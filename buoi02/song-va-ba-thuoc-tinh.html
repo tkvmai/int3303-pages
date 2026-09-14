@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Demo Buổi 2 Tiết 1</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mut:#5A6272;
+      --line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE}
+nav{display:flex;flex-wrap:wrap;gap:7px;padding:13px 26px;border-bottom:1px solid var(--line);background:var(--tint)}
+nav button{border:1px solid var(--line);background:#fff;color:var(--ink);font:inherit;font-size:14px;
+  padding:8px 14px;border-radius:7px;cursor:pointer}
+nav button:hover{border-color:#B9C1CF}
+nav button.on{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+h2{font-family:Cambria,Georgia,serif;font-size:25px;margin:0 0 4px}
+.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.5}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+.ctl{display:flex;flex-wrap:wrap;gap:20px;align-items:center;margin:15px 0 0;
+  padding:13px 16px;background:var(--tint);border-radius:10px}
+.ctl label{font-size:14px;display:flex;align-items:center;gap:9px}
+.ctl input[type=range]{width:170px;accent-color:var(--acc)}
+.ctl b{font-variant-numeric:tabular-nums;color:var(--acc);min-width:76px;display:inline-block}
+.ctl button{border:1px solid var(--line);background:#fff;font:inherit;font-size:14px;padding:7px 15px;
+  border-radius:7px;cursor:pointer}
+.ctl button:hover{border-color:#B9C1CF}
+.note{margin-top:15px;padding:13px 16px;border-left:4px solid var(--acc);background:#FFF6F2;
+  font-size:14.5px;line-height:1.6}
+.note b{color:var(--acc)}
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);border-radius:7px;padding:6px 13px;cursor:pointer;
+  font-size:14px;background:#fff;user-select:none}
+.chip.on{background:var(--pur);color:#fff;border-color:var(--pur);font-weight:700}
+.hide{display:none}
+footer{padding:16px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13px}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;text-decoration:none;border-bottom:1px solid #E4E8EF}a.veml:hover{color:#FF6B35}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · MẠNG KHÔNG DÂY</div>
+  <h1>Demo Buổi 2, Tiết 1: sóng và ba thuộc tính</h1>
+  <p>Sáu mô phỏng chạy trực tiếp. Không cần mạng, mở bằng trình duyệt bất kỳ.</p>
+</header>
+<a class="veml" href="../index.html">Về mục lục mô phỏng INT3303</a>
+
+
+<nav id="nav"></nav>
+
+<main>
+  <h2 id="ttl"></h2>
+  <p class="sub" id="sub"></p>
+  <canvas id="cv" width="1100" height="380"></canvas>
+  <div class="ctl" id="ctl"></div>
+  <div class="note" id="note"></div>
+</main>
+
+<footer>Dùng kèm bộ slide Buổi 2. Các con số trên demo là minh hoạ nguyên lý, không phải số liệu đo thực tế.</footer>
+
+<script>
+const C={ink:'#1A1F36',acc:'#FF6B35',teal:'#2A9D8F',pur:'#6C5CE7',mut:'#5A6272',
+         line:'#E4E8EF',fade:'#DDE2EA',grid:'#EFF2F6'};
+const cv=document.getElementById('cv'), g=cv.getContext('2d');
+if(!g.roundRect){ CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+  r=Math.min(r,w/2,h/2); this.beginPath();
+  this.moveTo(x+r,y); this.arcTo(x+w,y,x+w,y+h,r); this.arcTo(x+w,y+h,x,y+h,r);
+  this.arcTo(x,y+h,x,y,r); this.arcTo(x,y,x+w,y,r); this.closePath(); return this; }; }
+const W=cv.width, H=cv.height;
+let t=0, running=true, cur=0;
+
+/* ---------- tien ich ve ---------- */
+function clear(){g.clearRect(0,0,W,H);}
+function axis(y,x0,x1,lab){
+  g.strokeStyle=C.line; g.lineWidth=1.5; g.beginPath(); g.moveTo(x0,y); g.lineTo(x1,y); g.stroke();
+  if(lab){g.fillStyle=C.mut; g.font='italic 14px Calibri'; g.textAlign='right'; g.fillText(lab,x1,y+22);}
+}
+function txt(s,x,y,col,size,bold,align){
+  g.fillStyle=col||C.ink; g.font=(bold?'bold ':'')+(size||15)+'px Calibri';
+  g.textAlign=align||'left'; g.textBaseline='alphabetic'; g.fillText(s,x,y);
+}
+function dot(x,y,r,col){g.fillStyle=col;g.beginPath();g.arc(x,y,r,0,7);g.fill();}
+function arrow(x0,y0,x1,y1,col,w){
+  g.strokeStyle=col; g.lineWidth=w||2; g.beginPath(); g.moveTo(x0,y0); g.lineTo(x1,y1); g.stroke();
+  const a=Math.atan2(y1-y0,x1-x0), s=8;
+  g.fillStyle=col; g.beginPath(); g.moveTo(x1,y1);
+  g.lineTo(x1-s*Math.cos(a-0.4),y1-s*Math.sin(a-0.4));
+  g.lineTo(x1-s*Math.cos(a+0.4),y1-s*Math.sin(a+0.4)); g.closePath(); g.fill();
+}
+
+/* ---------- cac demo ---------- */
+const D=[];
+
+/* 1. Dao dong sinh ra hinh sin */
+D.push({
+ name:'1 · Dao động thành hình sin',
+ title:'Một vật dao động, vẽ vị trí theo thời gian',
+ sub:'Quả nặng dao động đều đặn theo phương thẳng đứng. Đường ghi bên phải ghi lại vị trí của nó theo thời gian, và đường ghi được chính là hình sin.',
+ note:'<b>Điểm cần chỉ ra:</b> quả nặng chỉ dao động tại chỗ. Đường cong bên phải không phải quỹ đạo của nó, mà là đồ thị vị trí theo thời gian. Trục ngang ở đây là <b>giây</b>.',
+ ctl:[{id:'f',lab:'Tần số f',min:0.2,max:2.5,step:0.1,val:0.8,fmt:v=>v.toFixed(1)+' Hz'}],
+ draw(p){
+   const cx=140, cy=H/2, A=105, f=p.f;
+   const y=cy-A*Math.sin(2*Math.PI*f*t);
+   // lo xo
+   g.strokeStyle=C.fade; g.lineWidth=2; g.beginPath(); g.moveTo(cx,40);
+   for(let i=0;i<=28;i++){const yy=40+(y-40)*i/28; g.lineTo(cx+(i%2?16:-16),yy);}
+   g.lineTo(cx,y); g.stroke();
+   g.fillStyle=C.ink; g.fillRect(cx-52,32,104,8);
+   dot(cx,y,17,C.acc);
+   txt('vật dao động',cx,H-28,C.mut,14,false,'center');
+   // truc va vet but
+   const x0=250, x1=W-40;
+   axis(cy,x0,x1,'thời gian');
+   g.strokeStyle=C.acc; g.lineWidth=3; g.beginPath();
+   const span=3.2;                      // so giay hien tren man
+   for(let x=x0;x<=x1;x++){
+     const tt=t-(x1-x)/(x1-x0)*span;
+     g.lineTo(x,cy-A*Math.sin(2*Math.PI*f*tt));
+   }
+   g.stroke();
+   g.setLineDash([4,4]); g.strokeStyle=C.fade; g.lineWidth=1.5;
+   g.beginPath(); g.moveTo(cx+18,y); g.lineTo(x1,y); g.stroke(); g.setLineDash([]);
+   dot(x1,cy-A*Math.sin(2*Math.PI*f*t),6,C.acc);
+   // chu ky
+   const px=(x1-x0)/span/f;
+   if(px<x1-x0-40){
+     arrow(x1-px,cy-A-34,x1,cy-A-34,C.teal,2);
+     arrow(x1,cy-A-34,x1-px,cy-A-34,C.teal,2);
+     txt('T = '+(1/f).toFixed(2)+' s',x1-px/2,cy-A-42,C.teal,15,true,'center');
+   }
+ }
+});
+
+/* 2. Song lan truyen */
+D.push({
+ name:'2 · Sóng lan truyền',
+ title:'Sóng lan truyền sang phải, nhưng phần tử môi trường chỉ dao động tại chỗ',
+ sub:'Mỗi chấm là một phần tử của môi trường. Nhìn chấm màu cam: nó chỉ dao động tại chỗ, không dịch chuyển theo sóng.',
+ note:'<b>Chỗ sinh viên hay nhầm nhất.</b> Sóng truyền đi nhưng phần tử môi trường không dịch chuyển theo. Cái lan đi là dao động và năng lượng. Trục ngang ở đây là <b>mét</b>, nên khoảng cách giữa hai đỉnh là bước sóng, sẽ học ở tiết 2.',
+ ctl:[{id:'f',lab:'Tần số',min:0.3,max:2.0,step:0.1,val:0.8,fmt:v=>v.toFixed(1)+' Hz'},
+      {id:'lam',lab:'Bước sóng',min:120,max:420,step:10,val:260,fmt:v=>v+' px'}],
+ draw(p){
+   const cy=H/2, A=72, k=2*Math.PI/p.lam, w=2*Math.PI*p.f;
+   axis(cy,40,W-40,'khoảng cách');
+   g.strokeStyle=C.fade; g.lineWidth=2.5; g.beginPath();
+   for(let x=40;x<=W-40;x++) g.lineTo(x,cy-A*Math.sin(k*(x-40)-w*t));
+   g.stroke();
+   for(let x=40;x<=W-40;x+=26){
+     const y=cy-A*Math.sin(k*(x-40)-w*t);
+     dot(x,y,4,C.teal);
+   }
+   const mx=40+3.5*26, my=cy-A*Math.sin(k*(mx-40)-w*t);
+   g.setLineDash([4,4]); g.strokeStyle=C.acc; g.lineWidth=1.4;
+   g.beginPath(); g.moveTo(mx,cy-A-16); g.lineTo(mx,cy+A+16); g.stroke(); g.setLineDash([]);
+   dot(mx,my,9,C.acc);
+   txt('phần tử này chỉ dao động tại chỗ',mx,cy+A+42,C.acc,14,true,'center');
+   arrow(W-260,cy-A-46,W-90,cy-A-46,C.teal,2.5);
+   txt('sóng lan truyền theo hướng này',W-175,cy-A-56,C.teal,15,true,'center');
+ }
+});
+
+/* 3. Song dien tu */
+D.push({
+ name:'3 · Sóng điện từ',
+ title:'Điện trường và từ trường vuông góc, cùng lan đi',
+ sub:'Điện trường E dựng đứng, từ trường B nằm ngang, cả hai vuông góc với hướng lan truyền. Chúng dao động cùng nhịp và sinh ra nhau.',
+ note:'<b>Vì sao không cần môi trường:</b> điện trường biến thiên sinh ra từ trường, từ trường biến thiên lại sinh ra điện trường. Cặp trường này duy trì lẫn nhau nên lan truyền được qua chân không. Ở môn này ta không đi vào phương trình.',
+ ctl:[{id:'f',lab:'Tần số',min:0.3,max:2.0,step:0.1,val:0.7,fmt:v=>v.toFixed(1)+' Hz'},
+      {id:'sh',lab:'Góc nhìn',min:0,max:70,step:5,val:42,fmt:v=>v+'°'}],
+ draw(p){
+   const ox=90, oy=H/2+40, L=W-190, A=78, B=52;
+   const a=p.sh*Math.PI/180, bx=Math.cos(a)*0.62, by=-Math.sin(a)*0.62;
+   const P=(z,e,b)=>[ox+z+b*bx*1.0, oy-e+b*by*1.0];
+   // truc
+   let q=P(L,0,0); arrow(ox,oy,q[0],q[1],C.ink,2);
+   txt('hướng lan truyền',q[0]-6,q[1]+24,C.ink,14,true,'right');
+   q=P(0,0,B*1.35); arrow(ox,oy,q[0],q[1],C.mut,1.4);
+   txt('B',q[0]+8,q[1]+4,C.teal,15,true);
+   arrow(ox,oy,ox,oy-A*1.35,C.mut,1.4);
+   txt('E',ox-16,oy-A*1.35-4,C.acc,15,true);
+   const w=2*Math.PI*p.f, k=2*Math.PI/300;
+   // B truoc, E sau
+   g.strokeStyle=C.teal; g.lineWidth=2.6; g.beginPath();
+   for(let z=0;z<=L;z+=2){const s=Math.sin(k*z-w*t); const pt=P(z,0,B*s); z?g.lineTo(pt[0],pt[1]):g.moveTo(pt[0],pt[1]);}
+   g.stroke();
+   for(let z=0;z<=L;z+=26){
+     const s=Math.sin(k*z-w*t), p0=P(z,0,0), p1=P(z,0,B*s);
+     g.strokeStyle=C.teal; g.globalAlpha=.45; g.lineWidth=1.2;
+     g.beginPath(); g.moveTo(p0[0],p0[1]); g.lineTo(p1[0],p1[1]); g.stroke(); g.globalAlpha=1;
+   }
+   g.strokeStyle=C.acc; g.lineWidth=3; g.beginPath();
+   for(let z=0;z<=L;z+=2){const s=Math.sin(k*z-w*t); const pt=P(z,A*s,0); z?g.lineTo(pt[0],pt[1]):g.moveTo(pt[0],pt[1]);}
+   g.stroke();
+   for(let z=0;z<=L;z+=26){
+     const s=Math.sin(k*z-w*t), p0=P(z,0,0), p1=P(z,A*s,0);
+     g.strokeStyle=C.acc; g.globalAlpha=.45; g.lineWidth=1.2;
+     g.beginPath(); g.moveTo(p0[0],p0[1]); g.lineTo(p1[0],p1[1]); g.stroke(); g.globalAlpha=1;
+   }
+   txt('Điện trường E',ox+10,42,C.acc,16,true);
+   txt('Từ trường B',ox+10,64,C.teal,16,true);
+ }
+});
+
+/* 4. Ba tham so */
+D.push({
+ name:'4 · Ba thuộc tính',
+ title:'Biên độ, tần số, pha: kéo thử từng cái',
+ sub:'Đường mờ là sóng gốc để so sánh. Đường đậm là sóng sau khi đổi một thuộc tính.',
+ note:'<b>Ba thuộc tính là đủ.</b> Cho trước biên độ, tần số và pha thì vẽ lại được đúng đường cong, không thiếu gì. Không có thuộc tính thứ tư. Cả ba đều biến đổi được, và đó là ba cách đưa dữ liệu lên sóng mang ở buổi 3.',
+ ctl:[{id:'A',lab:'Biên độ',min:0.1,max:1.0,step:0.05,val:0.75,fmt:v=>v.toFixed(2)},
+      {id:'f',lab:'Tần số',min:0.5,max:5,step:0.5,val:2,fmt:v=>v.toFixed(1)+' Hz'},
+      {id:'ph',lab:'Pha',min:0,max:360,step:15,val:0,fmt:v=>v+'°'}],
+ draw(p){
+   const cy=H/2, A0=110, x0=60, x1=W-60, span=2;
+   axis(cy,x0,x1,'thời gian');
+   g.strokeStyle=C.fade; g.lineWidth=2.5; g.beginPath();
+   for(let x=x0;x<=x1;x++){const tt=(x-x0)/(x1-x0)*span; g.lineTo(x,cy-A0*0.75*Math.sin(2*Math.PI*2*tt));}
+   g.stroke();
+   txt('sóng gốc',x1,cy+A0+28,C.mut,14,false,'right');
+   g.strokeStyle=C.acc; g.lineWidth=3.4; g.beginPath();
+   for(let x=x0;x<=x1;x++){
+     const tt=(x-x0)/(x1-x0)*span;
+     g.lineTo(x,cy-A0*p.A*Math.sin(2*Math.PI*p.f*tt+p.ph*Math.PI/180));
+   }
+   g.stroke();
+   arrow(x0-22,cy,x0-22,cy-A0*p.A,C.acc,2); arrow(x0-22,cy-A0*p.A,x0-22,cy,C.acc,2);
+   txt('A',x0-40,cy-A0*p.A/2+5,C.acc,16,true);
+   txt('A = '+p.A.toFixed(2)+'   ·   f = '+p.f.toFixed(1)+' Hz   ·   pha = '+p.ph+'°',
+       W/2,36,C.ink,17,true,'center');
+ }
+});
+
+/* 5. Cong hai song lech pha */
+D.push({
+ name:'5 · Cộng hai sóng lệch pha',
+ title:'Hai sóng cùng tần số, lệch pha bao nhiêu thì triệt tiêu?',
+ sub:'Kéo thanh trượt về 180 độ và xem tổng của hai sóng.',
+ note:'<b>Lệch 180 độ thì tổng bằng 0.</b> Hiện tượng này giải thích một hiện tượng suy giảm tín hiệu, học ở buổi 8: cùng một tín hiệu tới máy thu bằng nhiều đường khác nhau và triệt tiêu lẫn nhau. Tai nghe chống ồn cũng dùng đúng nguyên lý này.',
+ ctl:[{id:'ph',lab:'Lệch pha',min:0,max:360,step:5,val:180,fmt:v=>v+'°'}],
+ draw(p){
+   const x0=60,x1=W-60,span=2, yA=95, yS=290, A=52;
+   const ph=p.ph*Math.PI/180;
+   axis(yA,x0,x1,''); axis(yS,x0,x1,'thời gian');
+   const f=2;
+   g.strokeStyle=C.acc; g.lineWidth=2.8; g.beginPath();
+   for(let x=x0;x<=x1;x++){const tt=(x-x0)/(x1-x0)*span; g.lineTo(x,yA-A*Math.sin(2*Math.PI*f*tt-2*Math.PI*t*0.4));}
+   g.stroke();
+   g.strokeStyle=C.teal; g.lineWidth=2.8; g.setLineDash([7,5]); g.beginPath();
+   for(let x=x0;x<=x1;x++){const tt=(x-x0)/(x1-x0)*span; g.lineTo(x,yA-A*Math.sin(2*Math.PI*f*tt-2*Math.PI*t*0.4+ph));}
+   g.stroke(); g.setLineDash([]);
+   txt('sóng A',x1,yA-A-16,C.acc,14,true,'right');
+   txt('sóng B, lệch '+p.ph+'°',x1,yA+A+26,C.teal,14,true,'right');
+   let peak=0;
+   g.strokeStyle=C.ink; g.lineWidth=3.4; g.beginPath();
+   for(let x=x0;x<=x1;x++){
+     const tt=(x-x0)/(x1-x0)*span;
+     const s=A*Math.sin(2*Math.PI*f*tt-2*Math.PI*t*0.4)+A*Math.sin(2*Math.PI*f*tt-2*Math.PI*t*0.4+ph);
+     peak=Math.max(peak,Math.abs(s)); g.lineTo(x,yS-s);
+   }
+   g.stroke();
+   txt('tổng A + B',x1,yS+A*2+30,C.ink,15,true,'right');
+   const pct=Math.round(peak/(2*A)*100);
+   g.fillStyle=pct<6?'#FFF1EB':'#F2F4F8';
+   g.strokeStyle=pct<6?C.acc:C.line; g.lineWidth=1.6;
+   g.beginPath(); g.roundRect(x0,yS+58,250,40,9); g.fill(); g.stroke();
+   txt('biên độ tổng: '+pct+'% so với tối đa',x0+16,yS+84,pct<6?C.acc:C.ink,16,true);
+ }
+});
+
+/* 6. Ba cach be song */
+D.push({
+ name:'6 · Ba cách biến đổi sóng',
+ title:'Nhìn trước buổi 3: điều chế biên độ, điều chế tần số, điều chế pha',
+ sub:'Bấm vào từng ô bit để đổi giữa 0 và 1, rồi xem sóng mang thay đổi ra sao.',
+ note:'<b>Ba thuộc tính, ba cách chở bit.</b> Cả ba đều dùng trong thực tế và WiFi hiện nay dùng kết hợp. Chi tiết là nội dung buổi 3, ở đây chỉ cần thấy sóng mang đổi theo dữ liệu.',
+ bits:[1,0,1,1,0,0,1,0],
+ ctl:[{id:'mode',type:'chips',lab:'Cách bẻ',opts:['Biên độ','Tần số','Pha'],val:0}],
+ draw(p){
+   const b=this.bits, n=b.length, x0=60, x1=W-60, bw=(x1-x0)/n, cy=250, A=78;
+   for(let i=0;i<n;i++){
+     const x=x0+i*bw;
+     g.fillStyle=b[i]?C.pur:'#EEF1F6';
+     g.beginPath(); g.roundRect(x+2,60,bw-4,42,7); g.fill();
+     txt(String(b[i]),x+bw/2,89,b[i]?'#fff':C.mut,19,true,'center');
+   }
+   txt('bấm để đổi bit',x0,44,C.mut,14);
+   axis(cy,x0,x1,'thời gian');
+   g.strokeStyle=C.line; g.lineWidth=1; g.setLineDash([3,4]);
+   for(let i=1;i<n;i++){const x=x0+i*bw; g.beginPath(); g.moveTo(x,cy-A-10); g.lineTo(x,cy+A+10); g.stroke();}
+   g.setLineDash([]);
+   const cols=[C.acc,C.teal,C.pur], col=cols[p.mode];
+   g.strokeStyle=col; g.lineWidth=2.8; g.beginPath();
+   let phase=0, px=null;
+   for(let x=x0;x<=x1;x+=1){
+     const i=Math.min(n-1,Math.floor((x-x0)/bw)), bit=b[i];
+     let amp=A*0.85, fr=3.0;
+     if(p.mode===0) amp=A*(bit?0.9:0.22);
+     if(p.mode===1) fr=bit?4.5:2.0;
+     phase+=2*Math.PI*fr*(1/(x1-x0))*8;
+     let ph=p.mode===2?(bit?0:Math.PI):0;
+     const y=cy-amp*Math.sin(phase+ph);
+     px===null?g.moveTo(x,y):g.lineTo(x,y); px=x;
+   }
+   g.stroke();
+   const names=['Điều chế biên độ: bit 1 phát mạnh, bit 0 phát yếu',
+                'Điều chế tần số: bit 1 một tần số, bit 0 tần số khác',
+                'Điều chế pha: bit 1 và bit 0 khác nhau ở điểm bắt đầu chu kỳ'];
+   txt(names[p.mode],W/2,cy+A+62,col,16,true,'center');
+ },
+ click(mx,my){
+   const n=this.bits.length, x0=60, x1=W-60, bw=(x1-x0)/n;
+   if(my>=60&&my<=102&&mx>=x0&&mx<=x1){ this.bits[Math.floor((mx-x0)/bw)]^=1; return true; }
+   return false;
+ }
+});
+
+/* ---------- khung dieu khien ---------- */
+const nav=document.getElementById('nav'), ctl=document.getElementById('ctl');
+const P={};
+function build(i){
+  cur=i; t=0; running=true;
+  [...nav.children].forEach((b,k)=>b.classList.toggle('on',k===i));
+  const d=D[i];
+  document.getElementById('ttl').textContent=d.title;
+  document.getElementById('sub').textContent=d.sub;
+  document.getElementById('note').innerHTML=d.note;
+  ctl.innerHTML='';
+  d.ctl.forEach(c=>{
+    P[c.id]=c.val;
+    if(c.type==='chips'){
+      const wrap=document.createElement('label');
+      wrap.innerHTML='<span>'+c.lab+'</span>';
+      const box=document.createElement('span'); box.className='chips';
+      c.opts.forEach((o,k)=>{
+        const el=document.createElement('span');
+        el.className='chip'+(k===c.val?' on':''); el.textContent=o;
+        el.onclick=()=>{P[c.id]=k;[...box.children].forEach((x,j)=>x.classList.toggle('on',j===k));};
+        box.appendChild(el);
+      });
+      wrap.appendChild(box); ctl.appendChild(wrap);
+    }else{
+      const l=document.createElement('label');
+      const out=document.createElement('b'); out.textContent=c.fmt(c.val);
+      const r=document.createElement('input');
+      Object.assign(r,{type:'range',min:c.min,max:c.max,step:c.step,value:c.val});
+      r.oninput=()=>{P[c.id]=+r.value; out.textContent=c.fmt(+r.value);};
+      l.append(c.lab,r,out); ctl.appendChild(l);
+    }
+  });
+  const pb=document.createElement('button');
+  pb.textContent='Tạm dừng';
+  pb.onclick=()=>{running=!running; pb.textContent=running?'Tạm dừng':'Chạy tiếp';};
+  ctl.appendChild(pb);
+  const rb=document.createElement('button');
+  rb.textContent='Về đầu'; rb.onclick=()=>{t=0;};
+  ctl.appendChild(rb);
+}
+D.forEach((d,i)=>{
+  const b=document.createElement('button'); b.textContent=d.name;
+  b.onclick=()=>build(i); nav.appendChild(b);
+});
+cv.addEventListener('click',e=>{
+  const r=cv.getBoundingClientRect();
+  const mx=(e.clientX-r.left)*W/r.width, my=(e.clientY-r.top)*H/r.height;
+  if(D[cur].click) D[cur].click(mx,my);
+});
+document.addEventListener('keydown',e=>{
+  if(e.key===' '){e.preventDefault(); running=!running;
+    const b=[...ctl.querySelectorAll('button')][0]; if(b) b.textContent=running?'Tạm dừng':'Chạy tiếp';}
+  if(e.key>='1'&&e.key<='6') build(+e.key-1);
+});
+let last=performance.now();
+function loop(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  if(running) t+=dt;
+  clear(); D[cur].draw(P);
+  requestAnimationFrame(loop);
+}
+build(0); requestAnimationFrame(loop);
+</script>
+</body>
+</html>

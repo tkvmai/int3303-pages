@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Từ trường biến thiên sinh ra điện trường</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mut:#5A6272;
+      --line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.5}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;
+  background:#fff;touch-action:none;cursor:pointer}
+.ctl{display:flex;flex-wrap:wrap;gap:20px;align-items:center;margin:15px 0 0;
+  padding:13px 16px;background:var(--tint);border-radius:10px}
+.ctl label{font-size:14px;display:flex;align-items:center;gap:9px}
+.ctl input[type=range]{width:260px;accent-color:var(--acc)}
+.ctl b{font-variant-numeric:tabular-nums;color:var(--acc);min-width:52px;display:inline-block}
+.ctl button{border:1px solid var(--line);background:#fff;font:inherit;font-size:14px;padding:7px 15px;
+  border-radius:7px;cursor:pointer}
+.ctl button:hover{border-color:#B9C1CF}
+.ctl button.on{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+.state{margin-top:15px;padding:13px 16px;border-left:4px solid var(--teal);background:#F1F8F7;
+  font-size:16px;line-height:1.55;min-height:58px}
+.state b{color:var(--teal)}
+.note{margin-top:13px;padding:13px 16px;border-left:4px solid var(--acc);background:#FFF6F2;
+  font-size:14.5px;line-height:1.6}
+.note b{color:var(--acc)}
+.note ol{margin:7px 0 0;padding-left:20px}
+.note li{margin:4px 0}
+footer{padding:16px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13px}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;text-decoration:none;border-bottom:1px solid #E4E8EF}a.veml:hover{color:#FF6B35}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · MẠNG KHÔNG DÂY</div>
+  <h1>Từ trường biến thiên sinh ra điện trường</h1>
+  <p>Buổi 2, Tiết 1. Núm vặn do người dạy điều khiển, nên dừng được ở bất cứ chỗ nào.</p>
+</header>
+<a class="veml" href="../index.html">Về mục lục mô phỏng INT3303</a>
+
+
+<main>
+  <p class="sub">Xuất phát từ đúng kết luận của slide trước: dòng đang chạy đều trong sợi dây,
+  quanh dây đã có từ trường, và kim điện kế đứng yên. Kéo núm vặn để thay đổi mức dòng ấy.</p>
+
+  <canvas id="cv" width="1180" height="560"></canvas>
+
+  <div class="ctl">
+    <label>Núm vặn dòng <input id="sl" type="range" min="0" max="100" value="45"> <b id="val">45</b></label>
+    <button id="auto">Chạy tự động</button>
+    <button id="reset">Về mức ban đầu</button>
+    <span style="font-size:13.5px;color:var(--mut)">Kéo được cả trên hình. Phím mũi tên trái phải cũng chỉnh được.</span>
+  </div>
+
+  <div class="state" id="st"></div>
+
+  <div class="note">
+    <b>Ba câu hỏi nên đặt cho lớp, theo thứ tự:</b>
+    <ol>
+      <li>Giữ núm đứng yên ở mức cao nhất. Từ trường rất mạnh. Vì sao kim vẫn chỉ số không?</li>
+      <li>Kéo từ 20 lên 80 thật chậm, rồi kéo lại đúng khoảng ấy thật nhanh. Hai lần đi cùng một quãng
+          nhưng kim lệch khác hẳn nhau. Vậy kim đo cái gì?</li>
+      <li>Kéo núm xuống. Vì sao kim đổi sang phía bên kia?</li>
+    </ol>
+  </div>
+</main>
+
+<footer>INT3303 · Buổi 2. Số chỉ điện kế trong mô phỏng được tính bằng đạo hàm theo thời gian của mức
+từ trường, đúng theo định luật cảm ứng Faraday. Nguồn: Feynman Lectures Vol II ch.17.</footer>
+
+<script>
+(function(){
+'use strict';
+var INK='#1A1F36',ACC='#FF6B35',TEAL='#2A9D8F',MUT='#5A6272',GREY='#C9D0DB',FADE='#EDF0F5';
+var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+var sl=document.getElementById('sl'), val=document.getElementById('val');
+var st=document.getElementById('st');
+var btnAuto=document.getElementById('auto'), btnReset=document.getElementById('reset');
+
+var B0=0.45;                 // muc tu truong san co, thua tu slide truoc
+var B=B0;                    // muc hien tai, 0 toi 1
+var dB=0;                    // toc do thay doi da lam muot, don vi mot don vi B tren giay
+var kim=0;                   // so chi dien ke, -1 toi 1
+var GAIN=1.7;                // he so quy doi tu dB/dt sang so chi
+var auto=false, autoT=0;
+var hist=[];                 // lich su {t,B,kim} de ve do thi
+var WIN=12;                  // be rong cua so do thi, tinh bang giay
+var last=performance.now()/1000, t=0;
+
+// ---------- toa do khung ve ----------
+var W=cv.width, H=cv.height;
+var EXP={x:24,y:56,w:660,h:452};        // panel thi nghiem
+var GR ={x:712,y:56,w:444,h:452};       // panel do thi
+var TRACK={x:EXP.x+105,y:EXP.y+318,w:250};  // duong ray, phai nam gon giua hai thanh doc
+
+function num(v){return Math.round(v*100)/100;}
+
+// ---------- ve ----------
+function line(x1,y1,x2,y2,c,w){ctx.strokeStyle=c;ctx.lineWidth=w||1;ctx.beginPath();
+  ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
+function txt(s,x,y,size,c,align,bold,italic){
+  ctx.fillStyle=c; ctx.textAlign=align||'left'; ctx.textBaseline='middle';
+  ctx.font=(italic?'italic ':'')+(bold?'700 ':'')+size+'px Calibri, Segoe UI, sans-serif';
+  ctx.fillText(s,x,y);}
+function ellipse(cx,cy,rx,ry,c,w,alpha){
+  ctx.save(); ctx.globalAlpha=alpha===undefined?1:alpha; ctx.strokeStyle=c; ctx.lineWidth=w||1;
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.stroke(); ctx.restore();}
+function arrow(x1,y1,x2,y2,c,w,head){
+  line(x1,y1,x2,y2,c,w||1.4);
+  var a=Math.atan2(y2-y1,x2-x1), h=head||6;
+  ctx.fillStyle=c; ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-h*Math.cos(a-0.42),y2-h*Math.sin(a-0.42));
+  ctx.lineTo(x2-h*Math.cos(a+0.42),y2-h*Math.sin(a+0.42));
+  ctx.closePath(); ctx.fill();}
+
+function veMach(){
+  var wx=EXP.x+230, wy=EXP.y+120;      // soi day nam ngang
+  var half=175, bot=TRACK.y;
+  // khung mach, num van nam THANG TRONG mach
+  line(wx-half,wy,wx+half,wy,INK,3.2);
+  line(wx-half,wy,wx-half,bot,INK,2);
+  line(wx+half,wy,wx+half,bot,INK,2);
+  line(wx-half,bot,TRACK.x,bot,INK,2);
+  line(TRACK.x+TRACK.w,bot,wx+half,bot,INK,2);
+  // ray va nut van
+  line(TRACK.x,bot,TRACK.x+TRACK.w,bot,GREY,5);
+  line(TRACK.x,bot,TRACK.x+TRACK.w*B,bot,ACC,5);
+  var kx=TRACK.x+TRACK.w*B;
+  ctx.fillStyle='#fff'; ctx.strokeStyle=ACC; ctx.lineWidth=2.4;
+  ctx.beginPath(); ctx.arc(kx,bot,10,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  txt('0',TRACK.x,bot+22,13,MUT,'center');
+  txt('tối đa',TRACK.x+TRACK.w,bot+22,13,MUT,'center');
+  txt('sợi dây có dòng, núm vặn nằm ngay trong mạch',wx,bot+50,14,MUT,'center');
+  // huong dang van
+  if(Math.abs(dB)>0.02){
+    var s=dB>0?1:-1;
+    arrow(kx+s*14,bot,kx+s*34,bot,ACC,2.2,7);
+    txt(dB>0?'đang vặn lên':'đang vặn xuống',wx,bot-30,15,ACC,'center',true);
+  }else{
+    txt('tay không chạm núm',wx,bot-30,15,MUT,'center');
+  }
+  // tu truong quanh day, ban kinh theo B
+  var ry=14+40*B;
+  for(var i=-2;i<=2;i++){
+    var xx=wx+i*66;
+    ellipse(xx,wy,ry*0.5,ry,TEAL,2,0.35+0.6*B);
+    if(Math.abs(dB)>0.02){
+      var s2=dB>0?1:-1;
+      arrow(xx,wy-ry,xx,wy-ry-s2*16,TEAL,1.3,5.5);
+      arrow(xx,wy+ry,xx,wy+ry+s2*16,TEAL,1.3,5.5);
+    }
+  }
+  var lbl = Math.abs(dB)>0.02 ? (dB>0?'vòng đang nở rộng':'vòng đang co lại') : 'vòng đứng yên';
+  txt(lbl,wx,EXP.y+34,15,Math.abs(dB)>0.02?TEAL:MUT,'center',Math.abs(dB)>0.02);
+}
+
+function veVong(){
+  var vx=EXP.x+560, vy=EXP.y+120;
+  ellipse(vx,vy,58,42,INK,2.2,1);
+  line(vx-6,vy+42,vx-6,vy+70,INK,1.8);
+  line(vx+6,vy+42,vx+6,vy+70,INK,1.8);
+  // dien ke
+  var gy=vy+104, pv=gy+10, R=34, LN=26;
+  ctx.fillStyle='#fff'; ctx.strokeStyle=INK; ctx.lineWidth=1.8;
+  ctx.beginPath(); ctx.arc(vx,gy,R,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  [-52,0,52].forEach(function(a){
+    var r=(90-a)*Math.PI/180;
+    line(vx+21*Math.cos(r),pv-21*Math.sin(r),vx+25*Math.cos(r),pv-25*Math.sin(r),GREY,1.2);
+  });
+  var ang=(90-kim*52)*Math.PI/180;
+  line(vx,pv,vx+LN*Math.cos(ang),pv-LN*Math.sin(ang),Math.abs(kim)>0.04?ACC:MUT,2.8);
+  ctx.fillStyle=INK; ctx.beginPath(); ctx.arc(vx,pv,4,0,Math.PI*2); ctx.fill();
+  txt('vòng dây kín',vx,EXP.y+34,15,MUT,'center');
+  txt('điện kế',vx,gy+50,14,MUT,'center');
+}
+
+function veDoThi(){
+  var gx=GR.x+46, gw=GR.w-70;
+  // do thi tren: B
+  var y0=GR.y+150, h1=104;
+  line(gx,y0,gx+gw,y0,GREY,1);
+  line(gx,y0,gx,y0-h1,GREY,1);
+  ctx.save(); ctx.setLineDash([4,4]);
+  line(gx,y0-h1*B0,gx+gw,y0-h1*B0,GREY,1); ctx.restore();
+  ctx.fillStyle='#fff'; ctx.fillRect(gx+3,y0-h1*B0-21,118,17);
+  txt('mức của slide trước',gx+6,y0-h1*B0-12,12.5,MUT,'left');
+  txt('từ trường B',gx,GR.y+22,15,TEAL,'left',true);
+  txt('theo thời gian',gx,GR.y+44,13.5,MUT);
+  // do thi duoi: kim
+  var y1=GR.y+340, h2=78;
+  line(gx,y1,gx+gw,y1,GREY,1);
+  line(gx,y1-h2,gx,y1+h2,GREY,1);
+  txt('số chỉ điện kế',gx,GR.y+232,15,ACC,'left',true);
+  txt('chính là độ dốc của đường trên',gx,GR.y+254,13.5,MUT);
+
+  if(hist.length>1){
+    var t1=hist[hist.length-1].t, t0=t1-WIN;
+    var px=function(tt){return gx+gw*Math.max(0,Math.min(1,(tt-t0)/WIN));};
+    ctx.lineWidth=2.4; ctx.lineJoin='round';
+    ctx.strokeStyle=TEAL; ctx.beginPath();
+    hist.forEach(function(p,i){var X=px(p.t),Y=y0-h1*p.B; i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});
+    ctx.stroke();
+    ctx.strokeStyle=ACC; ctx.beginPath();
+    hist.forEach(function(p,i){var X=px(p.t),Y=y1-h2*p.kim; i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});
+    ctx.stroke();
+    // dau cham hien tai
+    ctx.fillStyle=TEAL; ctx.beginPath(); ctx.arc(gx+gw,y0-h1*B,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=ACC;  ctx.beginPath(); ctx.arc(gx+gw,y1-h2*kim,5,0,Math.PI*2); ctx.fill();
+  }
+  txt('bây giờ',gx+gw,y1+h2+22,13,MUT,'right');
+  txt(WIN+' giây trước',gx,y1+h2+22,13,MUT,'left');
+}
+
+function veKhung(){
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle=FADE; ctx.lineWidth=1.2;
+  ctx.strokeRect(EXP.x,EXP.y,EXP.w,EXP.h);
+  ctx.strokeRect(GR.x,GR.y,GR.w,GR.h);
+  txt('Thí nghiệm',EXP.x+14,EXP.y-18,14,MUT,'left',true);
+  txt('Ghi lại theo thời gian',GR.x+14,GR.y-18,14,MUT,'left',true);
+}
+
+// ---------- chu giai trang thai ----------
+function capNhatChu(){
+  var s;
+  if(Math.abs(dB)<=0.02){
+    if(B<0.03) s='Núm ở số không. Không có dòng nên không có từ trường, và kim đứng yên.';
+    else s='Dòng chạy đều, quanh dây có từ trường và nó đang đứng yên. <b>Kim chỉ số không, '+
+           'dù mức từ trường lúc này là '+Math.round(B*100)+' phần trăm.</b>';
+  }else if(dB>0){
+    s='Từ trường đang <b>tăng</b>. Kim lệch sang một bên, và lệch càng nhiều khi tay vặn càng nhanh.';
+  }else{
+    s='Từ trường đang <b>giảm</b>. Kim lệch sang <b>phía ngược lại</b>, tuy vẫn là cùng chiều dòng ấy trong dây.';
+  }
+  st.innerHTML=s;
+}
+
+// ---------- vong lap ----------
+function tick(now){
+  now=now/1000;
+  var dt=Math.min(0.1,Math.max(0.001,now-last)); last=now; t+=dt;
+
+  if(auto){
+    autoT+=dt;
+    var T=autoT%9.0;
+    if(T<1.8)      B=B0;
+    else if(T<3.6) B=B0+(1-B0)*(T-1.8)/1.8;
+    else if(T<5.4) B=1;
+    else if(T<7.2) B=1-(1-B0)*(T-5.4)/1.8;
+    else           B=B0;
+    sl.value=Math.round(B*100); val.textContent=sl.value;
+  }
+
+  // Dao ham lay tren cua so 0.15 giay chu khong lay tung khung.
+  // Keo bang tay thi moi khung nhay mot buoc khac nhau, neu lay hieu hai khung lien
+  // tiep thi so chi kim rang cua, nhin khong ra dang do thi.
+  var TAU=0.15, ref=null;
+  for(var i=hist.length-1;i>=0;i--){ ref=hist[i]; if(t-ref.t>=TAU) break; }
+  var raw = (ref && t-ref.t>0.02) ? (B-ref.B)/(t-ref.t) : 0;
+  dB += (raw-dB)*Math.min(1,dt*10);
+  if(Math.abs(dB)<0.006) dB=0;
+  kim = Math.max(-1,Math.min(1,dB*GAIN));
+
+  hist.push({t:t,B:B,kim:kim});
+  while(hist.length>2 && hist[0].t < t-WIN) hist.shift();
+
+  veKhung(); veMach(); veVong(); veDoThi(); capNhatChu();
+  requestAnimationFrame(tick);
+}
+
+// ---------- dieu khien ----------
+function setB(v){ B=Math.max(0,Math.min(1,v)); sl.value=Math.round(B*100); val.textContent=sl.value; }
+sl.addEventListener('input',function(){ auto=false; btnAuto.classList.remove('on');
+  btnAuto.textContent='Chạy tự động'; B=sl.value/100; val.textContent=sl.value; });
+btnReset.addEventListener('click',function(){ auto=false; btnAuto.classList.remove('on');
+  btnAuto.textContent='Chạy tự động'; setB(B0); });
+btnAuto.addEventListener('click',function(){ auto=!auto; autoT=0;
+  btnAuto.classList.toggle('on',auto);
+  btnAuto.textContent=auto?'Dừng tự động':'Chạy tự động'; });
+
+// keo truc tiep tren hinh
+var keo=false;
+function toaDo(e){
+  var r=cv.getBoundingClientRect();
+  return {x:(e.clientX-r.left)*(cv.width/r.width), y:(e.clientY-r.top)*(cv.height/r.height)};
+}
+function apDung(p){ setB((p.x-TRACK.x)/TRACK.w); }
+cv.addEventListener('pointerdown',function(e){
+  var p=toaDo(e);
+  if(p.y>TRACK.y-34 && p.y<TRACK.y+34 && p.x>TRACK.x-34 && p.x<TRACK.x+TRACK.w+34){
+    keo=true; auto=false; btnAuto.classList.remove('on'); btnAuto.textContent='Chạy tự động';
+    cv.setPointerCapture(e.pointerId); apDung(p);
+  }
+});
+cv.addEventListener('pointermove',function(e){ if(keo) apDung(toaDo(e)); });
+cv.addEventListener('pointerup',function(){ keo=false; });
+cv.addEventListener('pointercancel',function(){ keo=false; });
+window.addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight'||e.key==='ArrowLeft'){
+    auto=false; btnAuto.classList.remove('on'); btnAuto.textContent='Chạy tự động';
+    setB(B+(e.key==='ArrowRight'?0.03:-0.03)); e.preventDefault();
+  }
+});
+
+requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
