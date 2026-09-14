@@ -49,7 +49,7 @@ a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;te
 
 <main>
   <p class="sub">Xuất phát từ đúng kết luận của slide trước: dòng đang chạy đều trong sợi dây,
-  quanh dây đã có từ trường, và kim điện kế đứng yên. Kéo núm vặn để thay đổi mức dòng ấy.</p>
+  quanh dây đã có từ trường, và kim điện kế đứng yên. Núm vặn chỉnh cường độ dòng điện; từ trường quanh dây mạnh yếu theo dòng.</p>
 
   <canvas id="cv" width="1180" height="560"></canvas>
 
@@ -65,7 +65,7 @@ a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;te
   <div class="note">
     <b>Ba câu hỏi nên đặt cho lớp, theo thứ tự:</b>
     <ol>
-      <li>Giữ núm đứng yên ở mức cao nhất. Từ trường rất mạnh. Vì sao kim vẫn chỉ số không?</li>
+      <li>Giữ núm ở mức cao nhất. Dòng lớn nên từ trường rất mạnh. Vì sao kim vẫn chỉ số không?</li>
       <li>Kéo từ 20 lên 80 thật chậm, rồi kéo lại đúng khoảng ấy thật nhanh. Hai lần đi cùng một quãng
           nhưng kim lệch khác hẳn nhau. Vậy kim đo cái gì?</li>
       <li>Kéo núm xuống. Vì sao kim đổi sang phía bên kia?</li>
@@ -137,14 +137,14 @@ function veMach(){
   var kx=TRACK.x+TRACK.w*B;
   ctx.fillStyle='#fff'; ctx.strokeStyle=ACC; ctx.lineWidth=2.4;
   ctx.beginPath(); ctx.arc(kx,bot,10,0,Math.PI*2); ctx.fill(); ctx.stroke();
-  txt('0',TRACK.x,bot+22,13,MUT,'center');
-  txt('tối đa',TRACK.x+TRACK.w,bot+22,13,MUT,'center');
-  txt('sợi dây có dòng, núm vặn nằm ngay trong mạch',wx,bot+50,14,MUT,'center');
+  txt('I = 0',TRACK.x,bot+22,13,MUT,'center');
+  txt('I tối đa',TRACK.x+TRACK.w,bot+22,13,MUT,'center');
+  txt('núm vặn chỉnh cường độ dòng điện trong dây',wx,bot+50,14,MUT,'center');
   // huong dang van
   if(Math.abs(dB)>0.02){
     var s=dB>0?1:-1;
     arrow(kx+s*14,bot,kx+s*34,bot,ACC,2.2,7);
-    txt(dB>0?'đang vặn lên':'đang vặn xuống',wx,bot-30,15,ACC,'center',true);
+    txt(dB>0?'đang tăng dòng':'đang giảm dòng',wx,bot-30,15,ACC,'center',true);
   }else{
     txt('tay không chạm núm',wx,bot-30,15,MUT,'center');
   }
@@ -234,12 +234,12 @@ function capNhatChu(){
   var s;
   if(Math.abs(dB)<=0.02){
     if(B<0.03) s='Núm ở số không. Không có dòng nên không có từ trường, và kim đứng yên.';
-    else s='Dòng chạy đều, quanh dây có từ trường và nó đang đứng yên. <b>Kim chỉ số không, '+
+    else s='Dòng chạy đều nên từ trường quanh dây đứng yên. <b>Kim chỉ số không, '+
            'dù mức từ trường lúc này là '+Math.round(B*100)+' phần trăm.</b>';
   }else if(dB>0){
-    s='Từ trường đang <b>tăng</b>. Kim lệch sang một bên, và lệch càng nhiều khi tay vặn càng nhanh.';
+    s='Dòng đang tăng nên từ trường <b>tăng theo</b>. Kim lệch sang một bên, và lệch càng nhiều khi tay vặn càng nhanh.';
   }else{
-    s='Từ trường đang <b>giảm</b>. Kim lệch sang <b>phía ngược lại</b>, tuy vẫn là cùng chiều dòng ấy trong dây.';
+    s='Dòng đang giảm nên từ trường <b>giảm theo</b>. Kim lệch sang <b>phía ngược lại</b>.';
   }
   st.innerHTML=s;
 }

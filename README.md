@@ -2,37 +2,26 @@
 
 Trang tĩnh dùng kèm bài giảng môn Mạng không dây, Trường Đại học Công nghệ, ĐHQGHN.
 
-## Cách đưa lên GitHub Pages
+Repo: https://github.com/tkvmai/int3303-pages
 
-Làm một lần, sau này chỉ cần kéo thả file mới.
+## Địa chỉ công khai
 
-1. Đăng nhập github.com, bấm dấu cộng góc trên bên phải, chọn **New repository**.
-2. Đặt **Repository name** là `int3303`. Chọn **Public** (Pages miễn phí yêu cầu repo công khai).
-   Không tick thêm README nào cả, vì thư mục này đã có sẵn.
-3. Repo mới hiện ra một trang trống. Bấm **uploading an existing file**.
-4. Kéo toàn bộ nội dung *bên trong* thư mục `int3303-pages` vào ô upload, gồm `index.html`,
-   thư mục `buoi02`, và file `.nojekyll`. Lưu ý kéo phần bên trong, đừng kéo cả thư mục cha,
-   nếu không đường dẫn sẽ thừa một cấp.
-5. Bấm **Commit changes**.
-6. Vào tab **Settings**, cột trái chọn **Pages**. Mục Source chọn **Deploy from a branch**,
-   Branch chọn `main` và thư mục `/ (root)`. Bấm **Save**.
-7. Đợi khoảng một tới hai phút. Link sẽ là:
+- Mục lục: https://tkvmai.github.io/int3303-pages/
+- Cảm ứng Faraday: https://tkvmai.github.io/int3303-pages/buoi02/tu-truong-bien-thien.html
+- Sóng và ba thuộc tính: https://tkvmai.github.io/int3303-pages/buoi02/song-va-ba-thuoc-tinh.html
 
-   `https://<tên tài khoản github>.github.io/int3303/`
+Link không hết hạn, không cần đăng nhập, thuộc quyền quản lý của tài khoản GitHub.
 
-   Trang mô phỏng Faraday nằm ở:
+## Bật GitHub Pages
 
-   `https://<tên tài khoản github>.github.io/int3303/buoi02/tu-truong-bien-thien.html`
+Chỉ làm một lần. Vào https://github.com/tkvmai/int3303-pages/settings/pages, mục Source
+chọn **Deploy from a branch**, Branch chọn `main` và thư mục `/ (root)`, bấm **Save**.
+Đợi một tới hai phút. Repo phải để **Public** thì Pages mới chạy ở gói miễn phí.
 
-## Dán link vào slide
-
-Dùng link ngắn ở mục lục (`.../int3303/`) cho slide mở đầu, và link thẳng tới từng trang
-cho slide tương ứng. Link này không hết hạn, không cần đăng nhập, và thuộc quyền quản lý
-của tài khoản GitHub chứ không phụ thuộc nền tảng nào khác.
-
-Nếu muốn link ngắn hơn nữa thì đặt tên repo là `<tên tài khoản>.github.io`, khi đó địa chỉ
-rút còn `https://<tên tài khoản>.github.io/buoi02/...`. Đổi lại, mỗi tài khoản chỉ có một
-repo kiểu này, nên nó chiếm mất chỗ nếu sau này anh cần trang cá nhân riêng.
+Nếu sau này muốn địa chỉ ngắn hơn thì đổi tên repo thành `tkvmai.github.io`, khi đó
+địa chỉ rút còn `https://tkvmai.github.io/buoi02/...`. Đổi lại, mỗi tài khoản chỉ có một
+repo kiểu này, nên nó chiếm mất chỗ nếu sau này cần trang cá nhân riêng. Đổi tên repo
+cũng làm hỏng mọi link đã dán vào slide, nên cân nhắc trước khi phát tài liệu cho sinh viên.
 
 ## Cập nhật về sau
 

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Điện trường biến thiên sinh ra từ trường</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mut:#5A6272;
+      --line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.5}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;
+  background:#fff;touch-action:none;cursor:pointer}
+.ctl{display:flex;flex-wrap:wrap;gap:20px;align-items:center;margin:15px 0 0;
+  padding:13px 16px;background:var(--tint);border-radius:10px}
+.ctl label{font-size:14px;display:flex;align-items:center;gap:9px}
+.ctl input[type=range]{width:260px;accent-color:var(--acc)}
+.ctl b{font-variant-numeric:tabular-nums;color:var(--acc);min-width:52px;display:inline-block}
+.ctl button{border:1px solid var(--line);background:#fff;font:inherit;font-size:14px;padding:7px 15px;
+  border-radius:7px;cursor:pointer}
+.ctl button:hover{border-color:#B9C1CF}
+.ctl button.on{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+.state{margin-top:15px;padding:13px 16px;border-left:4px solid var(--pur);background:#F3F1FC;
+  font-size:16px;line-height:1.55;min-height:58px}
+.state b{color:var(--pur)}
+.note{margin-top:13px;padding:13px 16px;border-left:4px solid var(--acc);background:#FFF6F2;
+  font-size:14.5px;line-height:1.6}
+.note b{color:var(--acc)}
+.note ol{margin:7px 0 0;padding-left:20px}
+.note li{margin:4px 0}
+footer{padding:16px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13px}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · MẠNG KHÔNG DÂY</div>
+  <h1>Điện trường biến thiên sinh ra từ trường</h1>
+  <p>Buổi 2, Tiết 1. Chỉ một mạch duy nhất, không cần sợi dây thứ hai.</p>
+</header>
+<a class="veml" href="../index.html">Về mục lục mô phỏng INT3303</a>
+
+<main>
+  <p class="sub">Một sợi dây nối vào hai bản tụ, ở giữa là khe trống. Núm vặn chỉnh dòng nạp.
+  Dòng chạy thì hai bản tích điện dần, nên điện trường trong khe lớn dần. Câu hỏi cần trả lời:
+  lúc ấy từ trường mới xuất hiện ở chỗ nào.</p>
+
+  <canvas id="cv" width="1180" height="580"></canvas>
+
+  <div class="ctl">
+    <label>Dòng nạp <input id="sl" type="range" min="-100" max="100" value="0"> <b id="val">0</b></label>
+    <button id="auto">Chạy tự động</button>
+    <button id="reset">Xả hết, về đầu</button>
+    <span style="font-size:13.5px;color:var(--mut)">Kéo sang phải là nạp, sang trái là xả. Thả tay thì núm tự về không.</span>
+  </div>
+
+  <div class="state" id="st"></div>
+
+  <div class="note">
+    <b>Ba câu hỏi nên đặt cho lớp, theo thứ tự:</b>
+    <ol>
+      <li>Nạp cho đầy rồi buông tay. Điện trường trong khe đang rất lớn. Vì sao từ trường
+          trong khe lại biến mất?</li>
+      <li>Trong khe không có một điện tích nào chạy qua. Vậy từ trường ở đó do cái gì sinh ra?</li>
+      <li>So vòng từ trường trong khe với vòng quanh dây: chúng cùng cỡ và nối liền nhau.
+          Điều đó gợi ý gì về việc hai định luật có thật sự là hai thứ khác nhau không?</li>
+    </ol>
+  </div>
+</main>
+
+<footer>INT3303 · Buổi 2. Từ trường trong khe được tính bằng đạo hàm theo thời gian của điện trường,
+đúng theo số hạng Maxwell trong phương trình IV. Nguồn: Feynman Lectures Vol II ch.18. Từ trường
+giữa hai bản tụ đã được đo thực nghiệm: Bartlett và Corle, Phys. Rev. Lett. 55, 59 (1985).</footer>
+
+<script>
+(function(){
+'use strict';
+var INK='#1A1F36',ACC='#FF6B35',TEAL='#2A9D8F',PUR='#6C5CE7',MUT='#5A6272',
+    GREY='#C9D0DB',FADE='#EDF0F5';
+var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+var sl=document.getElementById('sl'), val=document.getElementById('val');
+var st=document.getElementById('st');
+var btnAuto=document.getElementById('auto'), btnReset=document.getElementById('reset');
+
+// I la dong nap, -1 toi 1. Q la dien tich da tich, 0 toi 1.
+// E ti le Q. dE/dt ti le I. Tu truong ti le I o CA HAI cho, quanh day va trong khe,
+// vi dong dich giua hai ban bang dung dong dan trong day.
+var I=0, Q=0.35, B=0;
+var auto=false, autoT=0;
+var hist=[], WIN=12;
+var last=performance.now()/1000, t=0;
+var day=false;                 // vua cham tran hoac cham day
+
+var W=cv.width, H=cv.height;
+var EXP={x:24,y:56,w:660,h:472};
+var GR ={x:712,y:56,w:444,h:472};
+var TRACK={x:EXP.x+180,y:EXP.y+392,w:250};
+var AX=EXP.y+144;              // truc ngang cua mach, cung la truc cua cac vong tu truong
+
+function line(x1,y1,x2,y2,c,w,dash){ctx.save();if(dash)ctx.setLineDash(dash);
+  ctx.strokeStyle=c;ctx.lineWidth=w||1;ctx.beginPath();
+  ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();}
+function txt(s,x,y,size,c,align,bold){
+  ctx.fillStyle=c; ctx.textAlign=align||'left'; ctx.textBaseline='middle';
+  ctx.font=(bold?'700 ':'')+size+'px Calibri, Segoe UI, sans-serif';
+  ctx.fillText(s,x,y);}
+function ellipse(cx,cy,rx,ry,c,w,alpha){
+  ctx.save(); ctx.globalAlpha=alpha===undefined?1:alpha; ctx.strokeStyle=c; ctx.lineWidth=w||1;
+  ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.stroke(); ctx.restore();}
+function arrow(x1,y1,x2,y2,c,w,head,alpha){
+  ctx.save(); ctx.globalAlpha=alpha===undefined?1:alpha;
+  line(x1,y1,x2,y2,c,w||1.4);
+  var a=Math.atan2(y2-y1,x2-x1), h=head||6;
+  ctx.fillStyle=c; ctx.beginPath(); ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-h*Math.cos(a-0.42),y2-h*Math.sin(a-0.42));
+  ctx.lineTo(x2-h*Math.cos(a+0.42),y2-h*Math.sin(a+0.42));
+  ctx.closePath(); ctx.fill(); ctx.restore();}
+
+function veMach(){
+  // Bo cuc phai tach ba tang ro rang, neu khong cac nhan de len nhau:
+  //   tang tren  : nhan cua cac vong tu truong
+  //   tang giua  : mach, ban tu, vong tu truong
+  //   tang duoi  : nhan cua dien truong va num van
+  var p1=EXP.x+270, p2=EXP.x+358;         // hai ban tu
+  var ph=58;                               // nua chieu cao ban
+  var wl=EXP.x+60, wr=EXP.x+600;           // hai dau day
+  var gm=(p1+p2)/2;                        // giua khe
+  var cl=(wl+p1)/2, cr=(p2+wr)/2;          // tam vong tu truong quanh day
+
+  line(wl,AX,p1,AX,INK,3);
+  line(p2,AX,wr,AX,INK,3);
+  line(p1,AX-ph,p1,AX+ph,INK,5);
+  line(p2,AX-ph,p2,AX+ph,INK,5);
+  txt('hai bản tụ',gm,AX-ph-30,14,INK,'center',true);
+
+  // dien tich tren hai ban, so luong theo Q
+  var n=Math.round(Q*7), sg=1;
+  for(var i=0;i<n;i++){
+    var yy=AX-ph+12+i*(2*ph-24)/Math.max(1,n-1);
+    txt('+',p1-14,yy,15,ACC,'center',true);
+    txt('\u2212',p2+14,yy,15,TEAL,'center',true);
+  }
+
+  // dien truong trong khe. Ve o bon muc, chua doan giua cho vong tu truong.
+  var aE=Math.min(1,Q*1.15);
+  if(aE>0.02){
+    [-46,-23,23,46].forEach(function(dy){
+      arrow(p1+7,AX+dy,p2-7,AX+dy,ACC,2,7,0.22+0.68*aE);
+    });
+    txt('điện trường E trong khe, hướng từ bản dương sang bản âm',
+        gm,AX+ph+46,13.5,ACC,'center',true);
+  }
+
+  // dong trong day, dat sat hai dau de khong dam vao vong tu truong
+  if(Math.abs(I)>0.02){
+    var d=I>0?1:-1, xa=wl+52, xb=wr-52;
+    arrow(xa-16*d,AX,xa+16*d,AX,ACC,2.6,10);
+    arrow(xb-16*d,AX,xb+16*d,AX,ACC,2.6,10);
+    txt(I>0?'dòng nạp':'dòng xả',xa,AX-24,13,ACC,'center',true);
+    txt(I>0?'dòng nạp':'dòng xả',xb,AX-24,13,ACC,'center',true);
+  }
+
+  // Vong tu truong. Quanh day mau xanh, trong khe mau tim.
+  // CUNG BAN KINH, vi dong dich giua hai ban bang dung dong dan trong day.
+  var ry=Math.abs(I)*40;
+  if(ry>3){
+    var al=0.35+0.6*Math.abs(I);
+    [[cl,TEAL],[cr,TEAL],[gm,PUR]].forEach(function(o){
+      ellipse(o[0],AX,ry*0.34,ry,o[1],2.2,al);
+      ellipse(o[0],AX,ry*0.19,ry*0.55,o[1],1.4,al*0.65);
+    });
+    line(cl,AX-ry-6,cr,AX-ry-6,GREY,1,[5,5]);
+    txt('các vòng cùng cỡ và nối liền nhau xuyên qua khe',gm,AX-ph-56,13,MUT,'center');
+    txt('B quanh dây',cl,AX+ph+20,13,TEAL,'center',true);
+    txt('B trong khe',gm,AX+ph+20,13,PUR,'center',true);
+    txt('B quanh dây',cr,AX+ph+20,13,TEAL,'center',true);
+  }
+  txt('khe trống, không một điện tích nào chạy qua',gm,AX+ph+82,13,MUT,'center');
+
+  // num van dong nap, nam ngay trong mach
+  var bot=TRACK.y;
+  line(wl,AX,wl,bot,INK,2); line(wr,AX,wr,bot,INK,2);
+  line(wl,bot,TRACK.x,bot,INK,2); line(TRACK.x+TRACK.w,bot,wr,bot,INK,2);
+  line(TRACK.x,bot,TRACK.x+TRACK.w,bot,GREY,5);
+  var mid=TRACK.x+TRACK.w/2, kx=mid+I*TRACK.w/2;
+  line(mid,bot,kx,bot,ACC,5);
+  ctx.fillStyle='#fff'; ctx.strokeStyle=ACC; ctx.lineWidth=2.4;
+  ctx.beginPath(); ctx.arc(kx,bot,10,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  line(mid,bot-9,mid,bot+9,MUT,1);
+  txt('xả',TRACK.x,bot+22,13,MUT,'center');
+  txt('0',mid,bot+22,13,MUT,'center');
+  txt('nạp',TRACK.x+TRACK.w,bot+22,13,MUT,'center');
+  txt('núm vặn chỉnh dòng nạp, nằm ngay trong mạch',mid,bot+48,14,MUT,'center');
+}
+function veDoThi(){
+  var gx=GR.x+46, gw=GR.w-70;
+  var y0=GR.y+168, h1=112;
+  line(gx,y0,gx+gw,y0,GREY,1);
+  line(gx,y0,gx,y0-h1,GREY,1);
+  txt('điện trường E trong khe',gx,GR.y+24,15,ACC,'left',true);
+  txt('lớn dần khi tụ đang nạp',gx,GR.y+46,13.5,MUT);
+
+  var y1=GR.y+372, h2=84;
+  line(gx,y1,gx+gw,y1,GREY,1);
+  line(gx,y1-h2,gx,y1+h2,GREY,1);
+  txt('từ trường B trong khe',gx,GR.y+256,15,PUR,'left',true);
+  txt('chính là độ dốc của đường trên',gx,GR.y+278,13.5,MUT);
+
+  if(hist.length>1){
+    var t1=hist[hist.length-1].t, t0=t1-WIN;
+    var px=function(tt){return gx+gw*Math.max(0,Math.min(1,(tt-t0)/WIN));};
+    ctx.lineWidth=2.4; ctx.lineJoin='round';
+    ctx.strokeStyle=ACC; ctx.beginPath();
+    hist.forEach(function(p,i){var X=px(p.t),Y=y0-h1*p.Q; i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});
+    ctx.stroke();
+    ctx.strokeStyle=PUR; ctx.beginPath();
+    hist.forEach(function(p,i){var X=px(p.t),Y=y1-h2*p.B; i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});
+    ctx.stroke();
+    ctx.fillStyle=ACC; ctx.beginPath(); ctx.arc(gx+gw,y0-h1*Q,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=PUR; ctx.beginPath(); ctx.arc(gx+gw,y1-h2*B,5,0,Math.PI*2); ctx.fill();
+  }
+  txt('bây giờ',gx+gw,y1+h2+22,13,MUT,'right');
+  txt(WIN+' giây trước',gx,y1+h2+22,13,MUT,'left');
+}
+
+function veKhung(){
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle=FADE; ctx.lineWidth=1.2;
+  ctx.strokeRect(EXP.x,EXP.y,EXP.w,EXP.h);
+  ctx.strokeRect(GR.x,GR.y,GR.w,GR.h);
+  txt('Thí nghiệm, chỉ một mạch duy nhất',EXP.x+14,EXP.y-18,14,MUT,'left',true);
+  txt('Ghi lại theo thời gian',GR.x+14,GR.y-18,14,MUT,'left',true);
+}
+
+function capNhatChu(){
+  var s;
+  if(day){
+    s='Tụ đã nạp đầy nên dòng không chạy được nữa. <b>Điện trường trong khe vẫn còn '+
+      'nguyên và rất lớn, nhưng từ trường trong khe đã biến mất.</b>';
+  }else if(Math.abs(I)<=0.02){
+    s = Math.abs(Q)<0.02
+      ? 'Tụ chưa tích điện, không có điện trường, không có từ trường.'
+      : 'Không nạp cũng không xả. Điện trường trong khe đứng yên ở mức '+
+        Math.round(Math.abs(Q)*100)+' phần trăm, và <b>từ trường trong khe bằng không</b>.';
+  }else if(I>0){
+    s='Đang nạp: điện trường trong khe <b>lớn dần</b>. Từ trường xuất hiện ngay trong khe, '+
+      'quấn vòng quanh trục và nối liền với vòng quanh dây.';
+  }else{
+    s='Đang xả: điện trường <b>nhỏ dần</b>. Từ trường vẫn có, nhưng <b>quấn theo chiều ngược lại</b>.';
+  }
+  st.innerHTML=s;
+}
+
+function tick(now){
+  now=now/1000;
+  var dt=Math.min(0.1,Math.max(0.001,now-last)); last=now; t+=dt;
+
+  if(auto){
+    autoT+=dt;
+    var T=autoT%12.0;
+    if(T<1.5)      I=0;
+    else if(T<4.5) I=0.75;
+    else if(T<7.0) I=0;
+    else if(T<10.0) I=-0.75;
+    else            I=0;
+    sl.value=Math.round(I*100);
+  }
+
+  // tich phan dien tich, chan o hai dau
+  Q += I*dt*0.22;
+  day=false;
+  if(Q>1){ Q=1; if(I>0){ I=0; day=true; } }
+  if(Q<0){ Q=0; if(I<0){ I=0; } }
+  if(day && !auto){ sl.value=0; }
+  val.textContent=Math.round(I*100);
+
+  // B ti le dong. Trong khe la dong dich, quanh day la dong dan, hai cai bang nhau.
+  B = Math.max(-1,Math.min(1,I));
+
+  hist.push({t:t,Q:Q,B:B});
+  while(hist.length>2 && hist[0].t < t-WIN) hist.shift();
+
+  veKhung(); veMach(); veDoThi(); capNhatChu();
+  requestAnimationFrame(tick);
+}
+
+function dungAuto(){ auto=false; btnAuto.classList.remove('on'); btnAuto.textContent='Chạy tự động'; }
+sl.addEventListener('input',function(){ dungAuto(); I=sl.value/100; val.textContent=sl.value; });
+sl.addEventListener('change',function(){ sl.value=0; I=0; val.textContent='0'; });
+btnReset.addEventListener('click',function(){ dungAuto(); Q=0; I=0; sl.value=0; val.textContent='0'; });
+btnAuto.addEventListener('click',function(){ auto=!auto; autoT=0;
+  btnAuto.classList.toggle('on',auto);
+  btnAuto.textContent=auto?'Dừng tự động':'Chạy tự động'; });
+
+var keo=false;
+function toaDo(e){ var r=cv.getBoundingClientRect();
+  return {x:(e.clientX-r.left)*(cv.width/r.width), y:(e.clientY-r.top)*(cv.height/r.height)}; }
+function apDung(p){
+  var mid=TRACK.x+TRACK.w/2;
+  I=Math.max(-1,Math.min(1,(p.x-mid)/(TRACK.w/2)));
+  sl.value=Math.round(I*100); val.textContent=sl.value;
+}
+cv.addEventListener('pointerdown',function(e){
+  var p=toaDo(e);
+  if(p.y>TRACK.y-34 && p.y<TRACK.y+34 && p.x>TRACK.x-34 && p.x<TRACK.x+TRACK.w+34){
+    keo=true; dungAuto(); cv.setPointerCapture(e.pointerId); apDung(p);
+  }
+});
+cv.addEventListener('pointermove',function(e){ if(keo) apDung(toaDo(e)); });
+cv.addEventListener('pointerup',function(){ if(keo){ keo=false; I=0; sl.value=0; val.textContent='0'; } });
+cv.addEventListener('pointercancel',function(){ keo=false; });
+window.addEventListener('keydown',function(e){
+  if(e.key==='ArrowRight'||e.key==='ArrowLeft'){
+    dungAuto();
+    I=Math.max(-1,Math.min(1,I+(e.key==='ArrowRight'?0.08:-0.08)));
+    sl.value=Math.round(I*100); val.textContent=sl.value; e.preventDefault();
+  }
+});
+
+requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
