@@ -155,8 +155,8 @@ function veMach(){
     [-46,-23,23,46].forEach(function(dy){
       arrow(p1+7,AX+dy,p2-7,AX+dy,ACC,2,7,0.22+0.68*aE);
     });
-    txt('điện trường E trong khe, hướng từ bản dương sang bản âm',
-        gm,AX+ph+46,13.5,ACC,'center',true);
+    var eL = Math.abs(I)<=0.02 ? 'E đứng yên' : (I>0?'E lớn dần':'E nhỏ dần');
+    txt(eL,gm,AX+ph+42,13,Math.abs(I)>0.02?ACC:MUT,'center',Math.abs(I)>0.02);
   }
 
   // dong trong day, dat sat hai dau de khong dam vao vong tu truong
@@ -179,11 +179,23 @@ function veMach(){
     });
     line(cl,AX-ry-6,cr,AX-ry-6,GREY,1,[5,5]);
     txt('các vòng cùng cỡ và nối liền nhau xuyên qua khe',gm,AX-ph-56,13,MUT,'center');
-    txt('B quanh dây',cl,AX+ph+20,13,TEAL,'center',true);
-    txt('B trong khe',gm,AX+ph+20,13,PUR,'center',true);
-    txt('B quanh dây',cr,AX+ph+20,13,TEAL,'center',true);
+    txt('B quanh dây',cl,AX+ph+18,13,TEAL,'center',true);
+    txt('B trong khe',gm,AX+ph+18,13,PUR,'center',true);
+    txt('B quanh dây',cr,AX+ph+18,13,TEAL,'center',true);
   }
-  txt('khe trống, không một điện tích nào chạy qua',gm,AX+ph+82,13,MUT,'center');
+  // Von ke mac vao hai ban. Voi hai ban song song cach nhau doan d thi hieu dien
+  // the bang E nhan d, nen kim von ke nhich len chinh la bang chung do duoc rang
+  // dien truong trong khe dang tang. Thieu no thi slide chi khang dinh suong.
+  var vy=AX+ph+92;
+  line(p1,AX+ph,p1,vy,INK,1.5); line(p2,AX+ph,p2,vy,INK,1.5);
+  line(p1,vy,gm-22,vy,INK,1.5); line(gm+22,vy,p2,vy,INK,1.5);
+  ctx.fillStyle='#fff'; ctx.strokeStyle=INK; ctx.lineWidth=1.6;
+  ctx.beginPath(); ctx.arc(gm,vy,22,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  var va=(90-Q*104+52)*Math.PI/180;
+  line(gm,vy+7,gm+17*Math.cos(va),vy+7-17*Math.sin(va),Q>0.02?ACC:MUT,2.2);
+  ctx.fillStyle=INK; ctx.beginPath(); ctx.arc(gm,vy+7,3,0,Math.PI*2); ctx.fill();
+  txt('vôn kế: số chỉ tỉ lệ với E trong khe',gm,vy+40,13,MUT,'center');
+  txt('khe trống, không một điện tích nào chạy qua',gm,vy+64,13,MUT,'center');
 
   // num van dong nap, nam ngay trong mach
   var bot=TRACK.y;
