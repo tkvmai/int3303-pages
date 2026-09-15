@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Vì sao sóng tự lan ra xa</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mut:#5A6272;
+      --line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.5}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;
+  background:#fff;touch-action:none}
+.ctl{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin:15px 0 0;
+  padding:13px 16px;background:var(--tint);border-radius:10px}
+.ctl label{font-size:14px;display:flex;align-items:center;gap:9px}
+.ctl input[type=range]{width:180px;accent-color:var(--acc)}
+.ctl b{font-variant-numeric:tabular-nums;color:var(--acc);min-width:58px;display:inline-block}
+.ctl button{border:1px solid var(--line);background:#fff;font:inherit;font-size:14.5px;
+  padding:8px 16px;border-radius:8px;cursor:pointer}
+.ctl button:hover{border-color:#B9C1CF}
+.ctl button.on{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+.state{margin-top:15px;padding:13px 16px;border-left:4px solid var(--teal);background:#F1F8F7;
+  font-size:16px;line-height:1.55;min-height:78px}
+.state b{color:var(--teal)}
+.state i{color:var(--acc);font-style:normal;font-weight:700}
+.note{margin-top:13px;padding:13px 16px;border-left:4px solid var(--acc);background:#FFF6F2;
+  font-size:14.5px;line-height:1.6}
+.note b{color:var(--acc)}
+.note ol{margin:7px 0 0;padding-left:20px}
+.note li{margin:4px 0}
+footer{padding:16px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13px;line-height:1.6}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · MẠNG KHÔNG DÂY</div>
+  <h1>Vì sao sóng tự lan ra xa</h1>
+  <p>Buổi 2, Tiết 1. Bấm "Từng bước" để chuỗi tiến thêm một mắt xích mỗi lần.</p>
+</header>
+<a class="veml" href="../index.html">Về mục lục mô phỏng INT3303</a>
+
+<main>
+  <p class="sub">Ăng-ten nằm bên trái. Mũi tên cam là điện trường, mũi tên xanh là từ trường, vẽ
+  nghiêng đi để thấy nó vuông góc với mặt giấy. <b>Ở mỗi chỗ đều có cả hai trường cùng lúc</b>,
+  không phải điện trường ở chỗ này còn từ trường ở chỗ kia. Chỗ có vạch đứt là <b>mặt trước của
+  chuỗi</b>: bên phải nó chưa có gì cả, vì tin tức chưa kịp tới.</p>
+
+  <canvas id="cv" width="1180" height="640"></canvas>
+
+  <div class="ctl">
+    <button id="buoc">Từng bước</button>
+    <button id="auto">Tự chạy</button>
+    <button id="reset">Về đầu</button>
+    <label>Tần số <input id="fr" type="range" min="30" max="90" value="55"> <b id="fv">0,55 Hz</b></label>
+  </div>
+
+  <div class="state" id="st"></div>
+
+  <div class="note">
+    <b>Ba câu hỏi nên đặt cho lớp, theo thứ tự:</b>
+    <ol>
+      <li>Bên phải vạch đứt hoàn toàn trống. Vì sao ở đó chưa có gì, dù ăng-ten đã chạy từ lâu?</li>
+      <li>Ở mọi chỗ của sóng, điện trường và từ trường cùng có mặt và cùng pha. Vậy thứ gì mới
+          thật sự đi từ trong ra ngoài?</li>
+      <li>Ngay tại mép, trường bên trong khác hẳn trường bên ngoài. Chênh lệch theo không gian ấy
+          buộc trường ở đúng chỗ đó phải đổi theo thời gian. Vì sao điều đó làm mép dịch ra?</li>
+      <li>Tắt ăng-ten đi thì phần chuỗi đã rời khỏi nó có dừng lại không? Vì sao?</li>
+    </ol>
+  </div>
+</main>
+
+<footer>INT3303 · Buổi 2. Trong chân không, tại mỗi điểm của sóng, điện trường và từ trường cùng
+có mặt, dao động cùng pha và vuông góc với nhau, cả hai cùng vuông góc với hướng đi. Cái truyền đi
+là sự thay đổi chứ không phải hai trường thay phiên nhau chiếm chỗ. Mặt trước của chuỗi tiến với tốc độ c.
+Tốc độ và tần số trong mô phỏng đã hạ xuống rất nhiều so với thực tế để mắt kịp theo dõi; tỉ lệ giữa
+bước sóng và tốc độ vẫn giữ đúng quan hệ bước sóng bằng tốc độ chia tần số. Nguồn: Feynman Lectures
+on Physics Vol II ch.18.</footer>
+
+<script>
+(function(){
+'use strict';
+var INK='#1A1F36',ACC='#FF6B35',TEAL='#2A9D8F',PUR='#6C5CE7',MUT='#5A6272',
+    GREY='#C9D0DB',FADE='#EDF0F5';
+var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+var st=document.getElementById('st');
+var fr=document.getElementById('fr'), fv=document.getElementById('fv');
+var bBuoc=document.getElementById('buoc'), bAuto=document.getElementById('auto'),
+    bReset=document.getElementById('reset');
+
+var W=cv.width, H=cv.height;
+var PAN={x:24,y:56,w:1132,h:470};
+var X0=PAN.x+130;                     // chan ang-ten, goc toa do cua truc
+var X1=PAN.x+PAN.w-40;                // dau kia cua truc
+var AXY=PAN.y+236;                    // truc nam ngang
+var AMP=74;                           // bien do ve
+var CSPD=150;                         // toc do mat truoc, diem tren giay
+var f=0.55;                           // tan so
+var xf=0;                             // vi tri mat truoc, tinh tu X0
+var auto=false, buoc=0;
+var t=0, last=performance.now()/1000;
+
+// Phoi canh: truc thu ba, tuc huong cua tu truong, chieu xuong mat phang ve
+// theo vector (0.55, -0.42). Dung cung quy uoc voi hinh "E vuong goc B" o slide sau.
+var PZX=0.55, PZY=-0.42;
+
+function lam(){ return CSPD/f; }      // buoc song
+
+function line(x1,y1,x2,y2,c,w,dash){ctx.save();if(dash)ctx.setLineDash(dash);
+  ctx.strokeStyle=c;ctx.lineWidth=w||1;ctx.beginPath();
+  ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();}
+function txt(s,x,y,size,c,align,bold){
+  ctx.fillStyle=c; ctx.textAlign=align||'left'; ctx.textBaseline='middle';
+  ctx.font=(bold?'700 ':'')+size+'px Calibri, Segoe UI, sans-serif';
+  ctx.fillText(s,x,y);}
+function arrow(x1,y1,x2,y2,c,w,head,alpha){
+  if(Math.abs(x2-x1)<0.6 && Math.abs(y2-y1)<0.6) return;
+  ctx.save(); ctx.globalAlpha=alpha===undefined?1:alpha;
+  ctx.strokeStyle=c; ctx.lineWidth=w||1.4;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  var a=Math.atan2(y2-y1,x2-x1), h=head||6;
+  ctx.fillStyle=c; ctx.beginPath(); ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-h*Math.cos(a-0.45),y2-h*Math.sin(a-0.45));
+  ctx.lineTo(x2-h*Math.cos(a+0.45),y2-h*Math.sin(a+0.45));
+  ctx.closePath(); ctx.fill(); ctx.restore();}
+
+/* Bien do tai mot diem cach nguon mot doan d, khi mat truoc dang o xf.
+   Cho nao mat truoc chua toi thi bang khong: do la toan bo y nghia cua "tin tuc
+   can thoi gian de di". Trong chan khong, dien truong va tu truong cua song dao
+   dong CUNG PHA, nen cung dung mot ham nay. */
+function bien(d){
+  if(d>xf) return null;
+  return Math.sin(2*Math.PI*(xf-d)/lam());
+}
+
+function veAngten(){
+  var ax=PAN.x+66;
+  ctx.strokeStyle=INK; ctx.lineWidth=4; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(ax,AXY-70); ctx.lineTo(ax,AXY-16); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ax,AXY+16); ctx.lineTo(ax,AXY+70); ctx.stroke();
+  ctx.lineCap='butt';
+  ctx.fillStyle='#fff'; ctx.strokeStyle=ACC; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(ax,AXY,13,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  txt('~',ax,AXY,15,ACC,'center',true);
+  txt('ăng-ten',ax,AXY-92,13.5,INK,'center',true);
+  txt('electron chạy\nlên xuống',ax,AXY+96,12.5,MUT,'center');
+  var s=Math.sin(2*Math.PI*f*t)>0?-1:1;
+  arrow(ax,AXY-40,ax,AXY-40+s*26,MUT,2,9,0.9);
+}
+
+function veTruc(){
+  line(X0,AXY,X1,AXY,GREY,1.2);
+  arrow(X1-26,AXY,X1+6,AXY,INK,2,11);
+  txt('hướng sóng đi',X1+2,AXY-20,13.5,INK,'right',true);
+}
+
+function veSong(){
+  var pE=[], pB=[], b;
+  for(var x=X0; x<=X1; x+=4){
+    b=bien(x-X0); if(b===null) break;
+    pE.push([x, AXY-AMP*b]);
+    pB.push([x+PZX*AMP*b, AXY+PZY*AMP*b]);
+  }
+  if(pE.length>1){
+    ctx.lineJoin='round';
+    ctx.strokeStyle=TEAL; ctx.lineWidth=2.2; ctx.globalAlpha=0.85; ctx.beginPath();
+    pB.forEach(function(p,i){ i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]); });
+    ctx.stroke();
+    ctx.strokeStyle=ACC; ctx.lineWidth=2.6; ctx.globalAlpha=1; ctx.beginPath();
+    pE.forEach(function(p,i){ i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]); });
+    ctx.stroke();
+    ctx.globalAlpha=1;
+  }
+  for(var x2=X0+22; x2<=X1; x2+=44){
+    b=bien(x2-X0); if(b===null) break;
+    if(Math.abs(b)<0.06) continue;
+    arrow(x2,AXY,x2,AXY-AMP*b,ACC,1.7,8,0.9);
+    arrow(x2,AXY,x2+PZX*AMP*b,AXY+PZY*AMP*b,TEAL,1.7,8,0.8);
+  }
+}
+
+function veMatTruoc(){
+  var x=X0+Math.min(xf,X1-X0);
+  line(x,PAN.y+24,x,PAN.y+PAN.h-56,INK,1.6,[6,5]);
+  txt('mặt trước của chuỗi',x-10,PAN.y+40,13.5,INK,'right',true);
+  txt('bên phải chưa có gì, tin tức chưa tới',x+10,PAN.y+40,13,MUT,'left');
+  // Tiep suc giua HAI CHO khac nhau, khong phai giua dien truong va tu truong.
+  //
+  // SUA 2026-09-15. Ban truoc ve mui ten tu mot diem tren duong E sang mot diem
+  // tren duong B o vi tri khac, khien nguoi xem hieu rang dien truong nam cho nay
+  // con tu truong nam cho kia. Sai. O moi diem cua song, ca hai truong deu co mat,
+  // cung pha va vuong goc nhau. Cai truyen di la SU THAY DOI, tu cho nay sang cho
+  // ngay phia truoc.
+  // SUA 2026-09-15 (lan 2). Ban truoc ghi 'dang thay doi nen dung len cap moi o phia
+  // truoc', tuc la khung tiep suc giua HAI CHO. Khung do khong dung voi Maxwell: hai
+  // dinh luat deu la quan he TAI CUNG MOT CHO, noi thay doi theo thoi gian cua truong
+  // nay voi chenh lech theo khong gian cua truong kia. Chu giai duoi day noi dung
+  // co che: chenh lech theo khong gian manh nhat nam o mep, va no vat qua mep nen
+  // phan ngay ben ngoai bi buoc phai doi, the la mep dich ra.
+  var L=lam(), dm=xf-0.10*L;
+  if(dm>0){
+    var xm=X0+dm;
+    line(xm,AXY-AMP-16,xm,AXY+AMP+16,PUR,1.2,[4,4]);
+    var bm=bien(xm-X0);
+    ctx.fillStyle=ACC; ctx.beginPath();
+    ctx.arc(xm,AXY-AMP*bm,4.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=TEAL; ctx.beginPath();
+    ctx.arc(xm+PZX*AMP*bm,AXY+PZY*AMP*bm,4.5,0,Math.PI*2); ctx.fill();
+    txt('trong mép đã có trường',xm,AXY-AMP-24,12,PUR,'center',true);
+    // Mui ten vat QUA mat truoc: phan ngay ben ngoai la cho vua bi buoc phai doi,
+    // nen mep dich ra. Neo chu phai kep lai, vi khi mat truoc gan mep phai cua khung
+    // thi dong chu can giua se tran ra ngoai khung.
+    var xf0 = X0 + xf;
+    arrow(xf0-30,AXY+AMP+54,xf0+52,AXY+AMP+54,PUR,2.2,11);
+    var cx = Math.min(Math.max(xf0, PAN.x+180), PAN.x+PAN.w-185);
+    txt('chênh lệch ở mép buộc phần ngay bên ngoài phải đổi',
+        cx,AXY+AMP+76,12.5,PUR,'center',true);
+  }
+}
+
+function veChuThich(){
+  var bx=PAN.x+20, by=PAN.y+PAN.h-34;
+  arrow(bx,by,bx,by-24,ACC,2,9); txt('điện trường',bx+10,by-12,13,ACC,'left',true);
+  arrow(bx+124,by,bx+124+PZX*24,by+PZY*24,TEAL,2,9);
+  txt('từ trường',bx+150,by-12,13,TEAL,'left',true);
+  txt('hai trường dao động cùng pha và vuông góc với nhau',bx+248,by-12,13,MUT,'left');
+  var L=lam();
+  if(xf>L){
+    var xa=X0+xf-L, xb=X0+xf;
+    line(xa,AXY-AMP-46,xb,AXY-AMP-46,MUT,1.2);
+    line(xa,AXY-AMP-52,xa,AXY-AMP-40,MUT,1.2);
+    line(xb,AXY-AMP-52,xb,AXY-AMP-40,MUT,1.2);
+    txt('một bước sóng',(xa+xb)/2,AXY-AMP-62,12.5,MUT,'center');
+  }
+}
+
+function chuGiai(){
+  var n=Math.floor(xf/(lam()*0.5));
+  var s;
+  if(xf<=0.5){
+    s='Chưa bấm gì. Electron trong ăng-ten bắt đầu chạy lên chạy xuống, nhưng ngoài kia chưa '+
+      'có gì cả.';
+  }else if(n<=0){
+    s='<i>Mắt xích 1.</i> Electron chạy nên <b>điện trường ngay cạnh ăng-ten thay đổi</b>. '+
+      'Mới chỉ có thế, chưa có gì đi đâu.';
+  }else if(n===1){
+    s='<i>Mắt xích 2.</i> Ở mép, trường bên trong khác hẳn trường bên ngoài. <b>Chênh lệch theo '+
+      'không gian ấy buộc trường tại chính chỗ đó phải đổi theo thời gian</b>. Đó là nội dung của '+
+      'hai định luật vừa học, và cả hai đều là quan hệ tại cùng một chỗ.';
+  }else if(n===2){
+    s='<i>Mắt xích 3.</i> Chênh lệch ấy vắt qua mép, nên <b>phần ngay bên ngoài cũng bị buộc phải '+
+      'đổi</b>. Trường vừa xuất hiện ở đó, và mép đã dịch ra. Không có gì được gửi từ chỗ này sang '+
+      'chỗ kia.';
+  }else{
+    s='<i>Và cứ thế.</i> Chỗ trường trong khác trường ngoài luôn nằm đúng ở mép, nên mép cứ tiến mãi. '+
+      '<b>Đến đây chuỗi không cần ăng-ten nữa</b>: tắt máy phát thì phần đã rời đi vẫn đang trên '+
+      'đường. Đó là lý do sóng tự lan ra xa.';
+  }
+  st.innerHTML=s;
+}
+
+function ve(){
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle=FADE; ctx.lineWidth=1.2; ctx.strokeRect(PAN.x,PAN.y,PAN.w,PAN.h);
+  veTruc(); veSong(); veAngten(); veMatTruoc(); veChuThich(); chuGiai();
+}
+
+function tick(now){
+  now=now/1000;
+  var dt=Math.min(0.05,Math.max(0.001,now-last)); last=now; t+=dt;
+  if(auto){
+    xf+=CSPD*dt;
+    if(xf>X1-X0+lam()){ xf=0; }
+  }
+  ve();
+  requestAnimationFrame(tick);
+}
+
+function dungAuto(){ auto=false; bAuto.classList.remove('on'); bAuto.textContent='Tự chạy'; }
+bBuoc.addEventListener('click',function(){
+  dungAuto();
+  xf+=lam()*0.5;
+  if(xf>X1-X0+lam()) xf=0;
+});
+bAuto.addEventListener('click',function(){
+  auto=!auto; bAuto.classList.toggle('on',auto);
+  bAuto.textContent=auto?'Tạm dừng':'Tự chạy';
+});
+bReset.addEventListener('click',function(){ dungAuto(); xf=0; });
+fr.addEventListener('input',function(){
+  f=fr.value/100; fv.textContent=f.toFixed(2).replace('.',',')+' Hz';
+});
+fv.textContent=f.toFixed(2).replace('.',',')+' Hz';
+
+requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
