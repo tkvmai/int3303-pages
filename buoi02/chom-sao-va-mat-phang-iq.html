@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Chòm sao và mặt phẳng I/Q</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mut:#5A6272;
+      --line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.5}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;
+  background:#fff;cursor:pointer;touch-action:none}
+.ctl{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:15px 0 0;
+  padding:13px 16px;background:var(--tint);border-radius:10px}
+.ctl label{font-size:14px;display:flex;align-items:center;gap:9px}
+.ctl button{border:1px solid var(--line);background:#fff;font:inherit;font-size:14.5px;
+  padding:8px 16px;border-radius:8px;cursor:pointer}
+.ctl button:hover{border-color:#B9C1CF}
+.ctl button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ctl input[type=range]{width:150px;accent-color:var(--acc)}
+.ctl b{font-variant-numeric:tabular-nums;color:var(--acc);min-width:30px;display:inline-block}
+.state{margin-top:15px;padding:13px 16px;border-left:4px solid var(--teal);background:#F1F8F7;
+  font-size:16px;line-height:1.55;min-height:76px}
+.state b{color:var(--teal)}
+.state i{color:var(--acc);font-style:normal;font-weight:700}
+.note{margin-top:13px;padding:13px 16px;border-left:4px solid var(--acc);background:#FFF6F2;
+  font-size:14.5px;line-height:1.6}
+.note b{color:var(--acc)}
+.note ol{margin:7px 0 0;padding-left:20px}
+.note li{margin:4px 0}
+footer{padding:16px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13px;line-height:1.6}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · MẠNG KHÔNG DÂY</div>
+  <h1>Chòm sao và mặt phẳng I/Q</h1>
+  <p>Buổi 2, Tiết 3. Mỗi symbol là một điểm trên mặt phẳng I/Q. Bấm vào một điểm để xem dạng sóng nó sinh ra.</p>
+</header>
+<a class="veml" href="../index.html">Về mục lục mô phỏng INT3303</a>
+
+<main>
+  <p class="sub">Một sóng sin có biên độ và pha bất kỳ viết được thành <b>I·cos − Q·sin</b>, nên chỉ cần hai con số I và Q là mô tả trọn vẹn. Bỏ trục thời gian đi và vẽ cặp (I, Q) lên mặt phẳng, ta được <b>chòm sao</b>.</p>
+
+  <canvas id="cv" width="1180" height="560"></canvas>
+
+  <div class="ctl">
+    <button class="dd" data-k="bpsk">BPSK</button>
+    <button class="dd" data-k="qpsk">QPSK</button>
+    <button class="dd" data-k="ask4">4-ASK</button>
+    <button class="dd" data-k="qam16">16-QAM</button>
+    <label>Chu kỳ mỗi symbol <input id="sc" type="range" min="2" max="6" value="3"> <b id="vc">3</b></label>
+  </div>
+
+  <div class="state" id="st"></div>
+
+  <div class="note">
+    <b>Ba điều nên chỉ cho lớp thấy:</b>
+    <ol>
+      <li>Bấm lần lượt BPSK rồi QPSK. Số điểm tăng từ 2 lên 4, số bit mỗi symbol tăng từ 1 lên 2,
+          nhưng <b>dạng sóng vẫn chỉ là một sóng sin</b> với biên độ và pha khác nhau.</li>
+      <li>So 4-ASK với QPSK. Cùng bốn điểm và cùng hai bit mỗi symbol, nhưng 4-ASK xếp bốn điểm trên
+          <b>một trục</b> còn QPSK rải chúng quanh <b>một vòng tròn</b>.</li>
+      <li>Bấm 16-QAM. Mỗi symbol chở 4 bit, nhưng khoảng cách giữa hai điểm gần nhau đã co lại rõ rệt.
+          Số đo <b>d<sub>min</sub></b> hiện dưới hình cho thấy cái giá của việc tăng số mức.</li>
+    </ol>
+  </div>
+</main>
+
+<footer>INT3303 · Buổi 2. Chòm sao là tập các điểm (s<sub>i1</sub>, s<sub>i2</sub>) trong mặt phẳng, mỗi điểm là một symbol
+ứng với log₂M bit (Goldsmith, <i>Wireless Communications</i>, mục 5.2). MPAM đặt tin ở biên độ, MPSK ở pha, MQAM ở cả hai (mục 5.2).
+Khoảng cách tối thiểu của MPSK là d<sub>min</sub> = 2A·sin(π/M) (mục 5.3.2). Chòm sao vuông cỡ L² của MQAM tương đương MPAM cỡ L
+trên mỗi nhánh (mục 5.3.3). <b>Một chỗ đã hạ xuống để nhìn được:</b> hình chỉ vẽ vài chu kỳ sóng mang trong một symbol, hệ thật có
+hàng nghìn tới hàng triệu chu kỳ. Các điểm chòm sao ở đây chuẩn hoá về năng lượng trung bình bằng nhau giữa các định dạng, để phép
+so d<sub>min</sub> có nghĩa.</footer>
+
+<script>
+(function(){
+var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+var W=cv.width, H=cv.height;
+
+var INK='#1A1F36', ACC='#FF6B35', TEAL='#2A9D8F', PUR='#6C5CE7',
+    MUT='#5A6272', LINE='#E4E8EF', FADE='#DDE2EB';
+
+/* --- Dinh nghia bon chom sao -------------------------------------------
+   Diem luu duoi dang (I, Q) CHUA chuan hoa, kem nhan bit. Sau do ca bo duoc
+   chia cho can bac hai cua nang luong trung binh, de bon dinh dang co cung
+   nang luong trung binh. Khong chuan hoa thi phep so d_min vo nghia.       */
+var BODS = {
+  bpsk : {ten:'BPSK',  mau:PUR,  diem:[[-1,0,'0'],[1,0,'1']]},
+  qpsk : {ten:'QPSK',  mau:ACC,
+          diem:[[1,1,'00'],[-1,1,'01'],[-1,-1,'11'],[1,-1,'10']]},
+  ask4 : {ten:'4-ASK', mau:TEAL,
+          diem:[[-3,0,'00'],[-1,0,'01'],[1,0,'11'],[3,0,'10']]},
+  qam16: {ten:'16-QAM',mau:'#C2185B', diem:(function(){
+            var g=[-3,-1,1,3], m=['00','01','11','10'], r=[];
+            for(var a=0;a<4;a++) for(var b=0;b<4;b++)
+              r.push([g[a], g[b], m[a]+m[b]]);
+            return r; })()}
+};
+
+function chuanHoa(d){
+  var e=0; for(var i=0;i<d.length;i++) e += d[i][0]*d[i][0] + d[i][1]*d[i][1];
+  var k = Math.sqrt(d.length/e);
+  return d.map(function(p){ return [p[0]*k, p[1]*k, p[2]]; });
+}
+for(var k in BODS) BODS[k].diem = chuanHoa(BODS[k].diem);
+
+function dmin(d){
+  var m=Infinity;
+  for(var i=0;i<d.length;i++) for(var j=i+1;j<d.length;j++){
+    var dx=d[i][0]-d[j][0], dy=d[i][1]-d[j][1];
+    var v=Math.sqrt(dx*dx+dy*dy); if(v<m) m=v;
+  }
+  return m;
+}
+
+var kieu='qpsk', chon=0, ck=3;
+
+/* Khung ben trai: chom sao. Khung ben phai: dang song cua diem dang chon. */
+var CX=300, CY=270, R=185;            // tam va ban kinh khung chom sao
+var SX0=620, SX1=1130, SY=270, SAMP=105;
+
+function line(x1,y1,x2,y2,c,w,dash){ctx.save();if(dash)ctx.setLineDash(dash);
+  ctx.strokeStyle=c;ctx.lineWidth=w||1;ctx.beginPath();
+  ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();}
+function txt(s,x,y,size,c,align,bold){
+  ctx.fillStyle=c; ctx.textAlign=align||'left'; ctx.textBaseline='middle';
+  ctx.font=(bold?'700 ':'')+size+'px Calibri, Segoe UI, sans-serif';
+  ctx.fillText(s,x,y);}
+function cham(x,y,r,c,vien){
+  ctx.save(); ctx.fillStyle=c; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+  if(vien){ ctx.strokeStyle=vien; ctx.lineWidth=3; ctx.stroke(); }
+  ctx.restore();
+}
+
+function toaDo(p){ return [CX + p[0]*R/2.2, CY - p[1]*R/2.2]; }
+
+function veChomSao(){
+  var b=BODS[kieu], d=b.diem;
+  line(CX-R, CY, CX+R, CY, FADE, 1.2);
+  line(CX, CY-R, CX, CY+R, FADE, 1.2);
+  txt('I', CX+R+12, CY, 14, MUT, 'left', true);
+  txt('Q', CX, CY-R-14, 14, MUT, 'center', true);
+  for(var i=0;i<d.length;i++){
+    var xy=toaDo(d[i]);
+    var la = (i===chon);
+    cham(xy[0], xy[1], la?8:6, b.mau, la?'#FFD5C2':null);
+    if(d.length<=4) txt(d[i][2], xy[0], xy[1]-19, 13, la?b.mau:MUT, 'center', la);
+  }
+  if(d.length>4){
+    var xy2=toaDo(d[chon]);
+    txt(d[chon][2], xy2[0], xy2[1]-19, 13, b.mau, 'center', true);
+  }
+  txt(b.ten+' · '+d.length+' điểm · '+Math.log2(d.length)+' bit mỗi symbol',
+      CX, CY+R+32, 15, INK, 'center', true);
+  txt('dₘᵢₙ = '+dmin(d).toFixed(2)+' (năng lượng trung bình bằng nhau giữa bốn định dạng)',
+      CX, CY+R+56, 12.5, MUT, 'center');
+}
+
+function veDangSong(){
+  var b=BODS[kieu], p=b.diem[chon];
+  var A=Math.sqrt(p[0]*p[0]+p[1]*p[1]);
+  var th=Math.atan2(p[1], p[0]);
+  line(SX0, SY, SX1, SY, FADE, 1.2);
+  ctx.save(); ctx.strokeStyle=b.mau; ctx.lineWidth=2.4; ctx.beginPath();
+  for(var px=0; px<=SX1-SX0; px++){
+    var u=px/(SX1-SX0);
+    var y=SY - SAMP*A*Math.cos(2*Math.PI*ck*u + th);
+    if(px===0) ctx.moveTo(SX0+px,y); else ctx.lineTo(SX0+px,y);
+  }
+  ctx.stroke(); ctx.restore();
+  txt('dạng sóng của symbol đang chọn', (SX0+SX1)/2, SY-SAMP-42, 15, INK, 'center', true);
+  txt('I = '+p[0].toFixed(2)+'   Q = '+p[1].toFixed(2),
+      (SX0+SX1)/2, SY-SAMP-20, 13.5, MUT, 'center');
+  txt('biên độ '+A.toFixed(2)+'   pha '+Math.round(th*180/Math.PI)+'°',
+      (SX0+SX1)/2, SY+SAMP+24, 13.5, b.mau, 'center', true);
+  txt('bit: '+p[2], (SX0+SX1)/2, SY+SAMP+48, 14, INK, 'center', true);
+}
+
+function chuGiai(){
+  var b=BODS[kieu], d=b.diem, n=d.length, s;
+  var bit=Math.log2(n);
+  if(kieu==='bpsk'){
+    s='<b>BPSK</b> chỉ có hai điểm, nằm đối xứng qua gốc trên trục I. Hai điểm ấy cùng biên độ, '+
+      'khác nhau đúng nửa vòng pha. Mỗi symbol chở <i>1 bit</i>.';
+  }else if(kieu==='qpsk'){
+    s='<b>QPSK</b> có bốn điểm trên một vòng tròn, nên mọi symbol cùng biên độ. Mỗi symbol chở '+
+      '<i>2 bit</i>. Đây cũng chính là QAM với M = 4.';
+  }else if(kieu==='ask4'){
+    s='<b>4-ASK</b> cũng có bốn điểm và cũng chở <i>2 bit</i> mỗi symbol, nhưng bốn điểm nằm trên '+
+      'một trục duy nhất. Nhánh Q luôn bằng 0, tức là chỉ dùng một trong hai bậc tự do.';
+  }else{
+    s='<b>16-QAM</b> dùng bốn mức trên mỗi trục, cho 16 điểm và <i>4 bit</i> mỗi symbol. Cả biên độ '+
+      'lẫn pha đều mang tin, tức dùng cả hai bậc tự do.';
+  }
+  s += ' Với cùng năng lượng trung bình, dₘᵢₙ của định dạng này là <b>'+dmin(d).toFixed(2)+'</b>'+
+       ' ở mức '+bit+' bit mỗi symbol.';
+  document.getElementById('st').innerHTML=s;
+}
+
+function ve(){
+  ctx.clearRect(0,0,W,H);
+  ctx.save(); ctx.strokeStyle=FADE; ctx.lineWidth=1.2;
+  ctx.strokeRect(20,18,W-40,H-40); ctx.restore();
+  line(580, 40, 580, H-40, LINE, 1.2);
+  veChomSao(); veDangSong(); chuGiai();
+  var bs=document.querySelectorAll('.dd');
+  for(var i=0;i<bs.length;i++)
+    bs[i].className = 'dd' + (bs[i].getAttribute('data-k')===kieu ? ' on' : '');
+}
+
+cv.addEventListener('click', function(e){
+  var r=cv.getBoundingClientRect();
+  var x=(e.clientX-r.left)*(W/r.width), y=(e.clientY-r.top)*(H/r.height);
+  var d=BODS[kieu].diem, gan=-1, tot=1e9;
+  for(var i=0;i<d.length;i++){
+    var xy=toaDo(d[i]);
+    var v=(xy[0]-x)*(xy[0]-x)+(xy[1]-y)*(xy[1]-y);
+    if(v<tot){ tot=v; gan=i; }
+  }
+  if(tot<900){ chon=gan; ve(); }
+});
+
+var bs=document.querySelectorAll('.dd');
+for(var i=0;i<bs.length;i++) bs[i].addEventListener('click', function(){
+  kieu=this.getAttribute('data-k'); chon=0; ve(); });
+var sc=document.getElementById('sc');
+sc.addEventListener('input', function(){
+  ck=parseInt(sc.value,10); document.getElementById('vc').textContent=String(ck); ve(); });
+
+ve();
+})();
+</script>
+</body>
+</html>

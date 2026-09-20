@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Ba cách biến đổi sóng mang</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mut:#5A6272;
+      --line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.5}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;
+  background:#fff;cursor:pointer;touch-action:none}
+.ctl{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin:15px 0 0;
+  padding:13px 16px;background:var(--tint);border-radius:10px}
+.ctl label{font-size:14px;display:flex;align-items:center;gap:9px}
+.ctl input[type=range]{width:150px;accent-color:var(--acc)}
+.ctl b{font-variant-numeric:tabular-nums;color:var(--acc);min-width:34px;display:inline-block}
+.ctl button{border:1px solid var(--line);background:#fff;font:inherit;font-size:14.5px;
+  padding:8px 16px;border-radius:8px;cursor:pointer}
+.ctl button:hover{border-color:#B9C1CF}
+.state{margin-top:15px;padding:13px 16px;border-left:4px solid var(--teal);background:#F1F8F7;
+  font-size:16px;line-height:1.55;min-height:76px}
+.state b{color:var(--teal)}
+.state i{color:var(--acc);font-style:normal;font-weight:700}
+.note{margin-top:13px;padding:13px 16px;border-left:4px solid var(--acc);background:#FFF6F2;
+  font-size:14.5px;line-height:1.6}
+.note b{color:var(--acc)}
+.note ol{margin:7px 0 0;padding-left:20px}
+.note li{margin:4px 0}
+footer{padding:16px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13px;line-height:1.6}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · MẠNG KHÔNG DÂY</div>
+  <h1>Ba cách biến đổi sóng mang</h1>
+  <p>Buổi 2, Tiết 2. Sóng mang là sóng sin không đổi. Bấm vào một bit để đổi giá trị, cả ba dạng sóng cập nhật theo.</p>
+</header>
+<a class="veml" href="../index.html">Về mục lục mô phỏng INT3303</a>
+
+<main>
+  <p class="sub">Điều chế là làm biến đổi một thuộc tính của sóng mang theo tín hiệu cần truyền. ASK biến đổi <b>biên độ</b>, FSK biến đổi <b>tần số</b>, PSK biến đổi <b>pha</b>. Đó là ba thuộc tính duy nhất của một sóng sin, nên cũng là ba cách duy nhất.</p>
+
+  <canvas id="cv" width="1180" height="640"></canvas>
+
+  <div class="ctl">
+    <button id="mau">Dãy mẫu 1 0 1 1 0</button>
+    <button id="ngau">Đổi ngẫu nhiên</button>
+    <button id="mot">Tất cả bằng 1</button>
+    <label>Chu kỳ mỗi bit <input id="sc" type="range" min="2" max="6" value="3"> <b id="vc">3</b></label>
+  </div>
+
+  <div class="state" id="st"></div>
+
+  <div class="note">
+    <b>Ba điều nên chỉ cho lớp thấy:</b>
+    <ol>
+      <li>Bấm "Tất cả bằng 1". Cả ba dạng sóng trở lại thành sóng mang thuần, không phân biệt
+          được ranh giới giữa các bit. <b>Sóng mang không bị biến đổi thì không chở tin.</b></li>
+      <li>Đổi một bit bất kỳ. ASK tắt hẳn một đoạn, FSK chuyển giữa <b>f₁</b> và <b>f₂</b>, PSK giữ nguyên biên độ
+          và tần số nhưng chuyển giữa pha <b>0°</b> và <b>180°</b> tại ranh giới bit.</li>
+      <li>So độ lớn của ba dạng sóng. Chỉ ASK có độ lớn thay đổi theo dãy bit; FSK và PSK giữ
+          nguyên độ lớn suốt dãy. Đó là căn cứ để tiết sau xét xem hệ không dây nên chọn kiểu nào.</li>
+    </ol>
+  </div>
+</main>
+
+<footer>INT3303 · Buổi 2. ASK ở đây vẽ theo dạng hai mức đơn giản nhất: phát sóng mang khi gửi
+bit 1 và tắt khi gửi bit 0 (Molisch, <i>Wireless Communications</i>, mục 10.3.8). FSK chỉ phát đúng một sóng mang trong
+mỗi khoảng symbol (Goldsmith, <i>Wireless Communications</i>, mục 5.4). BPSK giữ nguyên biên độ và
+tần số, đổi pha giữa 0° và 180°. <b>Một chỗ đã hạ xuống để nhìn được:</b> hình vẽ chỉ có vài chu kỳ sóng
+mang trong một bit, còn hệ thật có hàng nghìn tới hàng triệu chu kỳ mỗi bit. Nếu vẽ đúng tỉ lệ thì
+sóng mang đặc kín, không nhìn ra gì. Pha của FSK được tính bằng cách cộng dồn nên không bị gãy ở
+ranh giới bit, đúng như mạch tạo FSK liên tục pha.</footer>
+
+<script>
+(function(){
+var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+var W=cv.width, H=cv.height;
+
+var INK='#1A1F36', ACC='#FF6B35', TEAL='#2A9D8F', PUR='#6C5CE7',
+    MUT='#5A6272', LINE='#E4E8EF', FADE='#DDE2EB';
+
+var X0=150, X1=1080;            // hai dau truc thoi gian
+var YBIT=78;                    // hang o bit
+var HBIT=44;
+var AMP=46;                     // nua chieu cao dang song
+var Y = {ask:230, fsk:378, psk:526};
+var NEN = {ask:'#FFF6F2', fsk:'#F1F8F7', psk:'#F3F1FE'};
+var MAU = {ask:ACC,       fsk:TEAL,      psk:PUR};
+
+var bits=[1,0,1,1,0,1,0,0];
+var ck=3;                       // so chu ky song mang trong mot bit
+var cuoiDoi=-1;                 // bit vua doi, de to sang
+
+function line(x1,y1,x2,y2,c,w,dash){ctx.save();if(dash)ctx.setLineDash(dash);
+  ctx.strokeStyle=c;ctx.lineWidth=w||1;ctx.beginPath();
+  ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();}
+function txt(s,x,y,size,c,align,bold){
+  ctx.fillStyle=c; ctx.textAlign=align||'left'; ctx.textBaseline='middle';
+  ctx.font=(bold?'700 ':'')+size+'px Calibri, Segoe UI, sans-serif';
+  ctx.fillText(s,x,y);}
+function khung(x,y,w,h,vien,day){
+  ctx.save(); ctx.strokeStyle=vien; ctx.lineWidth=day||1.2;
+  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+w,y); ctx.lineTo(x+w,y+h);
+  ctx.lineTo(x,y+h); ctx.closePath(); ctx.stroke(); ctx.restore();
+}
+function toNen(x,y,w,h,mau){
+  ctx.save(); ctx.lineCap='butt'; ctx.strokeStyle=mau; ctx.lineWidth=h;
+  ctx.beginPath(); ctx.moveTo(x,y+h/2); ctx.lineTo(x+w,y+h/2); ctx.stroke(); ctx.restore();
+}
+
+function rongBit(){ return (X1-X0)/bits.length; }
+
+/* Gia tri tuc thoi cua ba dang song tai thoi diem u, tinh theo don vi "so bit".
+   Pha duoc cong don doc theo u nen khong bi gay o ranh gioi bit. Rieng FSK thi
+   viec cong don nay chinh la dieu kien lien tuc pha cua mach tao FSK thuc te. */
+function mau(u, kieu){
+  var n=bits.length, buoc=0.002, phi=0, v=0;
+  for(var t=0; t<u-1e-9; t+=buoc){
+    var i=Math.min(n-1, Math.floor(t));
+    var b=bits[i];
+    var f = (kieu==='fsk') ? (b ? ck+1 : ck-1) : ck;
+    phi += 2*Math.PI*f*Math.min(buoc, u-t);
+  }
+  var i2=Math.min(n-1, Math.floor(Math.max(0,u-1e-9)));
+  var b2=bits[i2];
+  if(kieu==='ask') v = b2 ? Math.sin(phi) : 0;               // OOK: tat han khi bit 0
+  else if(kieu==='fsk') v = Math.sin(phi);                   // bien do khong doi
+  else v = Math.sin(phi + (b2 ? 0 : Math.PI));               // BPSK: lat pha 0 hoac pi
+  return v;
+}
+
+function veHangBit(){
+  var w=rongBit();
+  txt('dãy bit', X0-16, YBIT+HBIT/2, 13.5, MUT, 'right', true);
+  for(var i=0;i<bits.length;i++){
+    var x=X0+i*w;
+    toNen(x+2, YBIT, w-4, HBIT, i===cuoiDoi ? '#FFE3D6' : '#F2F4F8');
+    khung(x+2, YBIT, w-4, HBIT, i===cuoiDoi ? ACC : LINE, i===cuoiDoi?1.8:1.1);
+    txt(String(bits[i]), x+w/2, YBIT+HBIT/2, 20, i===cuoiDoi?ACC:INK, 'center', true);
+  }
+  txt('bấm vào một ô để đổi bit', X1+10, YBIT+HBIT/2, 12.5, MUT, 'left');
+}
+
+function veDangSong(kieu, ten, mota){
+  var y=Y[kieu], w=rongBit();
+  // vach ranh gioi bit, ve mo, de thay dieu che doi dung o ranh gioi
+  for(var i=1;i<bits.length;i++) line(X0+i*w, y-AMP-8, X0+i*w, y+AMP+8, FADE, 1.0, [4,5]);
+  line(X0, y, X1, y, FADE, 1.0);
+  // Nhan dat tren tung khoang bit, cho doc duoc GIA TRI ma thuoc tinh dang nhan.
+  // ASK khong can nhan: nhin la thay ngay co song hay khong. Phai khop voi hinh
+  // trong slide (figs_b02t2.py, bien NHAN).
+  var NHAN = {fsk:['f\u2082','f\u2081'], psk:['180\u00b0','0\u00b0']};
+  if(NHAN[kieu]){
+    for(var k=0;k<bits.length;k++){
+      txt(NHAN[kieu][bits[k]], X0+(k+0.5)*w, y-AMP-20, 13.5, MAU[kieu], 'center', true);
+    }
+  }
+  ctx.save(); ctx.strokeStyle=MAU[kieu]; ctx.lineWidth=2.2; ctx.beginPath();
+  for(var px=0; px<=X1-X0; px++){
+    var u=px/(X1-X0)*bits.length;
+    var yy=y-AMP*mau(u,kieu);
+    if(px===0) ctx.moveTo(X0+px,yy); else ctx.lineTo(X0+px,yy);
+  }
+  ctx.stroke(); ctx.restore();
+  txt(ten, X0-16, y-12, 15, MAU[kieu], 'right', true);
+  txt(mota, X0-16, y+12, 12.5, MUT, 'right');
+}
+
+function chuGiai(){
+  var s, n=bits.length, so1=bits.reduce(function(a,b){return a+b;},0);
+  if(so1===n){
+    s='Mọi bit đều bằng 1, nên cả ba dạng sóng đều trở lại thành <b>sóng mang thuần</b>, một sóng '+
+      'sin đều đặn. Không nhìn ra ranh giới giữa các bit, và máy thu cũng vậy. '+
+      '<i>Sóng mang không bị biến đổi thì không chở được tin.</i>';
+  }else if(so1===0){
+    s='Mọi bit đều bằng 0. ASK tắt hoàn toàn, còn FSK và PSK vẫn phát nhưng cũng không đổi gì. '+
+      'Lại là trường hợp không chở được tin.';
+  }else{
+    s='Dãy hiện tại: <i>'+bits.join(' ')+'</i>. Ba dạng sóng đổi tại đúng các ranh giới bit. '+
+      '<b>ASK</b> đổi biên độ, ở đây tắt hẳn khi bit bằng 0. <b>FSK</b> giữ nguyên biên độ, phát <b>f₁</b> '+
+      'cho bit 1 và <b>f₂</b> cho bit 0. <b>PSK</b> giữ nguyên cả biên độ lẫn tần số, phát pha '+
+      '<b>0°</b> cho bit 1 và <b>180°</b> cho bit 0.';
+    if(cuoiDoi>=0) s+=' Bit vừa đổi là bit thứ '+(cuoiDoi+1)+', đã tô sáng ở hàng trên.';
+  }
+  document.getElementById('st').innerHTML=s;
+}
+
+function ve(){
+  ctx.clearRect(0,0,W,H);
+  ctx.save(); ctx.strokeStyle=FADE; ctx.lineWidth=1.2;
+  ctx.strokeRect(20,18,1140,604); ctx.restore();
+  veHangBit();
+  veDangSong('ask','ASK','đổi biên độ');
+  veDangSong('fsk','FSK','đổi tần số: f₁ hoặc f₂');
+  veDangSong('psk','PSK','đổi pha: 0° hoặc 180°');
+  chuGiai();
+}
+
+function doiBit(i){ if(i<0||i>=bits.length) return; bits[i]=bits[i]?0:1; cuoiDoi=i; ve(); }
+
+cv.addEventListener('click', function(e){
+  var r=cv.getBoundingClientRect();
+  var x=(e.clientX-r.left)*(W/r.width), y=(e.clientY-r.top)*(H/r.height);
+  if(y<YBIT-6 || y>YBIT+HBIT+6) return;
+  doiBit(Math.floor((x-X0)/rongBit()));
+});
+document.getElementById('mau').addEventListener('click', function(){
+  bits=[1,0,1,1,0,1,0,0]; cuoiDoi=-1; ve(); });
+document.getElementById('ngau').addEventListener('click', function(){
+  bits=bits.map(function(){ return Math.random()<0.5?0:1; }); cuoiDoi=-1; ve(); });
+document.getElementById('mot').addEventListener('click', function(){
+  bits=bits.map(function(){ return 1; }); cuoiDoi=-1; ve(); });
+var sc=document.getElementById('sc');
+sc.addEventListener('input', function(){
+  ck=parseInt(sc.value,10); document.getElementById('vc').textContent=String(ck); ve(); });
+
+ve();
+})();
+</script>
+</body>
+</html>

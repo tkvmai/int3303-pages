@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Vết gãy của đường sức</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mut:#5A6272;
+      --line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.5}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;
+  background:#fff;touch-action:none}
+.ctl{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin:15px 0 0;
+  padding:13px 16px;background:var(--tint);border-radius:10px}
+.ctl label{font-size:14px;display:flex;align-items:center;gap:9px}
+.ctl input[type=range]{width:170px;accent-color:var(--acc)}
+.ctl b{font-variant-numeric:tabular-nums;color:var(--acc);min-width:42px;display:inline-block}
+.ctl button{border:1px solid var(--line);background:#fff;font:inherit;font-size:14.5px;
+  padding:8px 16px;border-radius:8px;cursor:pointer}
+.ctl button:hover{border-color:#B9C1CF}
+.ctl button.on{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+.state{margin-top:15px;padding:13px 16px;border-left:4px solid var(--teal);background:#F1F8F7;
+  font-size:16px;line-height:1.55;min-height:80px}
+.state b{color:var(--teal)}
+.state i{color:var(--acc);font-style:normal;font-weight:700}
+.note{margin-top:13px;padding:13px 16px;border-left:4px solid var(--acc);background:#FFF6F2;
+  font-size:14.5px;line-height:1.6}
+.note b{color:var(--acc)}
+.note ol{margin:7px 0 0;padding-left:20px}
+.note li{margin:4px 0}
+footer{padding:16px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13px;line-height:1.6}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · MẠNG KHÔNG DÂY</div>
+  <h1>Vết gãy của đường sức</h1>
+  <p>Buổi 2, Tiết 1. Giật điện tích một cái, rồi xem cái gì chạy ra xa.</p>
+</header>
+<a class="veml" href="../index.html">Về mục lục mô phỏng INT3303</a>
+
+<main>
+  <p class="sub">Chỉ cần hai điều. <b>Một:</b> tin tức đi với tốc độ c, không nhanh hơn.
+  <b>Hai:</b> đường sức điện không đứt giữa chừng trong chân không. Hai điều đó đủ để thấy sóng
+  điện từ sinh ra thế nào, không cần phương trình nào cả.</p>
+
+  <canvas id="cv" width="1180" height="640"></canvas>
+
+  <div class="ctl">
+    <button id="giat" class="on">Giật một cái</button>
+    <button id="dung">Tạm dừng</button>
+    <button id="dau">Về đầu</button>
+    <label>Cú giật mạnh <input id="sd" type="range" min="10" max="70" value="45"> <b id="vd">45</b></label>
+  </div>
+
+  <div class="state" id="st"></div>
+
+  <div class="note">
+    <b>Ba điều nên chỉ cho lớp thấy:</b>
+    <ol>
+      <li><b>Vì sao có đoạn nối.</b> Bên trong vỏ, đường sức đã biết điện tích dịch chỗ nên toả ra
+          từ chỗ mới. Bên ngoài vỏ, tin chưa tới nên vẫn toả ra từ chỗ cũ. Hai bộ lệch nhau, mà
+          đường sức thì không được đứt, nên chúng buộc phải nối lại. Đoạn nối ấy chính là sóng.</li>
+      <li><b>Vì sao chạy đều thì không phát sóng.</b> Kéo thanh "cú giật" về sát 0. Hai bộ đường
+          sức gần như trùng nhau, đoạn nối biến mất. Không giật thì không có sóng.</li>
+      <li><b>Vì sao ăng-ten không phát dọc theo trục của nó.</b> Nhìn sang phải, đúng hướng giật:
+          đoạn nối gần như thẳng, không có phần nằm ngang. Nhìn lên trên và xuống dưới, vuông góc
+          với hướng giật: đoạn nối nằm ngang và dài nhất. Đó chính là giản đồ bức xạ hai thuỳ.</li>
+    </ol>
+  </div>
+</main>
+
+<footer>INT3303 · Buổi 2. Dựng hình theo cách của J. J. Thomson, được Purcell dùng lại trong
+<i>Electricity and Magnetism</i> (Berkeley Physics Course). Mỗi đường sức được nối đúng theo góc:
+tia trong và tia ngoài cùng một góc thì nối với nhau, vì số đường sức trong một hình nón là không đổi.
+Bề dày của đoạn nối trong hình vẽ tỉ lệ với phần nằm ngang của nó, nên hình cũng chính là giản đồ bức xạ.
+<b>Hai chỗ đã phóng đại để nhìn được:</b> quãng giật vẽ to hơn thực tế rất nhiều so với bán kính vỏ,
+và tốc độ c hạ xuống còn khoảng 90 điểm ảnh mỗi giây. <b>Hình chỉ vẽ điện trường.</b> Từ trường đi
+kèm có độ lớn bằng E chia c, vuông góc với E và vuông góc với hướng đi; nó không được vẽ ở đây để
+hình khỏi rối. Nguồn: Purcell, <i>Electricity and Magnetism</i>; Schroeder, <i>Purcell Simplified</i>,
+https://physics.weber.edu/schroeder/mrr/mrrtalk.html</footer>
+
+<script>
+(function(){
+var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+var W=cv.width, H=cv.height;
+
+var INK='#1A1F36', ACC='#FF6B35', TEAL='#2A9D8F', PUR='#6C5CE7',
+    MUT='#5A6272', LINE='#E4E8EF', FADE='#DDE2EB';
+
+var CX=420, CY=320, RMAX=286;   // tam hinh va ban kinh lon nhat con nam trong khung
+var CPX=90;                     // toc do c, tinh bang diem anh moi giay
+var DAY=42;                     // be day vo song, tuc c nhan thoi gian cu giat
+var NLINE=24;                   // so duong suc ve ra
+var TX=770;                     // cot chu ben phai
+
+var d=45;                       // quang giat, diem anh
+var pha='yen';                  // 'yen' truoc khi giat, 'chay' sau khi giat
+var chay=true;                  // dang tu chay hay dang tam dung
+var t0=null, tnow=0, tgiat=0;
+
+function line(x1,y1,x2,y2,c,w,dash){ctx.save();if(dash)ctx.setLineDash(dash);
+  ctx.strokeStyle=c;ctx.lineWidth=w||1;ctx.beginPath();
+  ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();}
+function txt(s,x,y,size,c,align,bold){
+  ctx.fillStyle=c; ctx.textAlign=align||'left'; ctx.textBaseline='middle';
+  ctx.font=(bold?'700 ':'')+size+'px Calibri, Segoe UI, sans-serif';
+  ctx.fillText(s,x,y);}
+function tron(x,y,r,to,mau,w){
+  ctx.save(); ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
+  if(to){ ctx.fillStyle=mau; ctx.fill(); }
+  else { ctx.strokeStyle=mau; ctx.lineWidth=w||1.4; ctx.stroke(); }
+  ctx.restore();
+}
+function vongTron(x,y,r,mau,w,dash){
+  ctx.save(); if(dash) ctx.setLineDash(dash);
+  ctx.strokeStyle=mau; ctx.lineWidth=w||1.2;
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.stroke(); ctx.restore();
+}
+
+// Ban kinh hai mat vo tai thoi diem hien tai. R2 la mep ngoai (tin vua toi),
+// R1 la mep trong (cu giat da xong). Giua hai mat la doan noi.
+function banKinh(){
+  var tt = tnow - tgiat;
+  var R2 = Math.min(RMAX, CPX*tt);
+  var R1 = Math.max(0, R2 - DAY);
+  return [R1, R2];
+}
+function xong(){ return pha==='chay' && CPX*(tnow-tgiat) >= RMAX; }
+
+function veDuongSuc(){
+  var R = banKinh(), R1=R[0], R2=R[1];
+  var OX=CX, OY=CY;                       // cho cu
+  var NX=CX+(pha==='yen'?0:d), NY=CY;     // cho moi
+  var ra = xong();                        // vo song da ra khoi khung hinh chua
+
+  for(var i=0;i<NLINE;i++){
+    var g = i*2*Math.PI/NLINE, co=Math.cos(g), si=Math.sin(g);
+
+    if(pha==='yen'){
+      line(OX+10*co, OY+10*si, OX+RMAX*co, OY+RMAX*si, ACC, 1.6);
+      continue;
+    }
+    if(ra){
+      // Vo da ra khoi khung. Moi thu con lai trong khung deu toa ra tu CHO MOI,
+      // va dien tich thi da nam yen tu lau. Day chinh la luc song tach han khoi nguon.
+      line(NX+10*co, NY+10*si, NX+RMAX*co, NY+RMAX*si, ACC, 1.6);
+      continue;
+    }
+    // Tia phia trong: toa ra tu CHO MOI, di tu sat dien tich toi mat vo trong.
+    if(R1>12) line(NX+10*co, NY+10*si, NX+R1*co, NY+R1*si, ACC, 1.6);
+    // Tia phia ngoai: toa ra tu CHO CU, vi tin chua toi.
+    line(OX+R2*co, OY+R2*si, OX+RMAX*co, OY+RMAX*si, ACC, 1.6);
+
+    // Doan noi. Be day ve theo phan NAM NGANG cua no, ma phan nam ngang bang
+    // quang giat nhan |sin(goc)|. Nen be day phai phu thuoc CA quang giat: keo
+    // thanh truot ve gan 0 thi doan noi phai mo di, neu khong hinh se noi doi.
+    if(R1>0){
+      var ngang = (d/70) * Math.abs(si);
+      line(NX+R1*co, NY+R1*si, OX+R2*co, OY+R2*si, PUR, 0.7 + 3.8*ngang);
+    }
+  }
+
+  // Hai mat vo, ve mo de biet ranh gioi o dau
+  if(pha==='chay' && !ra){
+    if(R1>2) vongTron(OX,OY,R1,FADE,1.1,[5,6]);
+    vongTron(OX,OY,R2,FADE,1.1,[5,6]);
+  }
+
+  // Cho cu ve rong (chi la ky uc), cho moi ve dac (dien tich dang o day).
+  // Khong dat nhan chu canh cham, vi vung do day mui ten. Nhan nam o goc tren ben
+  // trai, ngoai han hinh tron ban kinh 286 quanh tam (420, 320).
+  if(pha==='chay' && !ra) tron(OX,OY,7,false,MUT,1.4);
+  tron(NX,NY,8,true,ACC);
+
+  var ly=62;
+  if(pha==='chay' && !ra){
+    tron(52,ly,7,false,MUT,1.4);
+    txt('chỗ cũ, điện tích đã rời đi', 68, ly, 13, MUT, 'left');
+    ly += 24;
+  }
+  tron(52,ly,8,true,ACC);
+  txt(pha==='yen' ? 'điện tích, đang đứng yên' : 'chỗ mới, điện tích đang ở đây',
+      68, ly, 13, ACC, 'left', true);
+}
+
+function veCotChu(){
+  var R=banKinh();
+  txt('Đọc hình thế nào', TX, 74, 17, INK, 'left', true);
+
+  var y=118;
+  function dong(mau, lw, s1, s2){
+    line(TX, y, TX+26, y, mau, lw);
+    txt(s1, TX+36, y, 14, INK, 'left', true);
+    if(s2) txt(s2, TX+36, y+21, 13.5, MUT, 'left');
+    y += s2 ? 62 : 42;
+  }
+  dong(ACC, 1.8, 'Ngoài vỏ: toả ra từ CHỖ CŨ', 'tin chưa kịp tới, nên chưa ai biết gì');
+  dong(PUR, 3.4, 'Trên vỏ: đoạn nối', 'đây chính là sóng. Càng dày càng mạnh.');
+  dong(ACC, 1.8, 'Trong vỏ: toả ra từ CHỖ MỚI', 'ở đây đã biết điện tích dịch chỗ');
+
+  y += 6;
+  txt(pha==='yen' ? 'Chưa giật, chưa có vỏ nào'
+                  : (xong() ? 'Vỏ đã ra khỏi khung, vẫn đang đi'
+                            : 'Bán kính vỏ: ' + Math.round(R[1]) + ' điểm ảnh'),
+      TX, y, 14.5, TEAL, 'left', true);
+  y += 34;
+  txt('Hai chỗ đáng chỉ cho lớp:', TX, y, 14.5, INK, 'left', true);
+  y += 26;
+  txt('Sang phải, đúng hướng giật: đoạn nối mảnh', TX, y, 13.5, MUT, 'left');
+  y += 20;
+  txt('gần như bằng không. Không phát sóng về phía ấy.', TX, y, 13.5, MUT, 'left');
+  y += 28;
+  txt('Lên trên và xuống dưới, vuông góc hướng giật:', TX, y, 13.5, MUT, 'left');
+  y += 20;
+  txt('đoạn nối dày nhất. Phát mạnh nhất về phía ấy.', TX, y, 13.5, MUT, 'left');
+}
+
+function chuGiai(){
+  var s, R=banKinh();
+  if(pha==='yen'){
+    s='Điện tích đang <b>đứng yên</b>. Đường sức là các tia thẳng toả đều ra mọi phía. '+
+      'Chưa có gì chạy đi đâu cả. Bấm <i>Giật một cái</i>.';
+  }else if(R[0]<=0){
+    s='<i>Vừa giật xong.</i> Điện tích đã sang chỗ mới, nhưng <b>ngoài kia chưa ai biết</b>. '+
+      'Tin tức mới chỉ đi được một quãng ngắn.';
+  }else if(!xong()){
+    s='Bây giờ có ba vùng. Trong vỏ, đường sức toả ra từ <b>chỗ mới</b>. Ngoài vỏ, chúng vẫn toả '+
+      'ra từ <b>chỗ cũ</b> vì tin chưa tới. Hai bộ lệch nhau, mà đường sức <b>không được đứt</b>, '+
+      'nên trên vỏ chúng phải nối lại bằng một đoạn nằm ngang. <i>Đoạn nối tím ấy chính là sóng '+
+      'điện từ</i>, và cái vỏ chứa nó đang phình ra với tốc độ c.';
+  }else{
+    s='Vỏ sóng đã ra khỏi khung hình và <b>vẫn đang đi tiếp</b>. Điện tích thì nằm yên ở chỗ mới '+
+      'từ lâu rồi, không còn liên quan gì nữa. Đoạn nối đã tách hẳn khỏi nguồn. '+
+      'Ăng-ten giật lên giật xuống vài tỉ lần mỗi giây thì sinh ra hết vỏ này tới vỏ khác, '+
+      'nối đuôi nhau, và đó là sóng vô tuyến.';
+  }
+  if(pha==='chay' && d<=14){
+    s+=' <b>Cú giật đang rất nhỏ:</b> hai bộ đường sức gần như trùng nhau nên đoạn nối gần như '+
+       'biến mất. Không giật thì không có sóng.';
+  }
+  document.getElementById('st').innerHTML=s;
+}
+
+function ve(){
+  ctx.clearRect(0,0,W,H);
+  ctx.save(); ctx.strokeStyle=FADE; ctx.lineWidth=1.2;
+  ctx.strokeRect(20,18,1140,604); ctx.restore();
+  veDuongSuc(); veCotChu(); chuGiai();
+}
+
+// Tam dung duoc lam bang cach day moc thoi gian giat theo dung nhip dong ho, de
+// ban kinh vo dung yen ma vong lap ve van chay.
+var lastT=0;
+function tick2(ms){
+  var t=ms/1000;
+  if(t0===null){ t0=t; lastT=0; }
+  var tt=t-t0, dt=Math.min(0.05, tt-lastT); lastT=tt; tnow=tt;
+  if(pha==='chay' && !chay) tgiat += dt;
+  ve();
+  requestAnimationFrame(tick2);
+}
+
+function veDau(){ pha='yen'; chay=true; tgiat=tnow;
+  document.getElementById('dung').classList.remove('on');
+  document.getElementById('giat').classList.add('on'); }
+
+document.getElementById('giat').addEventListener('click',function(){
+  pha='chay'; chay=true; tgiat=tnow;
+  document.getElementById('dung').classList.remove('on');
+  document.getElementById('giat').classList.remove('on');
+});
+document.getElementById('dung').addEventListener('click',function(){
+  chay=!chay;
+  document.getElementById('dung').classList.toggle('on', !chay);
+});
+document.getElementById('dau').addEventListener('click', veDau);
+var sd=document.getElementById('sd');
+sd.addEventListener('input',function(){
+  d=parseInt(sd.value,10); document.getElementById('vd').textContent=String(d);
+});
+
+requestAnimationFrame(tick2);
+})();
+</script>
+</body>
+</html>

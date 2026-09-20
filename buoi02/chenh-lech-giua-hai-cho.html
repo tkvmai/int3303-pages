@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Chênh lệch giữa hai chỗ</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mut:#5A6272;
+      --line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.5}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;
+  background:#fff;touch-action:none}
+.ctl{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin:15px 0 0;
+  padding:13px 16px;background:var(--tint);border-radius:10px}
+.ctl label{font-size:14px;display:flex;align-items:center;gap:9px}
+.ctl input[type=range]{width:180px;accent-color:var(--acc)}
+.ctl b{font-variant-numeric:tabular-nums;color:var(--acc);min-width:46px;display:inline-block}
+.ctl button{border:1px solid var(--line);background:#fff;font:inherit;font-size:14.5px;
+  padding:8px 16px;border-radius:8px;cursor:pointer}
+.ctl button:hover{border-color:#B9C1CF}
+.ctl button.on{background:var(--acc);color:#fff;border-color:var(--acc);font-weight:700}
+.state{margin-top:15px;padding:13px 16px;border-left:4px solid var(--teal);background:#F1F8F7;
+  font-size:16px;line-height:1.55;min-height:80px}
+.state b{color:var(--teal)}
+.state i{color:var(--acc);font-style:normal;font-weight:700}
+.note{margin-top:13px;padding:13px 16px;border-left:4px solid var(--acc);background:#FFF6F2;
+  font-size:14.5px;line-height:1.6}
+.note b{color:var(--acc)}
+.note ol{margin:7px 0 0;padding-left:20px}
+.note li{margin:4px 0}
+footer{padding:16px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13px;line-height:1.6}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · MẠNG KHÔNG DÂY</div>
+  <h1>Chênh lệch giữa hai chỗ</h1>
+  <p>Buổi 2, Tiết 1. Kéo hai thanh trượt để đặt trường ở hai chỗ A và B, rồi nhìn chỗ ở giữa.</p>
+</header>
+<a class="veml" href="../index.html">Về mục lục mô phỏng INT3303</a>
+
+<main>
+  <p class="sub">Hai định luật Maxwell đều có cùng một dạng: <b>trường ở hai chỗ sát nhau mà khác
+  nhau, thì trường ở khoảng giữa bắt buộc phải đổi theo thời gian</b>. Mô phỏng này tách đúng một
+  câu đó ra, bỏ hết mọi thứ khác. Bên trái là không gian, bên phải là đồng hồ theo dõi trường ở
+  khoảng giữa theo thời gian.</p>
+
+  <canvas id="cv" width="1180" height="640"></canvas>
+
+  <div class="ctl">
+    <button id="l2" class="on">Luật II: E chênh lệch</button>
+    <button id="l4">Luật IV: B chênh lệch</button>
+    <label>Chỗ A <input id="sa" type="range" min="-100" max="100" value="60"> <b id="va">+60</b></label>
+    <label>Chỗ B <input id="sb" type="range" min="-100" max="100" value="60"> <b id="vb">+60</b></label>
+    <button id="bang">Đặt bằng nhau</button>
+    <button id="reset">Xoá đồng hồ</button>
+  </div>
+
+  <div class="state" id="st"></div>
+
+  <div class="note">
+    <b>Ba việc nên làm, theo thứ tự:</b>
+    <ol>
+      <li>Kéo cả hai thanh lên hết cỡ. Hai mũi tên dài nhất có thể, mà đồng hồ vẫn nằm ngang.
+          Trường mạnh không làm gì cả, <b>chênh lệch mới làm</b>.</li>
+      <li>Hạ riêng chỗ B xuống một chút. Thước đo tốc độ rời khỏi vạch 0 ngay, và đồ thị bắt đầu
+          dốc. Hạ thêm nữa thì thước chỉ xa hơn và đồ thị dốc hơn, <b>đúng tỉ lệ</b>.</li>
+      <li>Đặt hai bên bằng nhau trở lại. Thước về 0 và đồ thị nằm ngang <b>ở độ cao nó đang có</b>,
+          chứ không rơi về 0. Chênh lệch quyết định trường đổi nhanh chậm ra sao, không quyết định
+          trường đang lớn bao nhiêu.</li>
+      <li>Bấm sang Luật IV. Đổi vai hai trường cho nhau, mọi thứ còn lại y hệt. Đó là lý do
+          sóng tự đi được: hai luật khớp vào nhau thành một vòng khép kín.</li>
+    </ol>
+  </div>
+</main>
+
+<footer>INT3303 · Buổi 2. Luật II (Faraday) ở dạng một chiều: độ chênh của E theo không gian bằng
+tốc độ đổi của B theo thời gian, lấy dấu âm. Luật IV (Maxwell) ở dạng một chiều: độ chênh của B
+theo không gian nhân c² bằng tốc độ đổi của E theo thời gian, lấy dấu âm. Mô phỏng dùng đơn vị tuỳ ý,
+chỉ giữ đúng quan hệ tỉ lệ và dấu, không giữ giá trị thật của c.
+<b>Một chỗ đây là lý tưởng hoá:</b> ở đây ta giữ chênh lệch cố định bằng tay, nên trường ở giữa
+tăng đều mãi. Trong sóng thật, chính chênh lệch ấy cũng đang đổi từng lúc, nên không có chuyện
+trường lớn lên vô hạn. Khung vẽ chỉ cao tới ±100 đơn vị; chạm trần thì đồ thị dừng ở đó, nhưng
+thước đo tốc độ vẫn chỉ đúng. Đó là giới hạn của khung vẽ, không phải của định luật. Nguồn: Feynman, <i>Lectures on Physics</i> Vol II ch.18, Bảng 18-1.</footer>
+
+<script>
+(function(){
+var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+var W=cv.width, H=cv.height;
+var PAN={x:20,y:18,w:1140,h:604};
+
+var INK='#1A1F36', ACC='#FF6B35', TEAL='#2A9D8F', PUR='#6C5CE7',
+    MUT='#5A6272', LINE='#E4E8EF', FADE='#DDE2EB';
+
+/* Ve truong vuong goc mat giay bang mui ten xien, dung dung ti le voi cac demo khac
+   cua Buoi 2 de sinh vien khong phai hoc lai mot quy uoc ve moi. */
+var PZX=0.55, PZY=-0.42;
+
+// Khu ve khong gian
+var YB=370, XA=240, XM=380, XB=520, LMAX=165;
+// Khu dong ho theo thoi gian
+var GX0=720, GX1=1120, GY0=270, GY1=560, GYM=(GY0+GY1)/2, GSEC=5;
+// Thuoc do toc do doi. Nua duong 180px ung voi 30 don vi moi giay.
+var MX=920, MY=160, MHW=180, MMAX=30;
+var HESO=0.15;   // chi de mot chenh lech 200 don vi lam day khung trong khoang 7 giay
+
+var luat=2;                 // 2 hoac 4
+var a=60, b=60;             // gia tri truong o hai cho, don vi tuy y
+var giua=0;                 // gia tri truong o khoang giua
+var vet=[];                 // [t, giatri]
+var t0=null, tnow=0;
+var CHAM=false;             // da cham mep dong ho chua
+
+function line(x1,y1,x2,y2,c,w,dash){ctx.save();if(dash)ctx.setLineDash(dash);
+  ctx.strokeStyle=c;ctx.lineWidth=w||1;ctx.beginPath();
+  ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();}
+function txt(s,x,y,size,c,align,bold){
+  ctx.fillStyle=c; ctx.textAlign=align||'left'; ctx.textBaseline='middle';
+  ctx.font=(bold?'700 ':'')+size+'px Calibri, Segoe UI, sans-serif';
+  ctx.fillText(s,x,y);}
+function arrow(x1,y1,x2,y2,c,w,head){
+  if(Math.abs(x2-x1)<0.6 && Math.abs(y2-y1)<0.6) return;
+  ctx.save(); ctx.strokeStyle=c; ctx.lineWidth=w||1.4;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  var g=Math.atan2(y2-y1,x2-x1), h=head||6;
+  ctx.fillStyle=c; ctx.beginPath(); ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-h*Math.cos(g-0.45),y2-h*Math.sin(g-0.45));
+  ctx.lineTo(x2-h*Math.cos(g+0.45),y2-h*Math.sin(g+0.45));
+  ctx.closePath(); ctx.fill(); ctx.restore();}
+
+// Mau va ten cua truong o hai cho, va cua truong o khoang giua
+function mauNgoai(){ return luat===2 ? ACC : TEAL; }
+function mauGiua(){  return luat===2 ? TEAL : ACC; }
+function tenNgoai(){ return luat===2 ? 'điện trường' : 'từ trường'; }
+function tenGiua(){  return luat===2 ? 'từ trường' : 'điện trường'; }
+
+/* Truong nam trong mat giay thi ve mui ten thang dung, truong vuong goc mat giay thi
+   ve mui ten xien. Luat II: E trong mat giay, B vuong goc. Luat IV: nguoc lai. */
+function veTruong(x, v, trongMatGiay, mau){
+  var L=Math.abs(v)/100*LMAX, d=v>=0?1:-1;
+  if(L<1.2) return;
+  if(trongMatGiay) arrow(x, YB, x, YB-d*L, mau, 3.2, 11);
+  else             arrow(x, YB, x+d*PZX*L, YB+d*PZY*L, mau, 3.2, 11);
+}
+
+function tocDo(){ return -(b-a)*HESO; }   // dau am lay dung tu hai dinh luat
+
+function veThuocDo(){
+  var v=tocDo(), fr=Math.max(-1,Math.min(1,v/MMAX));
+  txt('tốc độ đổi của '+tenGiua()+' ở khoảng giữa', MX, 96, 14, mauGiua(), 'center', true);
+  // Rãnh nền, ve bang net day thay vi fillRect de cong kiem canvas ghi lai duoc.
+  ctx.save(); ctx.lineWidth=22; ctx.lineCap='butt';
+  ctx.strokeStyle='#EEF1F6'; ctx.beginPath();
+  ctx.moveTo(MX-MHW,MY); ctx.lineTo(MX+MHW,MY); ctx.stroke();
+  if(Math.abs(fr)>0.004){
+    ctx.strokeStyle=mauGiua(); ctx.beginPath();
+    ctx.moveTo(MX,MY); ctx.lineTo(MX+fr*MHW,MY); ctx.stroke();
+  }
+  ctx.restore();
+  line(MX, MY-19, MX, MY+19, MUT, 1.6);
+  txt('0', MX, MY+32, 12, MUT, 'center');
+  txt('âm', MX-MHW, MY+32, 12, MUT, 'center');
+  txt('dương', MX+MHW, MY+32, 12, MUT, 'center');
+  var sv = (Math.abs(v)<0.005) ? 'bằng 0, trường ở khoảng giữa đứng yên'
+                               : (v>0?'+':'') + v.toFixed(1) + ' đơn vị mỗi giây';
+  txt(sv, MX, MY-34, 14.5, INK, 'center', true);
+}
+
+function veKhongGian(){
+  // truc khong gian. Nhan truc dat PHIA TREN truc, ben phai, vi phia duoi truc la cho
+  // mui ten am di xuong, de len nhau.
+  line(120, YB, 660, YB, MUT, 1.4);
+  arrow(640, YB, 668, YB, MUT, 1.4, 8);
+  txt('vị trí trong không gian', 664, YB-16, 12.5, MUT, 'right');
+
+  // Vach doc keo han xuong day khung, va nhan ba cho dat o day, thap hon diem thap nhat
+  // ma mui ten am co the cham toi (YB + LMAX = 535).
+  [[XA,'chỗ A'],[XM,'khoảng giữa'],[XB,'chỗ B']].forEach(function(o){
+    line(o[0], 160, o[0], 572, FADE, 1.1, [4,5]);
+    txt(o[1], o[0], 582, 13, MUT, 'center', o[0]===XM);
+  });
+  // Luon in gia tri o khoang giua, de luc dat hai ben bang nhau con thay ro no
+  // DUNG LAI o mot gia tri khac khong chu khong phai bien mat.
+  txt('giá trị: ' + (giua>0?'+':'') + giua.toFixed(0), XM, 604, 13, mauGiua(), 'center', true);
+
+  // hai mui ten o hai cho, va mui ten o khoang giua
+  var trongGiay2 = (luat===2);
+  veTruong(XA, a, trongGiay2, mauNgoai());
+  veTruong(XB, b, trongGiay2, mauNgoai());
+  veTruong(XM, giua, !trongGiay2, mauGiua());
+
+  // nhan ten truong, dat hai tang khac nhau de khong de len mui ten
+  txt(tenNgoai(), 120, 118, 14, mauNgoai(), 'left', true);
+  txt(tenGiua()+' ở khoảng giữa', 120, 96, 14, mauGiua(), 'left', true);
+
+  // dau ngoac chenh lech
+  var d=b-a;
+  var yn=152;
+  ctx.save(); ctx.setLineDash([]);
+  arrow(XA, yn, XB, yn, PUR, 1.6, 9); arrow(XB, yn, XA, yn, PUR, 1.6, 9);
+  ctx.restore();
+  var s = (d===0) ? 'hai bên bằng nhau, không chênh lệch'
+                  : 'B ' + (d>0?'cao hơn':'thấp hơn') + ' A ' + Math.abs(d) + ' đơn vị';
+  txt(s, XM, yn-16, 13.5, PUR, 'center', true);
+}
+
+function veDongHo(){
+  // khung
+  ctx.save(); ctx.strokeStyle=LINE; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.moveTo(GX0,GY0); ctx.lineTo(GX1,GY0);
+  ctx.lineTo(GX1,GY1); ctx.lineTo(GX0,GY1); ctx.closePath(); ctx.stroke(); ctx.restore();
+  line(GX0, GYM, GX1, GYM, FADE, 1.2, [5,5]);
+  txt('0', GX0-10, GYM, 12.5, MUT, 'right');
+
+  txt(tenGiua()+' ở khoảng giữa, theo thời gian', GX0, GY0-24, 14, mauGiua(), 'left', true);
+  txt('thời gian', GX1, GY1+20, 12.5, MUT, 'right');
+
+  // vet
+  if(vet.length>1){
+    ctx.save(); ctx.strokeStyle=mauGiua(); ctx.lineWidth=2.6; ctx.beginPath();
+    for(var i=0;i<vet.length;i++){
+      var px=GX0+(vet[i][0]-(tnow-GSEC))/GSEC*(GX1-GX0);
+      var py=GYM-vet[i][1]/100*((GY1-GY0)/2-6);
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke(); ctx.restore();
+  }
+  if(CHAM) txt('chạm trần khung vẽ', (GX0+GX1)/2, GY0+18, 12.5, MUT, 'center');
+}
+
+function veTieuDe(){
+  var s = (luat===2)
+    ? 'Luật II.  Điện trường ở hai chỗ khác nhau  →  từ trường ở khoảng giữa phải đổi'
+    : 'Luật IV.  Từ trường ở hai chỗ khác nhau  →  điện trường ở khoảng giữa phải đổi';
+  txt(s, PAN.x+26, 52, 19, INK, 'left', true);
+}
+
+function chuGiai(){
+  var d=b-a, v=tocDo(), s;
+  if(d===0){
+    s='Hai mũi tên bằng nhau nên <i>chênh lệch bằng không</i>. Thước đo tốc độ về đúng vạch 0, '+
+      'và trường ở khoảng giữa <b>đứng yên ở giá trị nó đang có</b>. Để ý: hai mũi tên có thể '+
+      'đang rất dài mà vẫn không làm gì cả. <b>Trường mạnh không quan trọng, chênh lệch mới '+
+      'quan trọng.</b>';
+  }else{
+    var m=Math.abs(d)>60?'rất dốc':(Math.abs(d)>25?'dốc rõ':'hơi dốc');
+    s='Chỗ B <i>'+(d>0?'cao hơn':'thấp hơn')+' chỗ A '+Math.abs(d)+'</i> đơn vị. Chênh lệch ấy '+
+      'buộc '+tenGiua()+' ở khoảng giữa <b>phải đổi, với tốc độ '+(v>0?'+':'')+v.toFixed(1)+
+      ' đơn vị mỗi giây</b>, nên đồ thị bên dưới '+m+'. Kéo cho chênh lệch to gấp đôi thì tốc độ '+
+      'gấp đôi và đồ thị dốc gấp đôi.';
+  }
+  if(CHAM){
+    var day = (giua>0 && v>0) || (giua<0 && v<0);
+    s += ' <b>Lưu ý:</b> giá trị đã chạm trần của khung vẽ (±100). '+
+         (day ? 'Thước đo vẫn đang chỉ khác 0, tức là định luật vẫn đang buộc nó đổi, chỉ là khung '+
+                'không vẽ cao hơn được nữa.'
+              : 'Nó nằm yên ở đó vì chênh lệch không còn đẩy nó lên.')+
+         ' Bấm <i>Xoá đồng hồ</i> để đưa về 0, hoặc kéo chênh lệch sang phía ngược lại để nó đi xuống.';
+  }
+  document.getElementById('st').innerHTML=s;
+}
+
+function ve(){
+  ctx.clearRect(0,0,W,H);
+  ctx.save(); ctx.strokeStyle=FADE; ctx.lineWidth=1.2;
+  ctx.strokeRect(PAN.x,PAN.y,PAN.w,PAN.h); ctx.restore();
+  veTieuDe(); veKhongGian(); veThuocDo(); veDongHo(); chuGiai();
+}
+
+function tick(ms){
+  var t=ms/1000;
+  if(t0===null) t0=t;
+  var tt=t-t0, dt=Math.min(0.05, tt-tnow);
+  tnow=tt;
+  if(dt>0){
+    // Dau am lay dung tu hai dinh luat: do chenh theo khong gian bang TRU toc do doi
+    // theo thoi gian cua truong kia. He so 0.25 chi de mot chenh lech 100 don vi lam
+    // day dong ho trong khoang bon giay, khong mang y nghia vat ly nao.
+    giua += tocDo()*dt;
+    // Kep o +-100 vi khung ve chi cao chung ay. Day la gioi han cua KHUNG, khong phai
+    // cua dinh luat, nen phai noi ro ra man hinh chu khong de nguoi dung tuong demo hong.
+    if(giua>100) giua=100; else if(giua<-100) giua=-100;
+    CHAM = Math.abs(giua) >= 99.9;
+    vet.push([tnow, giua]);
+    while(vet.length && vet[0][0] < tnow-GSEC) vet.shift();
+  }
+  ve();
+  requestAnimationFrame(tick);
+}
+
+function nhan(){
+  document.getElementById('va').textContent=(a>0?'+':'')+a;
+  document.getElementById('vb').textContent=(b>0?'+':'')+b;
+}
+function xoa(){ giua=0; vet=[]; CHAM=false; }
+
+var sa=document.getElementById('sa'), sb=document.getElementById('sb');
+sa.addEventListener('input',function(){ a=parseInt(sa.value,10); nhan(); });
+sb.addEventListener('input',function(){ b=parseInt(sb.value,10); nhan(); });
+document.getElementById('bang').addEventListener('click',function(){
+  b=a; sb.value=String(b); nhan(); });
+document.getElementById('reset').addEventListener('click', xoa);
+function doiLuat(n){
+  luat=n; xoa();
+  document.getElementById('l2').classList.toggle('on', n===2);
+  document.getElementById('l4').classList.toggle('on', n===4);
+}
+document.getElementById('l2').addEventListener('click',function(){ doiLuat(2); });
+document.getElementById('l4').addEventListener('click',function(){ doiLuat(4); });
+
+nhan();
+requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

@@ -7,8 +7,9 @@ Repo: https://github.com/tkvmai/int3303-pages
 ## Địa chỉ công khai
 
 - Mục lục: https://tkvmai.github.io/int3303-pages/
-- Cảm ứng Faraday: https://tkvmai.github.io/int3303-pages/buoi02/tu-truong-bien-thien.html
-- Sóng và ba thuộc tính: https://tkvmai.github.io/int3303-pages/buoi02/song-va-ba-thuoc-tinh.html
+
+Mọi mô phỏng đều có thẻ trong mục lục, nên chỉ cần dán địa chỉ mục lục cho sinh viên.
+Slide thì trỏ thẳng vào từng trang theo đường dẫn trong mục Cấu trúc dưới đây.
 
 Link không hết hạn, không cần đăng nhập, thuộc quyền quản lý của tài khoản GitHub.
 
@@ -31,10 +32,18 @@ Vào repo, mở đúng file, bấm biểu tượng bút chì để sửa, hoặc
 ## Cấu trúc
 
 ```
-index.html                              mục lục, là trang sinh viên vào đầu tiên
-buoi02/tu-truong-bien-thien.html        cảm ứng Faraday, có núm vặn tương tác
-buoi02/song-va-ba-thuoc-tinh.html       sáu mô phỏng về sóng
-.nojekyll                               tắt bộ xử lý Jekyll, phục vụ file y nguyên
+index.html                                 mục lục, là trang sinh viên vào đầu tiên
+.nojekyll                                  tắt bộ xử lý Jekyll, phục vụ file y nguyên
+
+buoi02/song-va-ba-thuoc-tinh.html          sáu mô phỏng về sóng, dùng ở Tiết 1
+buoi02/tu-truong-bien-thien.html           cảm ứng Faraday, có núm vặn tương tác
+buoi02/dien-truong-bien-thien.html         chiều ngược lại của cặp phương trình
+buoi02/dung-yen-chay-deu-dao-dong.html     ba trạng thái của điện tích
+buoi02/vet-gay-cua-duong-suc.html          dựng sóng theo cách của Thomson và Purcell
+buoi02/chenh-lech-giua-hai-cho.html        chênh lệch theo không gian và biến thiên theo thời gian
+buoi02/vi-sao-song-tu-lan-ra-xa.html       vì sao sóng tự duy trì khi đi xa
+buoi02/ba-cach-bien-doi-song-mang.html     ASK, FSK, PSK trên cùng một dãy bit, dùng ở Tiết 2
+buoi02/chom-sao-va-mat-phang-iq.html       chòm sao BPSK, QPSK, 4-ASK, 16-QAM, dùng ở Tiết 3
 ```
 
 Mỗi file HTML là một trang độc lập, đã nhúng sẵn toàn bộ CSS và JavaScript bên trong,
@@ -43,6 +52,9 @@ một thư viện bên thứ ba nào đó ngừng hoạt động.
 
 ## Bản gốc
 
-Thư mục này là bản sao để xuất bản. Bản làm việc nằm cùng cấp, trong
-`Bo slide 15 buoi`, với tên tiếng Việt đầy đủ. Khi sửa bản làm việc thì nhớ chép đè
-sang đây rồi mới upload.
+Thư mục này là bản sao để xuất bản. Bản làm việc nằm ở thư mục cha `Bo slide 15 buoi`,
+với tên tiếng Việt đầy đủ dạng `Demo Buoi 02 Tiet 2 - ...`. Khi sửa bản làm việc thì chép
+đè sang đây rồi mới đẩy lên.
+
+Hai bản phải khớp nhau. Nếu chỉ sửa một bên thì slide và trang công bố sẽ nói khác nhau,
+và đó là loại sai khó phát hiện nhất vì không có cổng kiểm nào bắt được.
