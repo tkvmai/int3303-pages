@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chỗ gấp khúc của đường sức — bản điều khiển được</title>
+<style>
+:root{--bg:#0C1620;--panel:#14283A;--line:#23415B;--ink:#E9F2F7;--mute:#7F9BB0;
+  --E:#4FE0C4;--B:#FFA24C;--q:#5C8DFF;--k:#FF6B8A}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,sans-serif;
+  font-weight:300;line-height:1.6;padding:28px}
+.wrap{max-width:1100px;margin:0 auto}
+h1{font-size:30px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px}
+.sub{color:var(--mute);font-size:16px;margin-bottom:20px}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+canvas{display:block;width:100%;border-radius:6px;touch-action:none}
+.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px;font-size:15px}
+button{font-family:inherit;font-size:15px;background:transparent;color:var(--ink);
+  border:1px solid var(--line);border-radius:6px;padding:11px 18px;cursor:pointer}
+button:hover{border-color:var(--E);color:var(--E)}
+button.on{border-color:var(--E);color:var(--E);background:rgba(79,224,196,.1)}
+button:focus-visible{outline:2px solid var(--E);outline-offset:2px}
+label{display:flex;align-items:center;gap:10px;color:var(--mute);flex:1;min-width:280px}
+input[type=range]{flex:1;accent-color:var(--E);height:26px}
+.read{color:var(--mute);font-size:15px;margin-top:12px;line-height:1.8}
+.read b{color:var(--ink);font-weight:400}
+.key{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:14px;color:var(--mute)}
+.key i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:middle;margin-right:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Chỗ gấp khúc của đường sức</h1>
+  <p class="sub">Bản điều khiển được để dùng khi giảng: dừng, tua từng khung, hoặc kéo thanh trượt tới đúng thời điểm cần chỉ cho sinh viên.</p>
+  <div class="stage"><canvas id="c" height="520"></canvas></div>
+  <div class="ctl">
+    <button id="pp" class="on">⏸ Tạm dừng</button>
+    <button id="bk">◀ Lùi</button>
+    <button id="fw">Tiến ▶</button>
+    <button id="rs">↺ Từ đầu</button>
+  </div>
+  <div class="ctl">
+    <label>Thời điểm <input type="range" id="sc" min="0" max="519" value="0"></label>
+    <label>Tốc độ <input type="range" id="sp" min="10" max="200" value="100"></label>
+  </div>
+  <div class="read" id="ro"></div>
+  <div class="key">
+    <span><i style="background:var(--q)"></i>electron (−)</span>
+    <span><i style="background:var(--k)"></i>chỗ gấp khúc — trường bức xạ</span>
+    <span><i style="background:var(--B)"></i>từ trường B (⊙ ra / ⊗ vào)</span>
+    <span><i style="background:#8AA0B2"></i>vùng chưa nhận được thông tin</span>
+  </div>
+</div>
+<script>
+const cv=document.getElementById('c'),g=cv.getContext('2d');
+function size(){const d=devicePixelRatio||1,w=cv.clientWidth;
+  cv.width=w*d;cv.height=520*d;g.setTransform(d,0,0,d,0,0);cv.__w=w;}
+size();addEventListener('resize',size);
+const CYC=520,JS=34,JD=18,V=1.10,MAXR=180,HOLD=270,EH=104;
+let t=0,run=true,acc=0;
+const pp=document.getElementById('pp'),sc=document.getElementById('sc'),
+      sp=document.getElementById('sp'),ro=document.getElementById('ro');
+function setRun(v){run=v;pp.classList.toggle('on',run);pp.textContent=run?'⏸ Tạm dừng':'▶ Chạy tiếp';}
+pp.onclick=()=>setRun(!run);
+document.getElementById('bk').onclick=()=>{setRun(false);t=(t-4+CYC)%CYC;};
+document.getElementById('fw').onclick=()=>{setRun(false);t=(t+4)%CYC;};
+document.getElementById('rs').onclick=()=>{t=0;sc.value=0;};
+sc.oninput=()=>{setRun(false);t=+sc.value;};
+addEventListener('keydown',e=>{
+  if(e.key===' '){e.preventDefault();setRun(!run);}
+  if(e.key==='ArrowRight'){setRun(false);t=(t+4)%CYC;}
+  if(e.key==='ArrowLeft'){setRun(false);t=(t-4+CYC)%CYC;}});
+function arw(x1,y1,x2,y2,col,w){const a=Math.atan2(y2-y1,x2-x1),h=w*3.2;
+  g.strokeStyle=col;g.fillStyle=col;g.lineWidth=w;
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();g.beginPath();g.moveTo(x2,y2);
+  g.lineTo(x2-h*Math.cos(a-0.42),y2-h*Math.sin(a-0.42));
+  g.lineTo(x2-h*Math.cos(a+0.42),y2-h*Math.sin(a+0.42));g.closePath();g.fill();}
+function draw(){
+  const W=cv.__w,H=520,cx=W/2,cy=H*0.46;
+  g.clearRect(0,0,W,H);
+  const ph=t%CYC,dx=30;
+  let p=Math.max(0,ph-JS),holding=false;
+  if(p>EH){ if(p<EH+HOLD){p=EH;holding=true;} else {p-=HOLD;} }
+  const rOut=Math.max(0,p*V),rIn=Math.max(0,(p-JD)*V);
+  const moved=ph>JS,nx=moved?cx+dx:cx,N=18;
+  for(let i=0;i<N;i++){
+    const a=(i/N)*Math.PI*2+0.09,ca=Math.cos(a),sa=Math.sin(a);
+    const ri=Math.min(rIn,MAXR),ro2=Math.min(rOut,MAXR);
+    if(ri>16){g.beginPath();g.moveTo(nx+ca*16,cy+sa*16);g.lineTo(nx+ca*ri,cy+sa*ri);
+      g.strokeStyle='rgba(79,224,196,0.42)';g.lineWidth=2.4;g.stroke();}
+    else if(!moved){g.beginPath();g.moveTo(cx+ca*16,cy+sa*16);g.lineTo(cx+ca*MAXR,cy+sa*MAXR);
+      g.strokeStyle='rgba(138,160,178,0.42)';g.lineWidth=2.4;g.stroke();continue;}
+    if(ro2<MAXR){g.beginPath();g.moveTo(cx+ca*Math.max(ro2,16),cy+sa*Math.max(ro2,16));
+      g.lineTo(cx+ca*MAXR,cy+sa*MAXR);g.strokeStyle='rgba(138,160,178,0.36)';g.lineWidth=2.4;g.stroke();}
+    if(ri>0&&ro2>ri&&ri<MAXR){g.beginPath();g.moveTo(nx+ca*ri,cy+sa*ri);
+      g.lineTo(cx+ca*ro2,cy+sa*ro2);g.strokeStyle='#FF6B8A';g.lineWidth=holding?8:5;g.stroke();}}
+  if(rIn>0&&rOut>rIn&&rIn<MAXR){
+    const rm=Math.min((rIn+Math.min(rOut,MAXR))/2,MAXR-8);
+    for(let i=0;i<24;i++){
+      const a=(i/24)*Math.PI*2+0.13,ca=Math.cos(a),sa=Math.sin(a),w=Math.abs(sa);
+      if(w<0.2)continue;
+      const x=cx+ca*rm,y=cy+sa*rm,rr=5+w*5,al=0.25+0.6*w;
+      g.beginPath();g.arc(x,y,rr,0,7);g.strokeStyle='rgba(255,162,76,'+al+')';g.lineWidth=2.6;g.stroke();
+      if(sa>0){g.beginPath();g.arc(x,y,rr*0.34,0,7);g.fillStyle='rgba(255,162,76,'+al+')';g.fill();}
+      else{const q=rr*0.55;g.strokeStyle='rgba(255,162,76,'+al+')';g.lineWidth=2.2;
+        g.beginPath();g.moveTo(x-q,y-q);g.lineTo(x+q,y+q);g.moveTo(x+q,y-q);g.lineTo(x-q,y+q);g.stroke();}}
+    g.font='700 15px system-ui,sans-serif';g.textAlign='left';g.fillStyle='#FFA24C';
+    g.fillText('B — ⊙ hướng ra / ⊗ hướng vào mặt phẳng',16,24);}
+  if(holding){const pu=0.3+0.3*Math.sin(t*0.09);
+    g.setLineDash([3,9]);g.strokeStyle='rgba(233,242,247,'+pu+')';g.lineWidth=2;
+    g.beginPath();g.arc(cx,cy,(rIn+Math.min(rOut,MAXR))/2,0,7);g.stroke();g.setLineDash([]);}
+  if(moved){g.beginPath();g.arc(cx,cy,7,0,7);g.strokeStyle='rgba(138,160,178,0.5)';g.lineWidth=2;g.stroke();
+    g.font='400 14px system-ui,sans-serif';g.textAlign='right';g.fillStyle='rgba(138,160,178,0.8)';
+    g.fillText('vị trí cũ',cx-14,cy+26);}
+  g.beginPath();g.arc(nx,cy,15,0,7);g.fillStyle='#5C8DFF';g.fill();
+  g.strokeStyle='#fff';g.lineWidth=4;g.beginPath();g.moveTo(nx-6,cy);g.lineTo(nx+6,cy);g.stroke();
+  g.font='400 14px system-ui,sans-serif';g.textAlign='center';g.fillStyle='#5C8DFF';
+  g.fillText('electron (−)',nx,cy+34);
+  let msg,col;
+  if(ph<JS){msg='Electron đứng yên — đường sức chụm vào tâm, không có sóng';col='#8AA0B2';}
+  else if(rIn<=0){msg='GIA TỐC ĐỘT NGỘT — thông tin bắt đầu lan truyền';col='#FF6B8A';}
+  else if(holding){msg='ĐANG DỪNG — đoạn hồng nối vùng trong với vùng ngoài';col='#E9F2F7';}
+  else{msg='Chỗ gấp khúc lan truyền với tốc độ c';col='#FF6B8A';}
+  g.font='400 16px system-ui,sans-serif';g.textAlign='center';g.fillStyle=col;
+  g.fillText(msg,W/2,H-14);
+  const stage=ph<JS?'tĩnh':(holding?'dừng quan sát':(rIn<=0?'vừa gia tốc':'đang lan truyền'));
+  ro.innerHTML='Khung <b>'+Math.round(ph)+'</b>/'+CYC+' · giai đoạn: <b>'+stage+'</b>'
+    +' · bán kính lớp vỏ: trong <b>'+Math.round(Math.min(rIn,MAXR))+'</b>, ngoài <b>'+Math.round(Math.min(rOut,MAXR))+'</b>'
+    +'<br>Phím tắt: <b>Space</b> dừng/chạy · <b>←</b> <b>→</b> tua từng bước';
+  if(run)sc.value=Math.round(ph);
+}
+let last=0;
+function loop(ts){
+  const dt=ts-last;last=ts;
+  if(run){acc+=dt*(+sp.value/100)*0.06;while(acc>=1){t=(t+1)%CYC;acc-=1;}}
+  draw();requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
