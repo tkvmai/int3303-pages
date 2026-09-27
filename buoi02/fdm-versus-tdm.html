@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · FDM versus TDM</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;--mut:#5A6272;
+      --line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.5}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;
+  background:#fff;touch-action:none}
+.ctl{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin:15px 0 0;
+  padding:13px 16px;background:var(--tint);border-radius:10px}
+.ctl label{font-size:14px;display:flex;align-items:center;gap:9px}
+.ctl input[type=range]{width:150px;accent-color:var(--acc)}
+.ctl b{font-variant-numeric:tabular-nums;color:var(--acc);min-width:34px;display:inline-block}
+.ctl button{border:1px solid var(--line);background:#fff;font:inherit;font-size:14.5px;
+  padding:8px 16px;border-radius:8px;cursor:pointer}
+.ctl button:hover{border-color:#B9C1CF}
+.ctl button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.state{margin-top:15px;padding:13px 16px;border-left:4px solid var(--teal);background:#F1F8F7;
+  font-size:16px;line-height:1.55;min-height:92px}
+.state b{color:var(--teal)}
+.state i{color:var(--acc);font-style:normal;font-weight:700}
+.note{margin-top:13px;padding:13px 16px;border-left:4px solid var(--acc);background:#FFF6F2;
+  font-size:14.5px;line-height:1.6}
+.note b{color:var(--acc)}
+.note ol{margin:7px 0 0;padding-left:20px}
+.note li{margin:4px 0}
+footer{padding:16px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13px;line-height:1.6}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · WIRELESS NETWORKS</div>
+  <h1>FDM versus TDM</h1>
+  <p>Session 2, Part 3. Three lanes at a steady speed, or one lane taken in turns at three times the speed.</p>
+</header>
+<a class="veml" href="../index.html">Back to the INT3303 simulation index</a>
+
+<main>
+  <p class="sub">Think of the medium as a stretch of road. <b>FDM</b> paints it into three lanes and gives one to each source: everybody drives at the same time, each in a lane of its own. <b>TDM</b> leaves one wide lane and lets the sources take turns, but a source that gets the whole road can drive three times as fast. The same traffic gets through either way.</p>
+
+  <canvas id="cv" width="1180" height="620"></canvas>
+
+  <div class="ctl">
+    <button id="mFDM" class="on">FDM</button>
+    <button id="mTDM">TDM</button>
+    <button id="mBOTH">Both at once</button>
+    <button id="play">Pause</button>
+    <label>Sources <input id="ns" type="range" min="2" max="4" value="3"> <b id="vns">3</b></label>
+    <label>Speed <input id="sp" type="range" min="1" max="10" value="4"> <b id="vsp">4</b></label>
+    <button id="idle">Source B has nothing to send</button>
+  </div>
+
+  <div class="state" id="st"></div>
+
+  <div class="note">
+    <b>What to look for</b>
+    <ol>
+      <li>Count the cars that reach the far end in one cycle. It is the same number in both schemes, because the road carries the same total traffic.</li>
+      <li>In FDM every car moves slowly but never stops. In TDM a car waits, then crosses at full speed. Same throughput, different delay.</li>
+      <li>The dashed strips between the FDM lanes are guard bands. They carry nothing, and they are the price of dividing along frequency.</li>
+      <li>Switch B off. In FDM lane B stays empty the whole time. In TDM B's turn still comes and the road sits idle for that turn. Neither can hand the gap to A or C.</li>
+    </ol>
+  </div>
+</main>
+
+<footer>
+  Built for INT3303. Both schemes, and the point that each wastes capacity to keep the implementation simple, follow Beard &amp; Stallings, section 2.5.
+</footer>
+
+<script>
+(function(){
+const cv=document.getElementById('cv'), g=cv.getContext('2d');
+const W=cv.width, H=cv.height;
+const COL=['#2A9D8F','#D81E5B','#6C5CE7','#F4A62A'];
+const NAME=['A','B','C','D'];
+const INK='#1A1F36', MUT='#5A6272', LINE='#E4E8EF', ACC='#FF6B35', FADE='#E2E6EC';
+const ROAD='#F4F6F9';
+
+let mode='FDM', n=3, speed=4, running=true, idle2=false, t=0;
+const $=id=>document.getElementById(id);
+const active=i=>!(idle2&&i===1);
+
+function txt(s,x,y,size,col,align,bold){
+  g.font=(bold?'bold ':'')+size+'px Calibri,Segoe UI,sans-serif';
+  g.fillStyle=col; g.textAlign=align||'left'; g.textBaseline='middle'; g.fillText(s,x,y);
+}
+function box(x,y,w,h,fill,stroke,r,dash){
+  r=r||5; g.save(); if(dash) g.setLineDash([6,5]);
+  g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r);
+  g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath();
+  if(fill){g.fillStyle=fill; g.fill();}
+  if(stroke){g.strokeStyle=stroke; g.lineWidth=1.6; g.stroke();}
+  g.restore();
+}
+// Mot "xe": than xe bo tron, hai banh, kem chu ten nguon.
+function car(x,y,w,h,col,ten){
+  const r=h*0.30;
+  g.beginPath();
+  g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r);
+  g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath();
+  g.fillStyle=col; g.fill();
+  g.fillStyle='#ffffff55';
+  g.fillRect(x+w*0.18,y+h*0.13,w*0.34,h*0.30);
+  g.fillStyle=INK;
+  for(const cx of [x+w*0.24,x+w*0.76]){
+    g.beginPath(); g.arc(cx,y+h,h*0.17,0,7); g.fill();
+  }
+  txt(ten,x+w/2,y+h*0.62,Math.min(17,h*0.55),'#fff','center',true);
+}
+
+// ------- mot lan duong -------
+// kind 'FDM': n lan, moi lan mot nguon, xe chay lien tuc voi toc do v.
+// kind 'TDM': mot lan, cac nguon thay phien, xe chay voi toc do n*v.
+function road(kind,x0,y0,w,h,title,sub){
+  // Nhan khe cua TDM ve o y0-14, nen tieu de phai day len cao hon nua, khong
+  // thi hai dong chong nhau. Da do lai bang toa do chu khong doan.
+  txt(title,x0,y0-62,19,INK,'left',true);
+  txt(sub,x0,y0-40,14,kind==='FDM'?COL[0]:ACC,'left',true);
+  box(x0,y0,w,h,ROAD,'#C9D0DB',6);
+
+  const CARW=Math.min(96,w/6.2), CARH=Math.max(22,h/(kind==='FDM'?n:1)*0.46);
+  const per=w+CARW;                      // quang duong mot vong
+
+  if(kind==='FDM'){
+    const lh=h/n;
+    for(let i=1;i<n;i++){                // vach phan lan, tuc guard band
+      const y=y0+i*lh;
+      box(x0+4,y-5,w-8,10,'#FFF1EA',ACC,3,true);
+    }
+    for(let i=0;i<n;i++){
+      const ly=y0+i*lh, cy=ly+lh/2-CARH/2;
+      if(!active(i)){
+        txt('lane '+NAME[i]+' is empty the whole time',x0+w/2,ly+lh/2,14,MUT,'center',true);
+        continue;
+      }
+      for(let k=0;k<3;k++){              // ba xe cach deu trong lan
+        const ph=(t+k/3)%1;
+        car(x0-CARW+ph*per,cy,CARW,CARH,COL[i],NAME[i]);
+      }
+      txt(NAME[i],x0-16,ly+lh/2,15,COL[i],'center',true);
+    }
+    txt('each lane is one band of frequencies',x0+w/2,y0+h+22,13.5,MUT,'center');
+  }else{
+    const cy=y0+h/2-CARH/2;
+    // Moi vong cua "t" la mot chu ky n khe. Trong khe j, xe cua nguon j chay
+    // het chieu dai duong, tuc nhanh gap n lan so voi FDM.
+    const slot=Math.floor(t*n)%n, ph=(t*n)%1;
+    if(active(slot)) car(x0-CARW+ph*per,cy,CARW,CARH,COL[slot],NAME[slot]);
+    else txt('slot '+NAME[slot]+': nobody is driving, the road is idle',
+             x0+w/2,y0+h/2,15,MUT,'center',true);
+    // hang doi dang cho
+    let qx=x0-64;
+    for(let i=0;i<n;i++){
+      if(i===slot||!active(i)) continue;
+      box(qx-26,y0+h+14,24,20,COL[i]+'33',COL[i],4);
+      txt(NAME[i],qx-14,y0+h+24,13,COL[i],'center',true);
+      qx+=30;
+    }
+    txt('waiting their turn',x0+n*30-30,y0+h+24,13,MUT,'left');
+    txt('one lane, the whole width of the road',x0+w/2,y0+h+52,13.5,MUT,'center');
+    // vach nhip
+    for(let j=0;j<n;j++){
+      const sx=x0+w*j/n;
+      g.strokeStyle=j===slot?ACC:LINE; g.lineWidth=j===slot?2:1;
+      g.beginPath(); g.moveTo(sx,y0-8); g.lineTo(sx,y0); g.stroke();
+      txt('slot '+NAME[j],sx+w/(2*n),y0-14,12.5,j===slot?ACC:MUT,'center',true);
+    }
+  }
+  // bien toc do
+  const v=kind==='FDM'?20:20*n;
+  box(x0+w-116,y0+h-34,104,26,'#fff',INK,5);
+  txt(v+' km/h',x0+w-64,y0+h-21,14,INK,'center',true);
+}
+
+function draw(){
+  g.clearRect(0,0,W,H);
+  if(mode==='BOTH'){
+    road('FDM',110,90,930,190,'FDM','three lanes, everybody drives at once');
+    road('TDM',110,420,930,120,'TDM','one lane, one at a time, three times as fast');
+  }else if(mode==='FDM'){
+    road('FDM',110,110,930,330,'FDM: three lanes, everybody drives at once',
+         'each source owns a band of frequencies and uses it all of the time');
+  }else{
+    road('TDM',110,170,930,200,'TDM: one lane, taken in turns',
+         'each source owns the whole band, but only during its own slot');
+  }
+}
+
+function say(){
+  const slot=Math.floor(t*n)%n;
+  let s='';
+  if(mode==='FDM'||mode==='BOTH'){
+    s+='<b>FDM.</b> '+(idle2?(n-1):n)+' sources are driving right now, each in a lane of its own at 20 km/h. '
+     + 'Nobody waits, but nobody gets the whole road either. A receiver picks one out with a <i>filter</i>.';
+  }
+  if(mode==='BOTH') s+='<br>';
+  if(mode==='TDM'||mode==='BOTH'){
+    s+='<b>TDM.</b> '+(active(slot)
+        ? ('Source '+NAME[slot]+' has the whole road and is doing '+(20*n)+' km/h. The others are queued at the entrance.')
+        : ('It is '+NAME[slot]+"'s turn but it has nothing to send, so the road runs <i>empty</i> for this slot."))
+     + ' A receiver picks one out with a <i>clock</i>.';
+  }
+  if(idle2) s+='<br>Either way the lost capacity stays lost. The lane and the slot were assigned in advance, so they cannot be handed to a source that does have data waiting.';
+  $('st').innerHTML=s;
+}
+
+let last=performance.now();
+function loop(now){
+  const dt=(now-last)/1000; last=now;
+  if(running){ t+=dt*speed*0.045; while(t>=1) t-=1; }
+  draw(); say(); requestAnimationFrame(loop);
+}
+
+function setMode(m){
+  mode=m;
+  for(const k of ['FDM','TDM','BOTH']) $('m'+k).classList.toggle('on',k===m);
+}
+$('mFDM').onclick=()=>setMode('FDM');
+$('mTDM').onclick=()=>setMode('TDM');
+$('mBOTH').onclick=()=>setMode('BOTH');
+$('play').onclick=function(){ running=!running; this.textContent=running?'Pause':'Play'; };
+$('ns').oninput=function(){ n=+this.value; $('vns').textContent=n; };
+$('sp').oninput=function(){ speed=+this.value; $('vsp').textContent=speed; };
+$('idle').onclick=function(){ idle2=!idle2; this.classList.toggle('on',idle2);
+  this.textContent=idle2?'Source B back to sending':'Source B has nothing to send'; };
+
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

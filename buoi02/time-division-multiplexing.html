@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Time division multiplexing</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;--mut:#5A6272;
+      --line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.5}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;
+  background:#fff;touch-action:none}
+.ctl{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin:15px 0 0;
+  padding:13px 16px;background:var(--tint);border-radius:10px}
+.ctl label{font-size:14px;display:flex;align-items:center;gap:9px}
+.ctl input[type=range]{width:150px;accent-color:var(--acc)}
+.ctl b{font-variant-numeric:tabular-nums;color:var(--acc);min-width:34px;display:inline-block}
+.ctl button{border:1px solid var(--line);background:#fff;font:inherit;font-size:14.5px;
+  padding:8px 16px;border-radius:8px;cursor:pointer}
+.ctl button:hover{border-color:#B9C1CF}
+.ctl button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.state{margin-top:15px;padding:13px 16px;border-left:4px solid var(--teal);background:#F1F8F7;
+  font-size:16px;line-height:1.55;min-height:76px}
+.state b{color:var(--teal)}
+.state i{color:var(--acc);font-style:normal;font-weight:700}
+.note{margin-top:13px;padding:13px 16px;border-left:4px solid var(--acc);background:#FFF6F2;
+  font-size:14.5px;line-height:1.6}
+.note b{color:var(--acc)}
+.note ol{margin:7px 0 0;padding-left:20px}
+.note li{margin:4px 0}
+footer{padding:16px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13px;line-height:1.6}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · WIRELESS NETWORKS</div>
+  <h1>Time division multiplexing</h1>
+  <p>Session 2, Part 3. Frames A, B and C step onto one link in turn, then step off to the right destination.</p>
+</header>
+<a class="veml" href="../index.html">Back to the INT3303 simulation index</a>
+
+<main>
+  <p class="sub">Each source hands its frames to the multiplexer. The multiplexer puts <b>one frame at a time</b> on the link, always in the same order, and the demultiplexer at the far end counts them off in the same order to decide who each one belongs to.</p>
+
+  <canvas id="cv" width="1180" height="560"></canvas>
+
+  <div class="ctl">
+    <button id="play">Pause</button>
+    <button id="step">Step one frame</button>
+    <label>Sources <input id="ns" type="range" min="2" max="4" value="3"> <b id="vns">3</b></label>
+    <label>Speed <input id="sp" type="range" min="1" max="10" value="4"> <b id="vsp">4</b></label>
+    <button id="idle">Source B has nothing to send</button>
+  </div>
+
+  <div class="state" id="st"></div>
+
+  <div class="note">
+    <b>What to look for</b>
+    <ol>
+      <li>Only one frame is ever entering the link at a time, and the order never changes: A, B, C, A, B, C.</li>
+      <li>Every frame uses the full width of the link. Nothing is divided in frequency here, only in time.</li>
+      <li>The demultiplexer has no label to read. It knows the frame is B's purely because it is the second one in the cycle, which is why TDM needs synchronisation.</li>
+      <li>Switch B off. Its turn still comes round and an empty frame goes out. The utilisation figure falls, and that gap cannot be given to A or C.</li>
+    </ol>
+  </div>
+</main>
+
+<footer>
+  Built for INT3303. The frame and slot structure follows Beard &amp; Stallings, section 2.5.
+</footer>
+
+<script>
+(function(){
+const cv=document.getElementById('cv'), g=cv.getContext('2d');
+const W=cv.width, H=cv.height;
+const COL=['#2A9D8F','#D81E5B','#6C5CE7','#F4A62A'];
+const NAME=['A','B','C','D'];
+const INK='#1A1F36', MUT='#5A6272', LINE='#E4E8EF', ACC='#FF6B35', FADE='#DDE2EA';
+
+let n=3, speed=4, running=true, idle2=false;
+let t=0;                 // thoi gian, don vi la KHE
+let sent=0, slots=0, counted=-1;
+const $=id=>document.getElementById(id);
+const active=i=>!(idle2&&i===1);
+
+const MY=280;            // truc duong truyen
+const MUX0=352, MUX1=424, DMX0=764, DMX1=836;
+const TRAVEL=1;          // moi khung di het duong truyen trong dung 1 khe -> luon co n khung tren duong
+function rowY(i){ const gap=Math.min(118,360/n); return MY+(i-(n-1)/2)*gap; }
+
+function txt(s,x,y,size,col,align,bold){
+  g.font=(bold?'bold ':'')+size+'px Calibri,Segoe UI,sans-serif';
+  g.fillStyle=col; g.textAlign=align||'left'; g.textBaseline='middle'; g.fillText(s,x,y);
+}
+function box(x,y,w,h,fill,stroke,r,dash){
+  r=r||6; g.save(); if(dash) g.setLineDash([5,4]);
+  g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r);
+  g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath();
+  if(fill){g.fillStyle=fill; g.fill();}
+  if(stroke){g.strokeStyle=stroke; g.lineWidth=1.8; g.stroke();}
+  g.restore();
+}
+function host(x,y,col){                     // may tinh don gian
+  box(x,y-21,50,34,'#fff',col,4);
+  box(x+6,y-15,38,22,col+'22',null,2);
+  g.fillStyle=col; g.fillRect(x+18,y+13,14,5); g.fillRect(x+10,y+18,30,4);
+}
+function trap(x0,x1,yt,yb,inset,label){
+  g.beginPath(); g.moveTo(x0,yt); g.lineTo(x1,yt+inset);
+  g.lineTo(x1,yb-inset); g.lineTo(x0,yb); g.closePath();
+  g.fillStyle='#fff'; g.fill(); g.strokeStyle=INK; g.lineWidth=2; g.stroke();
+  g.save(); g.translate((x0+x1)/2,(yt+yb)/2); g.rotate(-Math.PI/2);
+  g.font='bold 17px Calibri,sans-serif'; g.fillStyle=INK;
+  g.textAlign='center'; g.textBaseline='middle'; g.fillText(label,0,0); g.restore();
+}
+
+// Vi tri cua khung phat o khe k, tai thoi diem t. Tra ve null neu chua/da xong.
+function place(k){
+  const a=t-k, src=((k%n)+n)%n, y0=rowY(src);
+  if(a<-0.55||a>TRAVEL+0.75) return null;
+  if(a<0){                                    // tu hang doi vao bo don kenh
+    const p=(a+0.55)/0.55;
+    return {x:300+(MUX0-300)*p, y:y0+(MY-y0)*p*0.35, src:src, ph:0};
+  }
+  if(a<=TRAVEL){                              // tren duong truyen
+    const p=a/TRAVEL;
+    return {x:MUX1+(DMX0-MUX1-92)*p, y:MY, src:src, ph:1};
+  }
+  const p=(a-TRAVEL)/0.75;                    // ra khoi bo phan kenh toi dich
+  return {x:DMX1+(1000-DMX1)*p, y:MY+(y0-MY)*p, src:src, ph:2};
+}
+
+function draw(){
+  g.clearRect(0,0,W,H);
+  const slot=Math.floor(t), cur=((slot%n)+n)%n;
+
+  // --- nguon, hang doi, dich ---
+  for(let i=0;i<n;i++){
+    const y=rowY(i), on=active(i), c=COL[i];
+    host(60,y,on?c:MUT);
+    txt('source '+NAME[i],60,y+32,13.5,on?c:MUT,'left',true);
+    if(on){
+      for(let q=0;q<3;q++){
+        const x=132+q*56;
+        box(x,y-18,48,36,c+'22',c,5);
+        txt(NAME[i],x+24,y,17,c,'center',true);
+      }
+    }else{
+      box(132,y-18,160,36,'#F7F8FA',FADE,5,true);
+      txt('nothing to send',212,y,14,MUT,'center');
+    }
+    g.strokeStyle=on?c+'55':FADE; g.lineWidth=1.4;
+    g.beginPath(); g.moveTo(300,y); g.lineTo(MUX0,y); g.stroke();
+    // phia dich
+    host(1070,y,on?c:MUT);
+    txt('dest '+NAME[i],1070,y+32,13.5,on?c:MUT,'left',true);
+    g.strokeStyle=on?c+'55':FADE;
+    g.beginPath(); g.moveTo(DMX1,y); g.lineTo(1066,y); g.stroke();
+  }
+
+  // --- MUX, duong truyen, DEMUX ---
+  const yt=rowY(0)-46, yb=rowY(n-1)+46;
+  trap(MUX0,MUX1,yt,yb,26,'MUX');
+  trap(DMX1,DMX0,yt,yb,26,'DEMUX');
+  g.strokeStyle=INK; g.lineWidth=4;
+  g.beginPath(); g.moveTo(MUX1,MY); g.lineTo(DMX0,MY); g.stroke();
+  txt('one link, one frame at a time',(MUX1+DMX0)/2,MY-58,15,INK,'center',true);
+
+  // --- cac khung dang di ---
+  for(let k=slot-3;k<=slot+1;k++){
+    const p=place(k); if(!p) continue;
+    const on=active(p.src), c=COL[p.src];
+    if(on){
+      box(p.x,p.y-19,86,38,c,c,5);
+      txt(NAME[p.src],p.x+43,p.y,19,'#fff','center',true);
+    }else if(p.ph===1){
+      box(p.x,p.y-19,86,38,'#F7F8FA',FADE,5,true);
+      txt('empty',p.x+43,p.y,13.5,MUT,'center',true);
+    }
+  }
+
+  // --- vach nhip duoi duong truyen ---
+  const BY=MY+52;
+  txt('the cycle repeats',MUX1,BY+44,13,MUT,'left');
+  for(let j=0;j<n;j++){
+    const x=MUX1+(DMX0-MUX1)*j/n, w=(DMX0-MUX1)/n;
+    const on=active(j);
+    g.strokeStyle=j===cur?ACC:LINE; g.lineWidth=j===cur?2:1.2;
+    g.strokeRect(x+3,BY,w-6,22);
+    txt('slot '+NAME[j],x+w/2,BY+11,13,on?(j===cur?ACC:MUT):FADE,'center',true);
+  }
+
+  // --- hieu suat ---
+  const UY=506, u=slots?sent/slots:1;
+  txt('Link utilisation',60,UY,15,INK,'left',true);
+  box(200,UY-13,400,26,'#F2F4F8',LINE,6);
+  box(200,UY-13,400*u,26,u>0.99?'#2A9D8F':ACC,null,6);
+  txt(Math.round(u*100)+' percent of frames carried data, over '+slots+' slots',
+      620,UY,15,u>0.99?'#2A9D8F':ACC,'left',true);
+}
+
+function say(){
+  const slot=Math.floor(t), cur=((slot%n)+n)%n;
+  let s='<b>Slot '+NAME[cur]+'.</b> ';
+  if(active(cur)) s+='Source '+NAME[cur]+' is putting one frame on the link, using the whole link to itself. ';
+  else s+='Source '+NAME[cur]+' has nothing to send, so an <i>empty</i> frame goes out in its place. ';
+  s+='The other sources are waiting their turn, however much data they have queued.';
+  if(idle2) s+='<br>The empty frame cannot be given to A or C. Slots are assigned in advance and stay assigned, which is the price TDM pays for being simple to build.';
+  $('st').innerHTML=s;
+}
+
+function count(){
+  const slot=Math.floor(t);
+  if(slot!==counted){ counted=slot; slots++; if(active(((slot%n)+n)%n)) sent++; }
+}
+
+let last=performance.now();
+function loop(now){
+  const dt=(now-last)/1000; last=now;
+  if(running) t+=dt*speed*0.22;
+  count(); draw(); say(); requestAnimationFrame(loop);
+}
+
+$('play').onclick=function(){ running=!running; this.textContent=running?'Pause':'Play'; };
+$('step').onclick=function(){ running=false; $('play').textContent='Play'; t=Math.floor(t)+1.001; };
+$('ns').oninput=function(){ n=+this.value; $('vns').textContent=n; t=0; sent=0; slots=0; counted=-1; };
+$('sp').oninput=function(){ speed=+this.value; $('vsp').textContent=speed; };
+$('idle').onclick=function(){ idle2=!idle2; this.classList.toggle('on',idle2);
+  sent=0; slots=0; counted=-1;
+  this.textContent=idle2?'Source B back to sending':'Source B has nothing to send'; };
+
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
