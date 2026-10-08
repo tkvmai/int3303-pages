@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Từ dãy bit tới tín hiệu điều chế</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mut:#5A6272;
+      --line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.5}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;
+  background:#fff;cursor:pointer;touch-action:none}
+.ctl{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin:15px 0 0;
+  padding:13px 16px;background:var(--tint);border-radius:10px}
+.ctl label{font-size:14px;display:flex;align-items:center;gap:9px}
+.ctl input[type=range]{width:130px;accent-color:var(--acc)}
+.ctl b{font-variant-numeric:tabular-nums;color:var(--acc);min-width:22px;display:inline-block}
+.ctl button{border:1px solid var(--line);background:#fff;font:inherit;font-size:14.5px;
+  padding:8px 16px;border-radius:8px;cursor:pointer}
+.ctl button:hover{border-color:#B9C1CF}
+.ctl button.chinh{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+.state{margin-top:15px;padding:13px 16px;border-left:4px solid var(--teal);background:#F1F8F7;
+  font-size:16px;line-height:1.55;min-height:76px}
+.state b{color:var(--teal)}
+.state i{color:var(--acc);font-style:normal;font-weight:700}
+.note{margin-top:13px;padding:13px 16px;border-left:4px solid var(--acc);background:#FFF6F2;
+  font-size:14.5px;line-height:1.6}
+.note b{color:var(--acc)}
+.note ol{margin:7px 0 0;padding-left:20px}
+.note li{margin:4px 0}
+footer{padding:16px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13px;line-height:1.6}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · MẠNG KHÔNG DÂY</div>
+  <h1>Từ dãy bit tới tín hiệu điều chế</h1>
+  <p>Bài thực hành, Phần 1. Bấm vào một ô bit để đổi giá trị, mọi dạng sóng vẽ lại theo.</p>
+</header>
+<a class="veml" href="../index.html">Về mục lục mô phỏng INT3303</a>
+
+<main>
+  <p class="sub">Dãy bit không gửi thẳng lên trời được. Nó phải qua hai bước: trước hết thành một
+  tín hiệu điện có dạng bậc thang, gọi là <b>NRZ</b>, rồi nhân với sóng mang để dời lên dải tần
+  phát được. Mô phỏng này vẽ lại đúng từng bước ấy, với tham số của bài thực hành:
+  R<sub>b</sub> = 1000 bit/s, f<sub>c</sub> = 10 kHz, f<sub>0</sub> = 8 kHz, f<sub>1</sub> = 12 kHz.</p>
+
+  <canvas id="cv" width="1180" height="930"></canvas>
+
+  <div class="ctl">
+    <button class="chinh" id="chay">Chạy lại từ đầu</button>
+    <button id="dung">Tạm dừng</button>
+    <button id="ngau">Đổi dãy bit</button>
+    <label>Số bit hiển thị <input id="sb" type="range" min="4" max="10" step="2" value="6"> <b id="vb">6</b></label>
+    <label><input id="tach" type="checkbox"> Tách BFSK thành hai nhánh</label>
+  </div>
+
+  <div class="state" id="st"></div>
+
+  <div class="note">
+    <b>Bốn điều nên chỉ cho lớp thấy:</b>
+    <ol>
+      <li>Hai tín hiệu NRZ khác nhau ở chỗ nào. <b>x<sub>p</sub></b> nhận hai mức
+          <b>+1</b> và <b>−1</b>, trung bình bằng không. <b>x<sub>u</sub></b> nhận
+          <b>+1</b> và <b>0</b>, trung bình khác không. Chính chỗ khác nhau ấy quyết định
+          OOK có vạch phổ tại f<sub>c</sub> còn BPSK thì không.</li>
+      <li>Vì sao OOK phải dùng x<sub>u</sub>. Nhân thẳng x<sub>p</sub> với sóng mang thì được
+          BPSK chứ không phải OOK: biên độ không bao giờ tắt, chỉ có pha lật. Đó là câu hỏi 1
+          của bài thực hành.</li>
+      <li>Nhìn kỹ ranh giới bit trên BPSK. Biên độ và tần số không đổi, nhưng sóng
+          <b>lật pha 180°</b>, tức đỉnh biến thành đáy. Đổi một bit rồi xem chỗ lật dịch đi đâu.</li>
+      <li>BFSK <b>không</b> phải một phép nhân. Bật ô "tách thành hai nhánh": nó là
+          <b>tổng của hai tín hiệu OOK</b> trên hai sóng mang khác nhau, một nhánh bật khi bit
+          bằng 1 và nhánh kia bật khi bit bằng 0. Hai nhánh không bao giờ cùng bật.</li>
+    </ol>
+  </div>
+</main>
+
+<footer>INT3303 · Bài thực hành Phần 1. Các biểu thức vẽ đúng như đề bài:
+s<sub>OOK</sub>(t) = A·x<sub>u</sub>(t)·cos(2πf<sub>c</sub>t),
+s<sub>BPSK</sub>(t) = A·x<sub>p</sub>(t)·cos(2πf<sub>c</sub>t), và s<sub>BFSK</sub>(t) bằng
+A·cos(2πf<sub>1</sub>t) khi bit là 1, bằng A·cos(2πf<sub>0</sub>t) khi bit là 0.
+Dạng tổng hai nhánh dùng ở ô "tách" là cách viết lại tương đương:
+s<sub>BFSK</sub> = x<sub>u</sub>·A·cos(2πf<sub>1</sub>t) + (1 − x<sub>u</sub>)·A·cos(2πf<sub>0</sub>t).
+<b>Hình này vẽ đúng tỉ lệ tần số của đề bài</b>, tức 10 chu kỳ sóng mang trong một bit, 8 và 12 chu kỳ
+cho hai tần số BFSK. Nhờ vậy mỗi bit chứa trọn một số nguyên chu kỳ và sóng không bị gãy pha ở ranh
+giới bit. Hệ thật có hàng nghìn tới hàng triệu chu kỳ mỗi bit, vẽ đúng tỉ lệ đó thì sóng đặc kín không
+nhìn ra gì.</footer>
+
+<script>
+(function(){
+var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+var W=cv.width, H=cv.height;
+
+var INK='#1A1F36', ACC='#FF6B35', TEAL='#2A9D8F', PUR='#6C5CE7',
+    MUT='#5A6272', LINE='#E4E8EF', FADE='#DDE2EB', BLUE='#2E6FD9';
+
+var X0=196, X1=1128;
+var AMP=34;
+var Y = {bit:92, xp:196, xu:306, song:416, ook:548, bpsk:678, bfsk:828};
+var NEN = {ook:'#FFF6F2', bpsk:'#F3F1FE', bfsk:'#F1F8F7'};
+
+// Ti le tan so lay dung tu de bai: fc/Rb = 10, f0/Rb = 8, f1/Rb = 12.
+var CK_C=10, CK_0=8, CK_1=12;
+
+var MAU=[1,0,1,1,0,1,0,0,1,0];
+var bits=MAU.slice(0,6);
+var nbit=6, tachBfsk=false;
+var pha=0;            // 0 bit, 1 NRZ, 2 song mang, 3 OOK va BPSK, 4 BFSK
+var u=0;              // vi tri dau ve trong giai doan dang chay, 0 toi 1
+var chayTiep=true, lanCuoi=0, bitSang=-1, tSang=0;
+
+function line(x1,y1,x2,y2,c,w,dash){ctx.save();if(dash)ctx.setLineDash(dash);
+  ctx.strokeStyle=c;ctx.lineWidth=w||1;ctx.beginPath();
+  ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();}
+function txt(s,x,y,size,c,align,bold){
+  ctx.fillStyle=c; ctx.textAlign=align||'left'; ctx.textBaseline='middle';
+  ctx.font=(bold?'700 ':'')+size+'px Calibri, Segoe UI, sans-serif';
+  ctx.fillText(s,x,y);}
+function nen(y,h,mau){ctx.save();ctx.fillStyle=mau;
+  ctx.fillRect(X0-10,y-h/2,X1-X0+20,h);ctx.restore();}
+
+function bw(){ return (X1-X0)/nbit; }          // be rong mot bit, pixel
+function xcua(k){ return X0 + k*bw(); }         // meo trai cua bit thu k
+
+// Truc thoi gian co vach o tung ranh gioi bit
+function trucThoiGian(y, nhan){
+  line(X0,y,X1,y,FADE,1);
+  for(var k=0;k<=nbit;k++){
+    var x=xcua(k);
+    line(x,y-AMP-6,x,y+AMP+6,'#EEF1F6',1,[3,4]);
+  }
+  if(nhan){
+    for(var k2=0;k2<=nbit;k2++){
+      txt(k2+' ms', xcua(k2), y+AMP+22, 12, MUT, 'center');
+    }
+  }
+}
+
+// Ve mot ham theo thoi gian, t chay tu 0 toi nbit (don vi: so bit)
+function veSong(y, f, mau, day, den){
+  ctx.save(); ctx.strokeStyle=mau; ctx.lineWidth=day||2;
+  ctx.lineJoin='round'; ctx.beginPath();
+  var n=Math.round((X1-X0)), i, veTo=Math.round(n*(den===undefined?1:den));
+  for(i=0;i<=veTo;i++){
+    var x=X0+i, t=(x-X0)/bw();
+    var yy=y-f(t)*AMP;
+    if(i===0) ctx.moveTo(x,yy); else ctx.lineTo(x,yy);
+  }
+  ctx.stroke(); ctx.restore();
+}
+
+// Ham bac thang: tra ve gia tri cua bit chua thoi diem t
+function bitTai(t){
+  var k=Math.floor(t); if(k<0)k=0; if(k>nbit-1)k=nbit-1;
+  return bits[k];
+}
+function xp(t){ return bitTai(t)?1:-1; }
+function xu(t){ return bitTai(t)?1:0; }
+function songMang(t){ return Math.cos(2*Math.PI*CK_C*t); }
+function sOOK(t){ return xu(t)*songMang(t); }
+function sBPSK(t){ return xp(t)*songMang(t); }
+function nhanh1(t){ return xu(t)*Math.cos(2*Math.PI*CK_1*t); }
+function nhanh0(t){ return (1-xu(t))*Math.cos(2*Math.PI*CK_0*t); }
+function sBFSK(t){ return nhanh1(t)+nhanh0(t); }
+
+// Ve bac thang NRZ, co canh dung o ranh gioi
+function veBac(y, f, mau, den){
+  ctx.save(); ctx.strokeStyle=mau; ctx.lineWidth=2.6; ctx.lineJoin='miter';
+  ctx.beginPath();
+  var tHet=(den===undefined?1:den)*nbit, batDau=true, k;
+  for(k=0;k<nbit;k++){
+    var ta=k, tb=Math.min(k+1,tHet);
+    if(ta>=tHet) break;
+    var xa=xcua(k), xb=X0+tb*bw(), yy=y-f(k+0.5)*AMP;
+    if(batDau){ ctx.moveTo(xa,yy); batDau=false; }
+    else ctx.lineTo(xa,yy);
+    ctx.lineTo(xb,yy);
+  }
+  ctx.stroke(); ctx.restore();
+}
+
+function nhanDong(y, ten, ct, mau){
+  txt(ten, X0-18, y-13, 17, mau, 'right', true);
+  txt(ct,  X0-18, y+10, 13.5, MUT, 'right');
+}
+
+function ve(){
+  ctx.clearRect(0,0,W,H);
+
+  // ---------- hang bit ----------
+  txt('Dãy bit cần gửi', X0-18, Y.bit, 17, INK, 'right', true);
+  var hb=46;
+  for(var k=0;k<nbit;k++){
+    var x=xcua(k), w=bw(), hien=(pha>0)||(u*nbit>k);
+    ctx.save();
+    ctx.fillStyle = hien ? (bits[k]? '#EAF2FF':'#F7F8FA') : '#FFF';
+    ctx.strokeStyle = (k===bitSang)? ACC : LINE;
+    ctx.lineWidth = (k===bitSang)? 2.4 : 1.2;
+    ctx.fillRect(x+1.5, Y.bit-hb/2, w-3, hb);
+    ctx.strokeRect(x+1.5, Y.bit-hb/2, w-3, hb);
+    ctx.restore();
+    if(hien) txt(String(bits[k]), x+w/2, Y.bit, 22, bits[k]?BLUE:MUT, 'center', true);
+  }
+  txt('mỗi ô là một bit, kéo dài Tb = 1 ms', X1, Y.bit+hb/2+18, 12.5, MUT, 'right');
+
+  if(pha<1 && u<1){ ketThuc(); return; }
+
+  // ---------- hai tin hieu NRZ ----------
+  var denN = (pha>1)?1:u;
+  nhanDong(Y.xp, 'xₚ(t)', 'NRZ lưỡng cực, +1 và −1', INK);
+  trucThoiGian(Y.xp,false);
+  line(X0,Y.xp-AMP,X1,Y.xp-AMP,'#F0F2F6',1); line(X0,Y.xp+AMP,X1,Y.xp+AMP,'#F0F2F6',1);
+  txt('+1', X1+6, Y.xp-AMP, 12, MUT); txt('−1', X1+6, Y.xp+AMP, 12, MUT);
+  veBac(Y.xp, xp, PUR, denN);
+
+  nhanDong(Y.xu, 'xᵤ(t)', 'NRZ đơn cực, +1 và 0', INK);
+  trucThoiGian(Y.xu,false);
+  line(X0,Y.xu-AMP,X1,Y.xu-AMP,'#F0F2F6',1);
+  txt('+1', X1+6, Y.xu-AMP, 12, MUT); txt('0', X1+6, Y.xu, 12, MUT);
+  veBac(Y.xu, function(t){return 2*xu(t)-1;}, ACC, denN);
+
+  if(pha<2 && u<1){ ketThuc(); return; }
+
+  // ---------- song mang ----------
+  var denS = (pha>2)?1:u;
+  nhanDong(Y.song, 'Sóng mang', 'cos(2π fc t), 10 chu kỳ mỗi bit', INK);
+  trucThoiGian(Y.song,false);
+  veSong(Y.song, songMang, MUT, 1.6, denS);
+
+  if(pha<3 && u<1){ ketThuc(); return; }
+
+  // ---------- OOK va BPSK ----------
+  var denM = (pha>3)?1:u;
+
+  nen(Y.ook, 2*AMP+30, NEN.ook);
+  nhanDong(Y.ook, 'OOK', 'xᵤ(t) × sóng mang', ACC);
+  trucThoiGian(Y.ook,false);
+  veBac(Y.ook, function(t){return  xu(t);}, '#F6C3AC', denM);
+  veBac(Y.ook, function(t){return -xu(t);}, '#F6C3AC', denM);
+  veSong(Y.ook, sOOK, ACC, 1.9, denM);
+
+  nen(Y.bpsk, 2*AMP+30, NEN.bpsk);
+  nhanDong(Y.bpsk, 'BPSK', 'xₚ(t) × sóng mang', PUR);
+  trucThoiGian(Y.bpsk,false);
+  veBac(Y.bpsk, function(t){return  1;}, '#CFC8F5', denM);
+  veBac(Y.bpsk, function(t){return -1;}, '#CFC8F5', denM);
+  veSong(Y.bpsk, sBPSK, PUR, 1.9, denM);
+  // danh dau cho lat pha
+  if(denM>=1){
+    for(var j=1;j<nbit;j++){
+      if(bits[j]!==bits[j-1]){
+        var xj=xcua(j);
+        line(xj, Y.bpsk-AMP-18, xj, Y.bpsk+AMP+12, PUR, 1.6, [4,4]);
+        txt('lật pha', xj, Y.bpsk-AMP-28, 11.5, PUR, 'center', true);
+      }
+    }
+  }
+
+  if(pha<4 && u<1){ ketThuc(); return; }
+
+  // ---------- BFSK ----------
+  var denF = (pha>4)?1:u;
+  nen(Y.bfsk, 2*AMP+30, NEN.bfsk);
+  nhanDong(Y.bfsk, 'BFSK', tachBfsk ? 'tổng của hai nhánh' : 'f₁ khi bit 1, f₀ khi bit 0', TEAL);
+  trucThoiGian(Y.bfsk,true);
+  if(tachBfsk){
+    // Hai nhanh ve mo o duoi, tong ve dam o tren. Khi bat che do nay thi bo
+    // cac nhan "8 chu ky" di, neu khong ba lop chu chong len nhau.
+    veSong(Y.bfsk, nhanh1, '#9AD6CE', 1.5, denF);
+    veSong(Y.bfsk, nhanh0, '#F6C3AC', 1.5, denF);
+    txt('nhánh 1:  xᵤ × cos(2π f₁ t)', X0, Y.bfsk-AMP-26, 12.5, TEAL, 'left', true);
+    txt('nhánh 0:  (1−xᵤ) × cos(2π f₀ t)', X1, Y.bfsk-AMP-26, 12.5, ACC, 'right', true);
+  }
+  veSong(Y.bfsk, sBFSK, TEAL, 1.9, denF);
+  if(denF>=1 && !tachBfsk){
+    for(var m=0;m<nbit;m++){
+      txt(bits[m]? '12 chu kỳ':'8 chu kỳ', xcua(m)+bw()/2, Y.bfsk-AMP-26, 11.5,
+          bits[m]?TEAL:MUT, 'center', true);
+    }
+  }
+  ketThuc();
+}
+
+var LOI = [
+ '<b>Bước 1.</b> Máy phát nhận một dãy bit. Cho tới lúc này nó mới chỉ là <i>con số</i>, chưa phải tín hiệu.',
+ '<b>Bước 2.</b> Mỗi bit thành một đoạn điện áp phẳng kéo dài trọn một chu kỳ bit. Có hai cách gán mức, và <i>chọn cách nào sẽ quyết định điều chế ra kiểu gì</i>.',
+ '<b>Bước 3.</b> Sóng mang là một hình sin không đổi. Tự nó <i>không chở tin</i>: nhìn vào không biết bit nào là bit nào.',
+ '<b>Bước 4.</b> Nhân từng điểm của NRZ với sóng mang. Dùng xᵤ ra <i>OOK</i>, sóng tắt hẳn ở bit 0. Dùng xₚ ra <i>BPSK</i>, biên độ không đổi mà pha lật 180°.',
+ '<b>Bước 5.</b> BFSK không đổi biên độ cũng không đổi pha, nó <i>đổi tần số</i>. Viết lại được thành tổng hai tín hiệu OOK trên hai sóng mang, bật tắt ngược nhau.'
+];
+function ketThuc(){ document.getElementById('st').innerHTML = LOI[Math.min(pha,4)]; }
+
+function khung(ts){
+  if(!lanCuoi) lanCuoi=ts;
+  var dt=Math.min((ts-lanCuoi)/1000, 0.05); lanCuoi=ts;
+  if(chayTiep){
+    u += dt*0.85;
+    if(u>=1){ if(pha<4){ pha++; u=0; } else { u=1; chayTiep=false; } }
+  }
+  if(bitSang>=0 && ts-tSang>900) bitSang=-1;
+  ve();
+  requestAnimationFrame(khung);
+}
+
+function datLai(){ pha=0; u=0; chayTiep=true; }
+
+document.getElementById('chay').onclick=function(){ datLai(); };
+document.getElementById('dung').onclick=function(){
+  chayTiep=!chayTiep; this.textContent = chayTiep? 'Tạm dừng':'Chạy tiếp';
+  if(!chayTiep && pha<4){ /* giu nguyen */ }
+};
+document.getElementById('ngau').onclick=function(){
+  for(var k=0;k<bits.length;k++) bits[k]=Math.random()<0.5?0:1;
+  pha=4; u=1; chayTiep=false;
+  document.getElementById('dung').textContent='Chạy tiếp';
+};
+document.getElementById('sb').oninput=function(){
+  nbit=+this.value; document.getElementById('vb').textContent=nbit;
+  bits=[]; for(var k=0;k<nbit;k++) bits.push(MAU[k%MAU.length]);
+};
+document.getElementById('tach').onchange=function(){ tachBfsk=this.checked; };
+
+cv.addEventListener('click', function(e){
+  var r=cv.getBoundingClientRect();
+  var x=(e.clientX-r.left)*(W/r.width);
+  var k=Math.floor((x-X0)/bw());
+  if(k>=0 && k<nbit){
+    bits[k]=bits[k]?0:1; bitSang=k; tSang=performance.now();
+    pha=4; u=1; chayTiep=false;
+    document.getElementById('dung').textContent='Chạy tiếp';
+  }
+});
+
+requestAnimationFrame(khung);
+})();
+</script>
+</body>
+</html>
