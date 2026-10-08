@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · 16-QAM: bốn bit thành một điểm</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mut:#5A6272;
+      --line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.5}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;
+  background:#fff;cursor:pointer;touch-action:none}
+.ctl{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:15px 0 0;
+  padding:13px 16px;background:var(--tint);border-radius:10px}
+.ctl label{font-size:14px;display:flex;align-items:center;gap:9px}
+.ctl input[type=range]{width:120px;accent-color:var(--acc)}
+.ctl b{font-variant-numeric:tabular-nums;color:var(--acc);min-width:22px;display:inline-block}
+.ctl button{border:1px solid var(--line);background:#fff;font:inherit;font-size:14.5px;
+  padding:8px 15px;border-radius:8px;cursor:pointer}
+.ctl button:hover{border-color:#B9C1CF}
+.ctl button.chinh{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+.state{margin-top:15px;padding:13px 16px;border-left:4px solid var(--teal);background:#F1F8F7;
+  font-size:16px;line-height:1.55;min-height:76px}
+.state b{color:var(--teal)}
+.state i{color:var(--acc);font-style:normal;font-weight:700}
+.note{margin-top:13px;padding:13px 16px;border-left:4px solid var(--acc);background:#FFF6F2;
+  font-size:14.5px;line-height:1.6}
+.note b{color:var(--acc)}
+.note ol{margin:7px 0 0;padding-left:20px}
+.note li{margin:4px 0}
+footer{padding:16px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13px;line-height:1.6}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · MẠNG KHÔNG DÂY</div>
+  <h1>16-QAM: bốn bit thành một điểm</h1>
+  <p>Bài thực hành, Phần 3. Bấm vào một điểm trên chòm sao để nhảy tới symbol mang nhãn đó.</p>
+</header>
+<a class="veml" href="index.html">Về mục lục bài thực hành</a>
+
+<main>
+  <p class="sub">Hai họ đã biết đều chỉ dùng một thuộc tính: ASK đổi biên độ, PSK đổi pha. 16-QAM
+  dùng cả hai cùng lúc, nên số tổ hợp là <b>tích</b> chứ không phải tổng: bốn mức cho nhánh I nhân
+  bốn mức cho nhánh Q là đủ mười sáu symbol. Mỗi symbol vì vậy chở <b>bốn bit</b>, và cả bài quy về
+  một việc: biến bốn bit thành một cặp số (I, Q), rồi biến cặp số ấy thành một đoạn sóng.</p>
+
+  <canvas id="cv" width="1180" height="800"></canvas>
+
+  <div class="ctl">
+    <button class="chinh" id="chay">Tạm dừng</button>
+    <button id="buoc">Symbol tiếp theo</button>
+    <button id="ngau">Đổi dãy bit</button>
+    <label>Chu kỳ sóng mang mỗi symbol <input id="ck" type="range" min="2" max="8" value="4"> <b id="vck">4</b></label>
+    <label><input id="tp" type="checkbox" checked> Hiện hai thành phần</label>
+  </div>
+
+  <div class="state" id="st"></div>
+
+  <div class="note">
+    <b>Bốn điều nên chỉ cho lớp thấy:</b>
+    <ol>
+      <li><b>Hai cặp bit làm hai việc độc lập nhau.</b> Hai bit đầu chọn mức cho nhánh I, hai bit
+          sau chọn mức cho nhánh Q. Đổi một bit ở nửa đầu thì điểm chạy ngang, đổi ở nửa sau thì
+          điểm chạy dọc. Đó là lý do mặt phẳng này có đúng hai trục.</li>
+      <li><b>Mã Gray không phải để cho đẹp.</b> Bấm thử hai điểm nằm cạnh nhau: nhãn của chúng chỉ
+          khác <i>đúng một bit</i>. Khi máy thu đọc nhầm sang điểm bên cạnh thì chỉ sai một bit chứ
+          không sai cả bốn. Thứ tự mức là 00, 01, 11, 10 chứ không phải 00, 01, 10, 11.</li>
+      <li><b>Dạng sóng không còn đọc được bằng mắt.</b> Với OOK thì nhìn là biết bit. Ở đây biên độ
+          và pha đều thay đổi cùng lúc, nên nhìn s(t) không suy ra được bốn bit. Phải quay về mặt
+          phẳng mới đọc được, và đó chính là lý do người ta vẽ chòm sao.</li>
+      <li><b>Bật ô "hiện hai thành phần".</b> s(t) là tổng của một sóng cosin và một sóng sin, hai
+          sóng cùng tần số nhưng lệch nhau 90°. Chính chỗ lệch 90° làm hai nhánh không trộn vào
+          nhau, nên máy thu tách lại được. Chữ <i>cầu phương</i> trong tên gọi là nói điều này.</li>
+    </ol>
+  </div>
+</main>
+
+<footer>INT3303 · Bài thực hành Phần 3. Ánh xạ Gray lấy đúng bảng của đề bài: cặp bit 00, 01, 11, 10
+ứng với biên độ −3, −1, +1, +3 vôn; hai bit đầu cho nhánh I, hai bit sau cho nhánh Q. Dạng sóng theo
+đúng biểu thức s(t) = I(t)·cos(2πf<sub>c</sub>t) − Q(t)·sin(2πf<sub>c</sub>t).
+<b>Một chỗ đã hạ xuống để nhìn được:</b> đề bài dùng f<sub>c</sub> = 10 kHz và R<sub>s</sub> = 250
+baud, tức <b>40 chu kỳ sóng mang trong một symbol</b>. Vẽ đúng tỉ lệ ấy thì sóng đặc kín không nhìn
+ra gì, nên hình này vẽ ít chu kỳ hơn, chỉnh được bằng thanh trượt. Mọi kết luận về biên độ, pha và
+mã Gray không phụ thuộc số chu kỳ. Khoảng cách nhỏ nhất giữa hai điểm là 2 V, năng lượng trung bình
+của chòm sao là 10, biên độ đỉnh là căn của 18, khoảng 4,24 V.</footer>
+
+<script>
+(function(){
+var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+var W=cv.width, H=cv.height;
+var INK='#1A1F36', ACC='#FF6B35', TEAL='#2A9D8F', PUR='#6C5CE7',
+    MUT='#5A6272', LINE='#E4E8EF', FADE='#DDE2EB', BLUE='#2E6FD9';
+
+// Bang anh xa Gray, lay dung tu de bai. Thu tu 00, 01, 11, 10 chu khong phai
+// thu tu dem nhi phan, do la diem cot loi cua ma Gray.
+var GRAY=[['00',-3],['01',-1],['11',1],['10',3]];
+function muc(b1,b2){ var k=''+b1+b2; for(var i=0;i<4;i++) if(GRAY[i][0]===k) return GRAY[i][1]; }
+
+var NSYM=4;                       // so symbol hien tren hinh
+var bits=[], ck=4, hienTP=true;
+var sym=0, u=0, chay=true, lanCuoi=0;
+
+function dayMoi(){
+  bits=[]; for(var i=0;i<NSYM*4;i++) bits.push(Math.random()<0.5?0:1);
+}
+function nhom(k){ return bits.slice(k*4,k*4+4); }
+function Icua(k){ var g=nhom(k); return muc(g[0],g[1]); }
+function Qcua(k){ var g=nhom(k); return muc(g[2],g[3]); }
+function nhan(k){ return nhom(k).join(''); }
+
+// ---------- ve co ban ----------
+function line(x1,y1,x2,y2,c,w,dash){ctx.save();if(dash)ctx.setLineDash(dash);
+  ctx.strokeStyle=c;ctx.lineWidth=w||1;ctx.beginPath();
+  ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();}
+function txt(s,x,y,size,c,align,bold){
+  ctx.fillStyle=c; ctx.textAlign=align||'left'; ctx.textBaseline='middle';
+  ctx.font=(bold?'700 ':'')+size+'px Calibri, Segoe UI, sans-serif';
+  ctx.fillText(s,x,y);}
+function hop(x,y,w,h,nen,vien,day){
+  ctx.save(); if(nen){ctx.fillStyle=nen;ctx.fillRect(x,y,w,h);}
+  ctx.strokeStyle=vien; ctx.lineWidth=day||1.2; ctx.strokeRect(x,y,w,h); ctx.restore();
+}
+
+// ---------- hinh hoc ----------
+var BY=78, BH=42;                       // hang bit
+var CX0=74, CY0=186, CS=316;            // chom sao, hinh vuong
+var GX=438, GY=214;                     // bang Gray
+var TX0=690, TX1=1140;                  // hai do thi I va Q
+var YI=244, YQ=374, TA=42;
+var SY=640, SA=74;                      // do thi s(t)
+var SX0=74, SX1=1140;
+
+function cx(I){ return CX0 + (I+4)/8*CS; }
+function cy(Q){ return CY0 + (4-Q)/8*CS; }
+
+function veChomSao(){
+  txt('Chòm sao 16-QAM', CX0, CY0-24, 17, INK, 'left', true);
+  hop(CX0, CY0, CS, CS, '#FCFDFE', LINE);
+  var mu=[-3,-1,1,3], i, j;
+  for(i=0;i<mu.length;i++){
+    line(cx(mu[i]), CY0, cx(mu[i]), CY0+CS, '#F0F2F6', 1);
+    line(CX0, cy(mu[i]), CX0+CS, cy(mu[i]), '#F0F2F6', 1);
+  }
+  line(cx(0), CY0, cx(0), CY0+CS, FADE, 1.4);
+  line(CX0, cy(0), CX0+CS, cy(0), FADE, 1.4);
+  txt('I', CX0+CS-6, cy(0)-14, 14, MUT, 'right', true);
+  txt('Q', cx(0)+12, CY0+10, 14, MUT, 'left', true);
+  for(i=0;i<4;i++){
+    txt(String(mu[i]), cx(mu[i]), cy(0)+16, 11.5, MUT, 'center');
+    txt(String(mu[i]), cx(0)-12, cy(mu[i]), 11.5, MUT, 'right');
+  }
+  var Ic=Icua(sym), Qc=Qcua(sym);
+  for(i=0;i<4;i++) for(j=0;j<4;j++){
+    var I=mu[i], Q=mu[j], la=(I===Ic&&Q===Qc);
+    ctx.save(); ctx.fillStyle = la?ACC:'#C3CAD6';
+    ctx.beginPath(); ctx.arc(cx(I), cy(Q), la?7:4.5, 0, 6.2832); ctx.fill(); ctx.restore();
+    txt(GRAY[i][0]+GRAY[j][0], cx(I), cy(Q)-16, la?12.5:11, la?ACC:'#98A2B3', 'center', la);
+  }
+  // vecto toi diem hien tai
+  var k=Math.min(u*2,1);
+  line(cx(0), cy(0), cx(0)+(cx(Ic)-cx(0))*k, cy(0)+(cy(Qc)-cy(0))*k, ACC, 2.2);
+  line(cx(Ic), cy(Qc), cx(Ic), cy(0), '#F6C3AC', 1.4, [4,4]);
+  line(cx(Ic), cy(Qc), cx(0), cy(Qc), '#F6C3AC', 1.4, [4,4]);
+}
+
+function veBangGray(){
+  txt('Bảng ánh xạ Gray', GX, GY-24, 17, INK, 'left', true);
+  var w=196, h=34, i, g=nhom(sym);
+  var kI=''+g[0]+g[1], kQ=''+g[2]+g[3];
+  hop(GX, GY, w, h, '#F7F8FA', LINE);
+  txt('cặp bit', GX+14, GY+h/2, 13.5, MUT, 'left', true);
+  txt('biên độ', GX+w-14, GY+h/2, 13.5, MUT, 'right', true);
+  for(i=0;i<4;i++){
+    var y=GY+h*(i+1), laI=(GRAY[i][0]===kI), laQ=(GRAY[i][0]===kQ);
+    var nen = laI&&laQ ? '#F3EEFB' : laI ? '#FFF6F2' : laQ ? '#F1F8F7' : '#fff';
+    hop(GX, y, w, h, nen, LINE);
+    txt(GRAY[i][0], GX+14, y+h/2, 15, laI||laQ?INK:MUT, 'left', true);
+    txt((GRAY[i][1]>0?'+':'')+GRAY[i][1]+' V', GX+w-14, y+h/2, 15, laI||laQ?INK:MUT, 'right', true);
+    if(laI) txt('I', GX+w+16, y+h/2, 15, ACC, 'left', true);
+    if(laQ) txt('Q', GX+w+(laI?34:16), y+h/2, 15, TEAL, 'left', true);
+  }
+  var yb=GY+h*5+22;
+  txt('bốn bit  ' + nhan(sym), GX, yb, 16, INK, 'left', true);
+  txt('I = ' + ((Icua(sym)>0?'+':'')+Icua(sym)) + ' V', GX, yb+28, 17, ACC, 'left', true);
+  txt('Q = ' + ((Qcua(sym)>0?'+':'')+Qcua(sym)) + ' V', GX+104, yb+28, 17, TEAL, 'left', true);
+}
+
+function veBac(y, lay, mau, ten){
+  txt(ten, TX0-10, y-TA-18, 14, mau, 'left', true);
+  line(TX0, y, TX1, y, FADE, 1);
+  var bw=(TX1-TX0)/NSYM, k;
+  for(k=0;k<=NSYM;k++) line(TX0+k*bw, y-TA-8, TX0+k*bw, y+TA+8, '#EEF1F6', 1, [3,4]);
+  for(k=-3;k<=3;k+=2) line(TX0, y-k/4*TA, TX1, y-k/4*TA, '#F4F6F9', 1);
+  ctx.save(); ctx.strokeStyle=mau; ctx.lineWidth=2.4; ctx.beginPath();
+  var dau=true;
+  for(k=0;k<NSYM;k++){
+    if(k>sym) break;
+    var ph=(k<sym)?1:u, yy=y-lay(k)/4*TA;
+    var xa=TX0+k*bw, xb=TX0+(k+ph)*bw;
+    if(dau){ ctx.moveTo(xa,yy); dau=false; } else ctx.lineTo(xa,yy);
+    ctx.lineTo(xb,yy);
+  }
+  ctx.stroke(); ctx.restore();
+}
+
+function song(k, ph, thanhPhan){
+  // ph chay tu 0 toi 1 trong symbol thu k; tra ve gia tri tai do
+  // Chia cho can 18, la bien do dinh cua chom sao nay, de khong tran khung.
+  var g=2*Math.PI*ck*(k+ph), DINH=Math.sqrt(18);
+  if(thanhPhan===1) return Icua(k)*Math.cos(g)/DINH;
+  if(thanhPhan===2) return -Qcua(k)*Math.sin(g)/DINH;
+  return (Icua(k)*Math.cos(g) - Qcua(k)*Math.sin(g))/DINH;
+}
+function veSong(){
+  txt('s(t) = I(t)·cos(2πfct) − Q(t)·sin(2πfct)', SX0, SY-SA-26, 16, INK, 'left', true);
+  line(SX0, SY, SX1, SY, FADE, 1);
+  var bw=(SX1-SX0)/NSYM, k, p;
+  for(k=0;k<=NSYM;k++) line(SX0+k*bw, SY-SA-10, SX0+k*bw, SY+SA+10, '#EEF1F6', 1, [3,4]);
+  for(k=0;k<NSYM;k++){
+    if(k<=sym) txt(nhan(k), SX0+k*bw+bw/2, SY+SA+20, 13, k===sym?ACC:'#98A2B3', 'center', true);
+  }
+  var tp=[[1,'#F6C3AC'],[2,'#9AD6CE']];
+  if(hienTP) for(var i=0;i<2;i++){
+    ctx.save(); ctx.strokeStyle=tp[i][1]; ctx.lineWidth=1.5; ctx.beginPath();
+    var dau=true;
+    for(k=0;k<=sym;k++){
+      var het=(k<sym)?1:u, n=Math.max(1,Math.round(bw*het));
+      for(p=0;p<=n;p++){
+        var ph=p/Math.max(bw,1), x=SX0+(k+Math.min(ph,het))*bw;
+        var yy=SY-song(k,Math.min(ph,het),tp[i][0])*SA;
+        if(dau){ ctx.moveTo(x,yy); dau=false; } else ctx.lineTo(x,yy);
+      }
+    }
+    ctx.stroke(); ctx.restore();
+  }
+  ctx.save(); ctx.strokeStyle=PUR; ctx.lineWidth=2.1; ctx.beginPath();
+  var dau2=true;
+  for(k=0;k<=sym;k++){
+    var het2=(k<sym)?1:u, n2=Math.max(1,Math.round(bw*het2));
+    for(p=0;p<=n2;p++){
+      var ph2=p/Math.max(bw,1), x2=SX0+(k+Math.min(ph2,het2))*bw;
+      var y2=SY-song(k,Math.min(ph2,het2),0)*SA;
+      if(dau2){ ctx.moveTo(x2,y2); dau2=false; } else ctx.lineTo(x2,y2);
+    }
+  }
+  ctx.stroke(); ctx.restore();
+  if(hienTP){
+    txt('I(t)·cos', SX1, SY+SA+42, 12.5, ACC, 'right', true);
+    txt('−Q(t)·sin', SX1-74, SY+SA+42, 12.5, TEAL, 'right', true);
+    txt('tổng', SX1-162, SY+SA+42, 12.5, PUR, 'right', true);
+  }
+}
+
+function veBits(){
+  txt('Dãy bit, cắt thành từng nhóm bốn bit', 74, BY-34, 15, INK, 'left', true);
+  var n=NSYM*4, w=(1140-74)/n, i;
+  for(i=0;i<n;i++){
+    var k=(i/4)|0, la=(k===sym), x=74+i*w;
+    hop(x+1.5, BY, w-3, BH, la?'#FFF6F2':(bits[i]?'#EAF2FF':'#F7F8FA'),
+        la?ACC:LINE, la?2.2:1);
+    txt(String(bits[i]), x+w/2, BY+BH/2, 19, bits[i]?BLUE:MUT, 'center', true);
+  }
+  for(i=0;i<NSYM;i++){
+    var xa=74+i*4*w;
+    if(i>0) line(xa, BY-8, xa, BY+BH+8, MUT, 1.6);
+    txt('symbol '+(i+1), xa+2*w, BY+BH+17, 12.5, i===sym?ACC:MUT, 'center', i===sym);
+  }
+  var g=74+sym*4*w;
+  txt('I', g+0.5*w, BY-12, 13, ACC,  'center', true);
+  txt('I', g+1.5*w, BY-12, 13, ACC,  'center', true);
+  txt('Q', g+2.5*w, BY-12, 13, TEAL, 'center', true);
+  txt('Q', g+3.5*w, BY-12, 13, TEAL, 'center', true);
+}
+
+function ve(){
+  ctx.clearRect(0,0,W,H);
+  veBits();
+  veChomSao();
+  veBangGray();
+  veBac(YI, Icua, ACC, 'I(t)');
+  veBac(YQ, Qcua, TEAL, 'Q(t)');
+  veSong();
+  var g=nhom(sym);
+  document.getElementById('st').innerHTML =
+    '<b>Symbol '+(sym+1)+', bốn bit '+nhan(sym)+'.</b> Hai bit đầu <i>'+g[0]+g[1]+
+    '</i> tra bảng Gray ra <i>I = '+(Icua(sym)>0?'+':'')+Icua(sym)+' V</i>, hai bit sau <i>'+
+    g[2]+g[3]+'</i> ra <i>Q = '+(Qcua(sym)>0?'+':'')+Qcua(sym)+' V</i>. Cặp số ấy định ra một điểm '+
+    'trên mặt phẳng, và đoạn sóng phát đi trong khoảng symbol này là tổng của hai sóng lệch nhau 90°.';
+}
+
+// ---------- dieu khien ----------
+function khung(ts){
+  if(!lanCuoi) lanCuoi=ts;
+  var dt=Math.min((ts-lanCuoi)/1000, 0.05); lanCuoi=ts;
+  if(chay){
+    u+=dt*0.65;
+    if(u>=1){ u=0; sym=(sym+1)%NSYM; if(sym===0) dayMoi(); }
+  }
+  ve(); requestAnimationFrame(khung);
+}
+document.getElementById('chay').onclick=function(){
+  chay=!chay; this.textContent = chay?'Tạm dừng':'Chạy tiếp'; };
+document.getElementById('buoc').onclick=function(){
+  u=1; sym=(sym+1)%NSYM; u=1; chay=false;
+  document.getElementById('chay').textContent='Chạy tiếp'; };
+document.getElementById('ngau').onclick=function(){ dayMoi(); sym=0; u=1; };
+document.getElementById('ck').oninput=function(){
+  ck=+this.value; document.getElementById('vck').textContent=ck; };
+document.getElementById('tp').onchange=function(){ hienTP=this.checked; };
+
+// Bam vao mot diem tren chom sao thi doi bon bit cua symbol dang xet thanh
+// nhan cua diem do, de so sanh hai diem ke nhau khac nhau may bit.
+cv.addEventListener('click', function(e){
+  var r=cv.getBoundingClientRect();
+  var x=(e.clientX-r.left)*(W/r.width), y=(e.clientY-r.top)*(H/r.height);
+  if(x<CX0-10||x>CX0+CS+10||y<CY0-10||y>CY0+CS+10) return;
+  var mu=[-3,-1,1,3], tot=null, dmin=1e9, i, j;
+  for(i=0;i<4;i++) for(j=0;j<4;j++){
+    var dx=x-cx(mu[i]), dy=y-cy(mu[j]), d=dx*dx+dy*dy;
+    if(d<dmin){ dmin=d; tot=[i,j]; }
+  }
+  if(tot && dmin<900){
+    var la=GRAY[tot[0]][0]+GRAY[tot[1]][0];
+    for(i=0;i<4;i++) bits[sym*4+i]=+la[i];
+    u=1; chay=false;
+    document.getElementById('chay').textContent='Chạy tiếp';
+  }
+});
+
+dayMoi(); requestAnimationFrame(khung);
+})();
+</script>
+</body>
+</html>

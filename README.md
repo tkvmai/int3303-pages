@@ -44,6 +44,11 @@ buoi02/chenh-lech-giua-hai-cho.html        chênh lệch theo không gian và bi
 buoi02/vi-sao-song-tu-lan-ra-xa.html       vì sao sóng tự duy trì khi đi xa
 buoi02/ba-cach-bien-doi-song-mang.html     ASK, FSK, PSK trên cùng một dãy bit, dùng ở Tiết 2
 buoi02/chom-sao-va-mat-phang-iq.html       chòm sao BPSK, QPSK, 4-ASK, 16-QAM, dùng ở Tiết 3
+
+lab/index.html                             mục lục riêng cho các bài thực hành
+lab/tu-day-bit-toi-tin-hieu-dieu-che.html  Phần 1, dãy bit thành NRZ rồi thành OOK, BPSK, BFSK
+lab/pho-bien-do-va-bang-thong.html         Phần 2, phổ biên độ và phép đo băng thông búp chính
+lab/dieu-che-16-qam.html                   Phần 3, bốn bit thành một điểm trên chòm sao
 ```
 
 Mỗi file HTML là một trang độc lập, đã nhúng sẵn toàn bộ CSS và JavaScript bên trong,
