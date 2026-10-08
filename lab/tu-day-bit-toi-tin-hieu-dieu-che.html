@@ -228,7 +228,10 @@ function ve(){
   trucThoiGian(Y.xu,false);
   line(X0,Y.xu-AMP,X1,Y.xu-AMP,'#F0F2F6',1);
   txt('+1', X1+6, Y.xu-AMP, 12, MUT); txt('0', X1+6, Y.xu, 12, MUT);
-  veBac(Y.xu, function(t){return 2*xu(t)-1;}, ACC, denN);
+  // Ve DUNG gia tri 0 va 1, khong keo gian ra +-1. Muc 0 phai nam ngay tren
+  // truc. Ban dau em ve 2*xu-1 cho day chieu cao hang, lam no thanh ra giong
+  // het xp, tuc la mau thuan voi chinh ghi chu "xu co trung binh khac khong".
+  veBac(Y.xu, xu, ACC, denN);
 
   if(pha<2 && u<1){ ketThuc(); return; }
 
