@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Bài thực hành</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--mut:#5A6272;
+      --line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:5px 0 0;font-family:Cambria,Georgia,serif;font-size:30px;font-weight:700}
+header p{margin:7px 0 0;font-size:15px;color:#AEB8CE;max-width:720px;line-height:1.5}
+main{padding:26px;max-width:960px;margin:0 auto}
+h2{font-family:Cambria,Georgia,serif;font-size:21px;margin:26px 0 12px;
+   padding-bottom:7px;border-bottom:1px solid var(--line)}
+h2:first-child{margin-top:0}
+p.dan{color:var(--mut);font-size:14.5px;line-height:1.55;margin:0 0 14px}
+.card{display:block;text-decoration:none;color:inherit;border:1px solid var(--line);
+  border-radius:10px;padding:15px 18px;margin-bottom:11px;transition:border-color .15s}
+.card:hover{border-color:var(--acc)}
+.card b{font-size:17px;display:block;margin-bottom:4px}
+.card span{font-size:14.5px;color:var(--mut);line-height:1.5}
+.soon{border-style:dashed;color:var(--mut);cursor:default}
+.soon:hover{border-color:var(--line)}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+footer{padding:20px 26px;border-top:1px solid var(--line);color:var(--mut);
+  font-size:13.5px;line-height:1.6}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · MẠNG KHÔNG DÂY</div>
+  <h1>Bài thực hành</h1>
+  <p>Các mô phỏng dùng kèm bài thực hành MATLAB. Mỗi trang dựng lại một bước của bài
+  bằng hình động, để hình dung trước khi ngồi viết code.</p>
+</header>
+<a class="veml" href="../index.html">Về mục lục mô phỏng INT3303</a>
+
+<main>
+  <h2>Bài 1. Điều chế số và ghép kênh FDM</h2>
+  <p class="dan">Bài làm cá nhân, ba tiết, chỉ dùng MATLAB cơ bản. Bốn phần: tín hiệu băng gốc
+  và điều chế nhị phân, phổ biên độ, 16-QAM, rồi ghép kênh theo tần số.</p>
+
+  <a class="card" href="tu-day-bit-toi-tin-hieu-dieu-che.html">
+    <b>Phần 1. Từ dãy bit tới tín hiệu điều chế</b>
+    <span>Dựng lại từng bước: dãy bit thành hai tín hiệu NRZ, rồi nhân với sóng mang để ra OOK và
+    BPSK. BFSK không phải một phép nhân, nhưng tách được thành tổng của hai tín hiệu OOK trên hai
+    sóng mang bật tắt ngược nhau. Bấm vào một ô bit để đổi giá trị.</span>
+  </a>
+
+  <div class="card soon">
+    <b>Phần 2. Phổ biên độ</b>
+    <span>Đang dựng.</span>
+  </div>
+
+  <div class="card soon">
+    <b>Phần 3. Điều chế 16-QAM</b>
+    <span>Đang dựng.</span>
+  </div>
+
+  <div class="card soon">
+    <b>Phần 4. Ghép kênh theo tần số</b>
+    <span>Đang dựng.</span>
+  </div>
+</main>
+
+<footer>
+  Trần Trúc Mai, Trường Đại học Công nghệ, Đại học Quốc gia Hà Nội.<br>
+  Các mô phỏng ở đây vẽ đúng bộ tham số của bài thực hành: R<sub>b</sub> = 1000 bit/s,
+  f<sub>c</sub> = 10 kHz, f<sub>0</sub> = 8 kHz, f<sub>1</sub> = 12 kHz.
+</footer>
+</body>
+</html>
