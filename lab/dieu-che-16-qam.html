@@ -67,6 +67,21 @@ a.veml:hover{color:#FF6B35}
 
   <div class="state" id="st"></div>
 
+
+  <p class="sub" style="margin-top:26px">Bước 7 của đề bài: vẽ phổ của s(t) trong dải 8 tới 12 kHz
+  rồi đo búp chính. Đây cũng là chỗ trả lời câu hỏi 3, nên phổ của <b>BPSK ở cùng tốc độ bit</b>
+  được vẽ chồng lên để so trực tiếp.</p>
+
+  <canvas id="cp" width="1180" height="420"></canvas>
+
+  <div class="ctl">
+    <button id="dop">Đo lại búp chính</button>
+    <label><input id="sosanh" type="checkbox" checked> So với BPSK cùng Rb</label>
+    <label>Trung bình <input id="tbp" type="range" min="1" max="20" value="5"> <b id="vtbp">5</b> lần</label>
+  </div>
+
+  <div class="state" id="stp"></div>
+
   <div class="note">
     <b>Bốn điều nên chỉ cho lớp thấy:</b>
     <ol>
@@ -82,6 +97,10 @@ a.veml:hover{color:#FF6B35}
       <li><b>Bật ô "hiện hai thành phần".</b> s(t) là tổng của một sóng cosin và một sóng sin, hai
           sóng cùng tần số nhưng lệch nhau 90°. Chính chỗ lệch 90° làm hai nhánh không trộn vào
           nhau, nên máy thu tách lại được. Chữ <i>cầu phương</i> trong tên gọi là nói điều này.</li>
+      <li><b>So hai búp chính ở khung phổ dưới.</b> Cùng chở 1000 bit mỗi giây, nhưng 16-QAM chỉ
+          chiếm <i>500 Hz</i> còn BPSK chiếm <i>2000 Hz</i>, tức <b>bằng một phần tư</b>. Lý do nằm
+          ở tốc độ symbol: 16-QAM gửi bốn bit mỗi symbol nên chỉ cần 250 symbol mỗi giây, mà bề
+          rộng búp chính phụ thuộc tốc độ <i>symbol</i> chứ không phụ thuộc tốc độ bit.</li>
     </ol>
   </div>
 </main>
@@ -93,7 +112,13 @@ a.veml:hover{color:#FF6B35}
 baud, tức <b>40 chu kỳ sóng mang trong một symbol</b>. Vẽ đúng tỉ lệ ấy thì sóng đặc kín không nhìn
 ra gì, nên hình này vẽ ít chu kỳ hơn, chỉnh được bằng thanh trượt. Mọi kết luận về biên độ, pha và
 mã Gray không phụ thuộc số chu kỳ. Khoảng cách nhỏ nhất giữa hai điểm là 2 V, năng lượng trung bình
-của chòm sao là 10, biên độ đỉnh là căn của 18, khoảng 4,24 V.</footer>
+của chòm sao là 10, biên độ đỉnh là căn của 18, khoảng 4,24 V.
+<b>Khung phổ ở dưới</b> tính trên 128 symbol với 128 điểm mỗi symbol, tức 16384 mẫu và tần số
+lấy mẫu 32 kHz, thay cho 1000 symbol và 100 kHz của đề bài. Chọn như vậy để độ dài là luỹ thừa
+của hai và để f<sub>c</sub>, R<sub>s</sub>, R<sub>b</sub> cùng các điểm không đều rơi đúng vào
+một vạch của phép biến đổi. Vị trí điểm không vì thế là số không tuyệt đối, và không phụ thuộc
+hai lựa chọn này. Đường BPSK vẽ để so dùng dãy bit cân bằng, cùng tốc độ bit 1000 bit/s và cùng
+f<sub>c</sub>.</footer>
 
 <script>
 (function(){
@@ -340,6 +365,162 @@ cv.addEventListener('click', function(e){
 
 dayMoi(); requestAnimationFrame(khung);
 })();
+
+// ====================================================================
+// Khung pho cua buoc 7. Doc lap han voi phan tren, co bo FFT rieng.
+// Tham so chon sao cho do dai la luy thua cua 2 va MOI tan so roi dung
+// vach: Ns = 128 mau moi symbol, 128 symbol, nen L = 16384 va Fs = 32 kHz.
+// Nho vay cac diem khong la so khong tuyet doi chu khong phai gan dung.
+// ====================================================================
+(function(){
+var cv=document.getElementById('cp'); if(!cv) return;
+var ctx=cv.getContext('2d'), W=cv.width, H=cv.height;
+var INK='#1A1F36', ACC='#FF6B35', TEAL='#2A9D8F', PUR='#6C5CE7',
+    MUT='#5A6272', LINE='#E4E8EF', FADE='#DDE2EB';
+
+var Rs=250, Rb=1000, fc=10000, Ns=128, NSYM=128;
+var L=Ns*NSYM, Fs=Rs*Ns, dt=1/Fs, df=Fs/L, SAN=-60;
+var GRAY2=[['00',-3],['01',-1],['11',1],['10',3]];
+function muc2(a,b){ var k=''+a+b; for(var i=0;i<4;i++) if(GRAY2[i][0]===k) return GRAY2[i][1]; }
+
+function fft(re, im){
+  var n=re.length, i, j=0, k, m, t;
+  for(i=0;i<n-1;i++){
+    if(i<j){ t=re[i];re[i]=re[j];re[j]=t; t=im[i];im[i]=im[j];im[j]=t; }
+    k=n>>1; while(k<=j){ j-=k; k>>=1; } j+=k;
+  }
+  for(m=1;m<n;m<<=1){
+    var step=m<<1, th=-Math.PI/m;
+    for(k=0;k<m;k++){
+      var wr=Math.cos(th*k), wi=Math.sin(th*k);
+      for(i=k;i<n;i+=step){
+        j=i+m;
+        var tr=wr*re[j]-wi*im[j], ti=wr*im[j]+wi*re[j];
+        re[j]=re[i]-tr; im[j]=im[i]-ti; re[i]+=tr; im[i]+=ti;
+      }
+    }
+  }
+}
+function phoCua(x){
+  var re=new Float64Array(L), im=new Float64Array(L), i, half=L/2+1;
+  re.set(x); fft(re,im);
+  var A=new Float64Array(half);
+  for(i=0;i<half;i++){ A[i]=Math.sqrt(re[i]*re[i]+im[i]*im[i])/L; if(i>0&&i<half-1) A[i]*=2; }
+  return A;
+}
+function sinhQam(){
+  var x=new Float64Array(L), k, n;
+  for(k=0;k<NSYM;k++){
+    var b=[0,0,0,0]; for(n=0;n<4;n++) b[n]=Math.random()<0.5?0:1;
+    var I=muc2(b[0],b[1]), Q=muc2(b[2],b[3]);
+    for(n=0;n<Ns;n++){
+      var idx=k*Ns+n, ang=2*Math.PI*fc*idx*dt;
+      x[idx]=I*Math.cos(ang)-Q*Math.sin(ang);
+    }
+  }
+  return x;
+}
+function sinhBpsk(){
+  // Cung thoi luong, cung toc do bit, day bit can bang de khong co vach du tai fc.
+  var nb=Math.round(Rb/Rs*NSYM), spb=L/nb, b=new Array(nb), i, j, tm;
+  for(i=0;i<nb;i++) b[i]=i%2;
+  for(i=nb-1;i>0;i--){ j=Math.floor(Math.random()*(i+1)); tm=b[i]; b[i]=b[j]; b[j]=tm; }
+  var x=new Float64Array(L);
+  for(i=0;i<L;i++) x[i]=(b[(i/spb)|0]?1:-1)*Math.cos(2*Math.PI*fc*i*dt);
+  return x;
+}
+function trungBinh(sinh, M){
+  var half=L/2+1, P=new Float64Array(half), m, i;
+  for(m=0;m<M;m++){ var A=phoCua(sinh()); for(i=0;i<half;i++) P[i]+=A[i]*A[i]; }
+  var A2=new Float64Array(half), mx=0;
+  for(i=0;i<half;i++){ A2[i]=Math.sqrt(P[i]/M); if(A2[i]>mx) mx=A2[i]; }
+  var dB=new Float64Array(half);
+  for(i=0;i<half;i++) dB[i]=20*Math.log10(A2[i]/mx+1e-300);
+  return dB;
+}
+
+var M2=5, soSanh=true, dQ=null, dB2=null, buoc=0, uu=0, truoc2=0;
+var FA=8000, FB=12000;
+var PX0=150, PX1=1122, PY0=70, PY1=330;
+function gx(f){ return PX0+(f-FA)/(FB-FA)*(PX1-PX0); }
+function gy(d){ return PY0+(-Math.max(d,SAN))/(-SAN)*(PY1-PY0); }
+function ln(x1,y1,x2,y2,c,w,dash){ctx.save();if(dash)ctx.setLineDash(dash);ctx.strokeStyle=c;
+  ctx.lineWidth=w||1;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();}
+function tx(s,x,y,sz,c,al,bo){ctx.fillStyle=c;ctx.textAlign=al||'left';ctx.textBaseline='middle';
+  ctx.font=(bo?'700 ':'')+sz+'px Calibri, Segoe UI, sans-serif';ctx.fillText(s,x,y);}
+
+function veDuong(dB, mau, day, dash){
+  ctx.save(); if(dash) ctx.setLineDash(dash);
+  ctx.strokeStyle=mau; ctx.lineWidth=day; ctx.beginPath();
+  var i0=Math.round(FA/df), i1=Math.round(FB/df), dau=true;
+  for(var i=i0;i<=i1;i++){
+    var x=gx(i*df), y=gy(dB[i]);
+    if(dau){ctx.moveTo(x,y);dau=false;} else ctx.lineTo(x,y);
+  }
+  ctx.stroke(); ctx.restore();
+}
+function veBang(lo,hi,mau,nhan,yo,k){
+  var a=fc+(lo-fc)*k, b=fc+(hi-fc)*k;
+  ctx.save(); ctx.fillStyle=mau.replace('rgb','rgba').replace(')',',0.10)');
+  ctx.fillRect(gx(a),PY0,gx(b)-gx(a),PY1-PY0); ctx.restore();
+  ln(gx(a),PY0,gx(a),PY1,mau,1.6); ln(gx(b),PY0,gx(b),PY1,mau,1.6);
+  if(k>=1){
+    var xm=(gx(lo)+gx(hi))/2;
+    ctx.save(); ctx.fillStyle='#fff'; ctx.strokeStyle=mau; ctx.lineWidth=1.4;
+    ctx.fillRect(xm-92,yo,184,26); ctx.strokeRect(xm-92,yo,184,26); ctx.restore();
+    tx(nhan+' '+Math.round(hi-lo)+' Hz', xm, yo+13, 13.5, mau, 'center', true);
+    tx(Math.round(lo)+' Hz', gx(lo), PY1+36, 12.5, mau, 'center', true);
+    tx(Math.round(hi)+' Hz', gx(hi), PY1+36, 12.5, mau, 'center', true);
+  }
+}
+function vePho(){
+  ctx.clearRect(0,0,W,H);
+  ctx.save(); ctx.fillStyle='#FCFDFE'; ctx.fillRect(PX0,PY0,PX1-PX0,PY1-PY0); ctx.restore();
+  for(var d=0;d>=SAN;d-=10){ var y=gy(d); ln(PX0,y,PX1,y,d===0?FADE:'#F0F2F6',1);
+    tx(d+' dB',PX0-10,y,12.5,MUT,'right'); }
+  for(var f=FA;f<=FB;f+=500){ var x=gx(f); ln(x,PY0,x,PY1,'#F0F2F6',1);
+    tx((f/1000).toFixed(1),x,PY1+18,12.5,MUT,'center'); }
+  ctx.save(); ctx.strokeStyle=LINE; ctx.lineWidth=1.2; ctx.strokeRect(PX0,PY0,PX1-PX0,PY1-PY0); ctx.restore();
+  tx('Phổ của s(t), dải 8 tới 12 kHz', PX0, PY0-26, 17, INK, 'left', true);
+  tx('trung bình '+M2+' lần', PX1, PY0-26, 13, MUT, 'right');
+  tx('tần số, kHz', PX1, PY1+56, 13, MUT, 'right');
+
+  var k=(buoc===2)?1:uu;
+  if(soSanh && dB2){
+    veDuong(dB2, '#9AA4B2', 1.6, [5,4]);
+    if(buoc>0) veBang(fc-Rb, fc+Rb, 'rgb(122,132,148)', 'BPSK', PY0+42, k);
+  }
+  veDuong(dQ, PUR, 1.4);
+  if(buoc>0) veBang(fc-Rs, fc+Rs, 'rgb(108,92,231)', '16-QAM', PY0+10, k);
+  tx('16-QAM', PX1-14, PY0+16, 13, PUR, 'right', true);
+  if(soSanh) tx('BPSK cùng Rb', PX1-14, PY0+34, 13, '#7A8494', 'right', true);
+}
+function loi(){
+  document.getElementById('stp').innerHTML =
+    '<b>Búp chính của 16-QAM rộng 500 Hz, của BPSK rộng 2000 Hz, tức bằng một phần tư.</b> '+
+    'Hai tín hiệu chở cùng 1000 bit mỗi giây. Bề rộng búp chính bằng hai lần tốc độ <i>symbol</i>, '+
+    'mà 16-QAM chở bốn bit mỗi symbol nên chỉ cần 250 symbol mỗi giây. '+
+    'Hiệu suất phổ vì vậy là <i>2 bit/s/Hz</i> cho 16-QAM và <i>0,5 bit/s/Hz</i> cho BPSK. '+
+    'Cả hai đều không có vạch tại fc, vì mức của I, Q và của xₚ đều có trung bình bằng không.';
+}
+function tinhLai2(){
+  dQ=trungBinh(sinhQam, M2);
+  dB2=trungBinh(sinhBpsk, M2);
+  buoc=1; uu=0; loi();
+}
+document.getElementById('dop').onclick=function(){ buoc=1; uu=0; };
+document.getElementById('sosanh').onchange=function(){ soSanh=this.checked; };
+document.getElementById('tbp').oninput=function(){
+  M2=+this.value; document.getElementById('vtbp').textContent=M2; tinhLai2(); };
+
+function khung2(ts){
+  var d=Math.min((ts-truoc2)/1000,0.05); truoc2=ts;
+  if(buoc===1){ uu+=d*0.9; if(uu>=1){ uu=1; buoc=2; } }
+  vePho(); requestAnimationFrame(khung2);
+}
+tinhLai2(); requestAnimationFrame(khung2);
+})();
+
 </script>
 </body>
 </html>
