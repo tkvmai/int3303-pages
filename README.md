@@ -49,6 +49,7 @@ lab/index.html                             mục lục riêng cho các bài th�
 lab/tu-day-bit-toi-tin-hieu-dieu-che.html  Phần 1, dãy bit thành NRZ rồi thành OOK, BPSK, BFSK
 lab/pho-bien-do-va-bang-thong.html         Phần 2, phổ biên độ và phép đo băng thông búp chính
 lab/dieu-che-16-qam.html                   Phần 3, bốn bit thành một điểm trên chòm sao
+lab/ghep-kenh-theo-tan-so.html             Phần 4, ba kênh 16-QAM ghép trên một đường truyền
 ```
 
 Mỗi file HTML là một trang độc lập, đã nhúng sẵn toàn bộ CSS và JavaScript bên trong,

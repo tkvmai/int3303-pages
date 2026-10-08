@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Ghép ba kênh 16-QAM theo tần số</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mut:#5A6272;
+      --line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;--do:#D7263D;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.5}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;
+  background:#fff;touch-action:none}
+.ctl{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:15px 0 0;
+  padding:13px 16px;background:var(--tint);border-radius:10px}
+.ctl label{font-size:14px;display:flex;align-items:center;gap:9px}
+.ctl input[type=range]{width:200px;accent-color:var(--acc)}
+.ctl b{font-variant-numeric:tabular-nums;color:var(--acc);min-width:52px;display:inline-block}
+.ctl button{border:1px solid var(--line);background:#fff;font:inherit;font-size:14.5px;
+  padding:8px 15px;border-radius:8px;cursor:pointer}
+.ctl button:hover{border-color:#B9C1CF}
+.state{margin-top:15px;padding:13px 16px;border-left:4px solid var(--teal);background:#F1F8F7;
+  font-size:16px;line-height:1.55;min-height:76px}
+.state b{color:var(--teal)}
+.state i{color:var(--acc);font-style:normal;font-weight:700}
+.state u{color:var(--do);text-decoration:none;font-weight:700}
+.note{margin-top:13px;padding:13px 16px;border-left:4px solid var(--acc);background:#FFF6F2;
+  font-size:14.5px;line-height:1.6}
+.note b{color:var(--acc)}
+.note ol{margin:7px 0 0;padding-left:20px}
+.note li{margin:4px 0}
+footer{padding:16px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13px;line-height:1.6}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · MẠNG KHÔNG DÂY</div>
+  <h1>Ghép ba kênh 16-QAM theo tần số</h1>
+  <p>Bài thực hành, Phần 4. Kéo thanh khoảng cách sóng mang để thấy ba búp chạy lại gần nhau.</p>
+</header>
+<a class="veml" href="index.html">Về mục lục bài thực hành</a>
+
+<main>
+  <p class="sub">Ba nguồn tin độc lập, mỗi nguồn một dãy bit riêng, cùng điều chế 16-QAM nhưng đặt
+  lên ba sóng mang khác nhau, rồi <b>cộng thẳng vào nhau</b> thành một tín hiệu duy nhất. Nhìn theo
+  thời gian thì tín hiệu tổng là một mớ không đọc được. Nhìn theo tần số mới thấy ba kênh vẫn nằm
+  riêng, với điều kiện đặt chúng đủ xa nhau. Đề bài cho hai trường hợp, và cả hai đều là
+  10 kHz cộng trừ một khoảng cách, nên chỉ cần một thanh trượt là chạy qua được cả hai.</p>
+
+  <canvas id="ct" width="1180" height="620"></canvas>
+
+  <div class="ctl">
+    <label>Khoảng cách sóng mang
+      <input id="kc" type="range" min="150" max="2500" step="50" value="2000"> <b id="vkc">2000 Hz</b></label>
+    <button id="p1">8 / 10 / 12 kHz</button>
+    <button id="p2">9,6 / 10 / 10,4 kHz</button>
+    <label><input id="zoom" type="checkbox"> Phóng to dải 9 tới 11 kHz</label>
+    <label>Trung bình <input id="tb" type="range" min="1" max="20" value="5" style="width:110px"> <b id="vtb" style="min-width:22px">5</b></label>
+  </div>
+
+  <canvas id="cp" width="1180" height="430"></canvas>
+
+  <div class="state" id="st"></div>
+
+  <div class="note">
+    <b>Bốn điều nên chỉ cho lớp thấy:</b>
+    <ol>
+      <li><b>Hàng cuối không đọc được, và đó là điều bình thường.</b> Tín hiệu tổng không giống bất
+          kỳ kênh nào trong ba kênh. Không có cơ chế nào giữ ba kênh tách ra cả, chúng cộng thẳng
+          vào nhau. Thứ duy nhất giữ chúng riêng biệt là <i>chúng chiếm những dải tần không chồng
+          lên nhau</i>, và điều đó chỉ nhìn thấy ở khung phổ.</li>
+      <li><b>Kéo thanh trượt từ 2000 Hz xuống.</b> Ba búp chạy lại gần nhau. Tới <i>500 Hz</i> thì
+          hai búp kề nhau vừa chạm, và dưới mức ấy chúng chồng lên nhau, vùng chồng tô đỏ. Con số
+          500 Hz không phải chọn tuỳ tiện: búp chính rộng 2R<sub>s</sub>, nên hai búp cách nhau đúng
+          2R<sub>s</sub> là vừa hết chạm.</li>
+      <li><b>Nhìn con số phần trăm năng lượng lấn sang.</b> Nó đo trong dải của kênh giữa, phần
+          năng lượng do hai kênh bên gây ra so với phần của chính kênh giữa. Ở 2000 Hz con số ấy
+          chỉ khoảng <i>0,4 phần trăm</i>; ở 500 Hz là <i>7 phần trăm</i>; kéo xuống 400 Hz theo
+          đúng đề bài thì lên <i>14 phần trăm</i>. Đó là cách đo bằng số, thay vì chỉ nói "trông
+          có vẻ chồng".</li>
+      <li><b>Ngay cả khi tách rời, búp phụ vẫn rơi vào kênh bên cạnh.</b> Đặt khoảng cách về 2000 Hz
+          rồi nhìn kỹ chân các búp: chúng không về không mà kéo dài sang hai bên. Xung chữ nhật có
+          đuôi phổ tắt rất chậm. Muốn dọn chỗ ấy thì phải đổi dạng xung, và đó chính là phần mở rộng
+          thứ hai của đề bài.</li>
+    </ol>
+  </div>
+</main>
+
+<footer>INT3303 · Bài thực hành Phần 4. Ba kênh dùng ba dãy bit độc lập, cùng ánh xạ Gray và cùng
+biểu thức như Phần 3, chỉ khác sóng mang. Tín hiệu ghép là tổng số học của ba kênh.
+<b>Tham số khung phổ:</b> 128 symbol, 128 điểm mỗi symbol, tức 16384 mẫu và tần số lấy mẫu 32 kHz,
+thay cho 1000 symbol và 100 kHz của đề bài, để độ dài là luỹ thừa của hai.
+<b>Một chỗ cần biết khi đọc hình:</b> các điểm không của phổ là số không tuyệt đối chỉ khi khoảng
+cách sóng mang là bội của 62,5 Hz, vì khi ấy mọi tần số mới rơi đúng vào một vạch của phép biến đổi.
+Hai trường hợp của đề bài, 2000 Hz và 400 Hz, thì 2000 Hz thoả còn 400 Hz không; ở 400 Hz các điểm
+không chỉ sâu chứ không tuyệt đối. Điều này không ảnh hưởng tới kết luận, vì ở 400 Hz ba búp đã
+chồng nhau rồi. Biên độ trên hàng tín hiệu ghép vẽ cùng tỉ lệ vôn với ba hàng trên, nên nó cao hơn
+thật chứ không phải do phóng to.</footer>
+
+<script>
+(function(){
+// ===== tham so, lay tu de bai =====
+var Rs=250, fc0=10000, Ns=128, NSYM=128;
+var L=Ns*NSYM, Fs=Rs*Ns, dt=1/Fs, df=Fs/L, SAN=-60;
+var GRAY=[['00',-3],['01',-1],['11',1],['10',3]];
+function muc(a,b){ var k=''+a+b; for(var i=0;i<4;i++) if(GRAY[i][0]===k) return GRAY[i][1]; }
+var DINH=Math.sqrt(18);              // bien do dinh cua mot kenh 16-QAM
+
+var INK='#1A1F36', ACC='#FF6B35', TEAL='#2A9D8F', PUR='#6C5CE7', DO='#D7263D',
+    MUT='#5A6272', LINE='#E4E8EF', FADE='#DDE2EB';
+var MAU=[TEAL, ACC, PUR];
+
+var d=2000, M=5, zoom=false, pho=null;
+var ct=document.getElementById('ct'), x1=ct.getContext('2d');
+var cp=document.getElementById('cp'), x2=cp.getContext('2d');
+
+// ===== FFT radix 2 =====
+function fft(re, im){
+  var n=re.length, i, j=0, k, m, t;
+  for(i=0;i<n-1;i++){
+    if(i<j){ t=re[i];re[i]=re[j];re[j]=t; t=im[i];im[i]=im[j];im[j]=t; }
+    k=n>>1; while(k<=j){ j-=k; k>>=1; } j+=k;
+  }
+  for(m=1;m<n;m<<=1){
+    var step=m<<1, th=-Math.PI/m;
+    for(k=0;k<m;k++){
+      var wr=Math.cos(th*k), wi=Math.sin(th*k);
+      for(i=k;i<n;i+=step){
+        j=i+m;
+        var tr=wr*re[j]-wi*im[j], ti=wr*im[j]+wi*re[j];
+        re[j]=re[i]-tr; im[j]=im[i]-ti; re[i]+=tr; im[i]+=ti;
+      }
+    }
+  }
+}
+function bitNgau(n){ var b=[],i; for(i=0;i<n;i++) b.push(Math.random()<0.5?0:1); return b; }
+function kenh(fcx, bits){
+  var x=new Float64Array(L), k, n;
+  for(k=0;k<NSYM;k++){
+    var I=muc(bits[k*4],bits[k*4+1]), Q=muc(bits[k*4+2],bits[k*4+3]);
+    for(n=0;n<Ns;n++){
+      var idx=k*Ns+n, ang=2*Math.PI*fcx*idx*dt;
+      x[idx]=I*Math.cos(ang)-Q*Math.sin(ang);
+    }
+  }
+  return x;
+}
+// Tra ve pho cua tin hieu ghep de ve, va hai so do nang luong trong dai cua
+// kenh giua: phan do chinh kenh giua sinh ra, va phan do hai kenh ben lan sang.
+//
+// Luc dau em do "muc tai diem khong cua kenh giua", nhung thuoc do ay HONG:
+// no chi cho biet diem khong cua hang xom co trung diem khong cua minh hay
+// khong. O d = 625 Hz no bao ban trong khi hai bup van tach roi, con o
+// d = 500 Hz lai bao sach. Nang luong trong dai thi don dieu theo d va dung
+// nghia xuyen am.
+function congSuat(x){
+  var half=L/2+1, re=new Float64Array(L), im=new Float64Array(L), i;
+  re.set(x); fft(re,im);
+  var P=new Float64Array(half);
+  for(i=0;i<half;i++){
+    var a=Math.sqrt(re[i]*re[i]+im[i]*im[i])/L;
+    if(i>0&&i<half-1) a*=2;
+    P[i]=a*a;
+  }
+  return P;
+}
+function tinhPho(){
+  var half=L/2+1, P=new Float64Array(half), m, i, k;
+  var iA=Math.round((fc0-Rs)/df), iB=Math.round((fc0+Rs)/df);
+  var Eg=0, Eb=0;
+  for(m=0;m<M;m++){
+    var ch=[], tong=new Float64Array(L);
+    for(k=-1;k<=1;k++){
+      ch.push(kenh(fc0+k*d, bitNgau(NSYM*4)));
+      for(i=0;i<L;i++) tong[i]+=ch[k+1][i];
+    }
+    var Pt=congSuat(tong);
+    for(i=0;i<half;i++) P[i]+=Pt[i];
+    var ben=new Float64Array(L);
+    for(i=0;i<L;i++) ben[i]=ch[0][i]+ch[2][i];
+    var Pg=congSuat(ch[1]), Pb=congSuat(ben);
+    for(i=iA;i<=iB;i++){ Eg+=Pg[i]; Eb+=Pb[i]; }
+  }
+  var A=new Float64Array(half), mx=0;
+  for(i=0;i<half;i++){ A[i]=Math.sqrt(P[i]/M); if(A[i]>mx) mx=A[i]; }
+  var dB=new Float64Array(half);
+  for(i=0;i<half;i++) dB[i]=20*Math.log10(A[i]/mx+1e-300);
+  return {dB:dB, xuyenAm: Eg>0 ? Eb/Eg : 0};
+}
+
+// ===== ve chung =====
+function ln(c,x1_,y1_,x2_,y2_,col,w,dash){c.save();if(dash)c.setLineDash(dash);
+  c.strokeStyle=col;c.lineWidth=w||1;c.beginPath();c.moveTo(x1_,y1_);c.lineTo(x2_,y2_);
+  c.stroke();c.restore();}
+function tx(c,s,x,y,sz,col,al,bo){c.fillStyle=col;c.textAlign=al||'left';c.textBaseline='middle';
+  c.font=(bo?'700 ':'')+sz+'px Calibri, Segoe UI, sans-serif';c.fillText(s,x,y);}
+
+// ===== khung 1: bon hang theo thoi gian =====
+// CKV = 5 chu ky cho kenh giua, nho vay o khoang cach 2000 Hz thi ba kenh co
+// 4, 5 va 6 chu ky moi symbol, deu nguyen, giong nhu ty le that cua de bai.
+var TX0=182, TX1=1140, NS4=4, CKV=5;
+// AK la so pixel cho mot don vi bien do, DUNG CHUNG cho ca bon hang. Hang tong
+// chi duoc cap nhieu cho hon theo chieu doc chu khong duoc phong to.
+var YK=[104,200,296], AK=32, YT=470, CAO_K=40, CAO_T=104;
+var bitsVe=[bitNgau(NS4*4), bitNgau(NS4*4), bitNgau(NS4*4)];
+
+function giaTri(k, pha){
+  // k: chi so kenh 0..2; pha chay 0..NS4 theo so symbol
+  var sym=Math.min(Math.floor(pha), NS4-1), b=bitsVe[k];
+  var I=muc(b[sym*4],b[sym*4+1]), Q=muc(b[sym*4+2],b[sym*4+3]);
+  // ti le tan so giu dung: song mang k co tan so (fc0+(k-1)*d)/fc0 lan kenh giua
+  var r=(fc0+(k-1)*d)/fc0, ang=2*Math.PI*CKV*r*pha;
+  return I*Math.cos(ang)-Q*Math.sin(ang);
+}
+function veHang(y, A, cao, f, mau, ten, phu){
+  tx(x1, ten, TX0-16, y-14, 16, mau, 'right', true);
+  if(phu) tx(x1, phu, TX0-16, y+8, 12.5, MUT, 'right');
+  ln(x1, TX0, y, TX1, y, FADE, 1);
+  var bw=(TX1-TX0)/NS4, k;
+  for(k=0;k<=NS4;k++) ln(x1, TX0+k*bw, y-cao, TX0+k*bw, y+cao, '#EEF1F6', 1, [3,4]);
+  x1.save(); x1.strokeStyle=mau; x1.lineWidth=1.8; x1.beginPath();
+  var n=Math.round(TX1-TX0), i;
+  for(i=0;i<=n;i++){
+    var pha=i/(TX1-TX0)*NS4, yy=y-f(pha)/DINH*A;
+    if(i===0) x1.moveTo(TX0+i, yy); else x1.lineTo(TX0+i, yy);
+  }
+  x1.stroke(); x1.restore();
+}
+function veThoiGian(){
+  x1.clearRect(0,0,ct.width,ct.height);
+  tx(x1, 'Bốn symbol đầu, cùng một trục thời gian', TX0-16, 44, 16, INK, 'left', true);
+  var k;
+  for(k=0;k<3;k++){
+    veHang(YK[k], AK, CAO_K, function(p){ return giaTri(k, p); }, MAU[k],
+           's'+(k+1)+'(t)', Math.round(fc0+(k-1)*d)+' Hz');
+  }
+  veHang(YT, AK, CAO_T, function(p){ return giaTri(0,p)+giaTri(1,p)+giaTri(2,p); }, INK,
+         's_FDM(t)', 'tổng, cùng tỉ lệ vôn');
+  var bw=(TX1-TX0)/NS4;
+  for(k=0;k<NS4;k++) tx(x1, 'symbol '+(k+1), TX0+k*bw+bw/2, YT+CAO_T+22, 12.5, MUT, 'center');
+}
+
+// ===== khung 2: pho =====
+var PX0=150, PX1=1122, PY0=74, PY1=330;
+function FA(){ return zoom ? 9000 : 6000; }
+function FB(){ return zoom ? 11000 : 14000; }
+function gx(f){ return PX0+(f-FA())/(FB()-FA())*(PX1-PX0); }
+function gy(v){ return PY0+(-Math.max(v,SAN))/(-SAN)*(PY1-PY0); }
+
+function vePho(){
+  x2.clearRect(0,0,cp.width,cp.height);
+  x2.save(); x2.fillStyle='#FCFDFE'; x2.fillRect(PX0,PY0,PX1-PX0,PY1-PY0); x2.restore();
+  var v, f, k;
+  for(v=0;v>=SAN;v-=10){ var y=gy(v); ln(x2,PX0,y,PX1,y, v===0?FADE:'#F0F2F6',1);
+    tx(x2, v+' dB', PX0-10, y, 12.5, MUT, 'right'); }
+  var buoc = zoom?250:1000;
+  for(f=FA();f<=FB()+1;f+=buoc){ var x=gx(f); ln(x2,x,PY0,x,PY1,'#F0F2F6',1);
+    tx(x2,(f/1000).toFixed(zoom?2:0), x, PY1+18, 12.5, MUT, 'center'); }
+
+  // ba dai bup chinh, to vung chong lan bang mau do
+  var chong = d < 2*Rs;
+  for(k=-1;k<=1;k++){
+    var c=fc0+k*d, lo=c-Rs, hi=c+Rs;
+    x2.save(); x2.globalAlpha=0.12; x2.fillStyle=MAU[k+1];
+    x2.fillRect(gx(lo),PY0,gx(hi)-gx(lo),PY1-PY0); x2.restore();
+    ln(x2, gx(c), PY0, gx(c), PY1, MAU[k+1], 1.4, [5,4]);
+    tx(x2, Math.round(c)+' Hz', gx(c), PY1+38, 12.5, MAU[k+1], 'center', true);
+  }
+  if(chong) for(k=-1;k<=0;k++){
+    var a=fc0+k*d+Rs, b=fc0+(k+1)*d-Rs;
+    x2.save(); x2.globalAlpha=0.30; x2.fillStyle=DO;
+    x2.fillRect(gx(b),PY0,gx(a)-gx(b),PY1-PY0); x2.restore();
+  }
+  x2.save(); x2.strokeStyle=LINE; x2.lineWidth=1.2;
+  x2.strokeRect(PX0,PY0,PX1-PX0,PY1-PY0); x2.restore();
+
+  // duong pho
+  x2.save(); x2.strokeStyle=INK; x2.lineWidth=1.2; x2.beginPath();
+  var i0=Math.round(FA()/df), i1=Math.round(FB()/df), dau=true;
+  for(k=i0;k<=i1;k++){
+    var xx=gx(k*df), yy=gy(pho.dB[k]);
+    if(dau){ x2.moveTo(xx,yy); dau=false; } else x2.lineTo(xx,yy);
+  }
+  x2.stroke(); x2.restore();
+
+  tx(x2, 'Phổ của tín hiệu ghép', PX0, PY0-28, 17, INK, 'left', true);
+  tx(x2, 'khoảng cách '+d+' Hz · trung bình '+M+' lần', PX1, PY0-28, 13, MUT, 'right');
+  tx(x2, 'tần số, kHz', PX1, PY1+56, 13, MUT, 'right');
+  if(chong){
+    x2.save(); x2.fillStyle='#fff'; x2.strokeStyle=DO; x2.lineWidth=1.5;
+    x2.fillRect(PX0+14, PY0+12, 250, 28); x2.strokeRect(PX0+14, PY0+12, 250, 28); x2.restore();
+    tx(x2, 'hai búp chính chồng lên nhau', PX0+139, PY0+26, 14, DO, 'center', true);
+  }
+}
+
+// ===== so lieu va loi giai thich =====
+function loi(){
+  var xa=100*pho.xuyenAm, chong = d<2*Rs;
+  var cs=[fc0-d, fc0, fc0+d].map(function(v){
+    return (v/1000).toFixed(v%1000?1:0).replace('.', ',');
+  }).join(' / ');
+  document.getElementById('st').innerHTML =
+    '<b>Ba sóng mang '+cs+' kHz, cách nhau '+d+' Hz.</b> Mỗi búp chính rộng 2Rₛ = 500 Hz, tức '+
+    'trải từ sóng mang trừ 250 Hz tới sóng mang cộng 250 Hz. Hai búp kề nhau vì vậy vừa chạm khi '+
+    'khoảng cách bằng <i>500 Hz</i>. Hiện tại ' +
+    (chong ? '<u>chúng đang chồng lên nhau</u>' : 'chúng tách rời') + '. ' +
+    'Trong dải của kênh giữa, năng lượng do <i>hai kênh bên</i> lấn sang chiếm ' +
+    (xa<10 ? xa.toFixed(1) : Math.round(xa)) + ' phần trăm năng lượng của chính kênh giữa. ' +
+    (xa > 10
+      ? '<u>Mức này đủ lớn để máy thu đọc nhầm.</u>'
+      : 'Phần lấn sang vẫn còn, do xung chữ nhật có đuôi phổ tắt chậm, nhưng còn nhỏ.');
+}
+
+function tinhLai(){ pho=tinhPho(); loi(); veThoiGian(); vePho(); }
+function datKC(v){
+  d=v;
+  document.getElementById('kc').value=v;
+  document.getElementById('vkc').textContent=v+' Hz';
+  tinhLai();
+}
+document.getElementById('kc').oninput=function(){ datKC(+this.value); };
+document.getElementById('p1').onclick=function(){ datKC(2000); };
+document.getElementById('p2').onclick=function(){ datKC(400); };
+document.getElementById('zoom').onchange=function(){ zoom=this.checked; vePho(); };
+document.getElementById('tb').oninput=function(){
+  M=+this.value; document.getElementById('vtb').textContent=M; tinhLai(); };
+
+datKC(2000);
+})();
+</script>
+</body>
+</html>
