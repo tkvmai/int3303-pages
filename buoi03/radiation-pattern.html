@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Giản đồ bức xạ trong không gian ba chiều</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mut:#5A6272;
+      --line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.5}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;
+  background:#fff;cursor:grab;touch-action:none}
+canvas.keo{cursor:grabbing}
+.ctl{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:15px 0 0;
+  padding:13px 16px;background:var(--tint);border-radius:10px}
+.ctl label{font-size:14px;display:flex;align-items:center;gap:9px}
+.ctl input[type=range]{width:150px;accent-color:var(--acc)}
+.ctl b{font-variant-numeric:tabular-nums;color:var(--acc);min-width:40px;display:inline-block}
+.ctl button{border:1px solid var(--line);background:#fff;font:inherit;font-size:14.5px;
+  padding:8px 15px;border-radius:8px;cursor:pointer}
+.ctl button:hover{border-color:#B9C1CF}
+.ctl button.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+.ctl .nhom{display:flex;gap:7px;flex-wrap:wrap}
+.state{margin-top:15px;padding:13px 16px;border-left:4px solid var(--teal);background:#F1F8F7;
+  font-size:16px;line-height:1.55;min-height:76px}
+.state b{color:var(--teal)}
+.state i{color:var(--acc);font-style:normal;font-weight:700}
+.note{margin-top:13px;padding:13px 16px;border-left:4px solid var(--acc);background:#FFF6F2;
+  font-size:14.5px;line-height:1.6}
+.note b{color:var(--acc)}
+.note ol{margin:7px 0 0;padding-left:20px}
+.note li{margin:4px 0}
+footer{padding:16px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13px;line-height:1.6}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · MẠNG KHÔNG DÂY</div>
+  <h1>Giản đồ bức xạ trong không gian ba chiều</h1>
+  <p>Buổi 3, Tiết 1. Kéo chuột để xoay. Giáo trình vẽ hai chiều nên cần ba hình chiếu; ở đây xoay
+  một vật thể là đủ.</p>
+</header>
+<a class="veml" href="../index.html">Về mục lục mô phỏng INT3303</a>
+
+<main>
+  <p class="sub">Giản đồ bức xạ là <b>mặt cong</b> trong không gian: theo mỗi hướng, khoảng cách từ
+  gốc tới mặt cong tỉ lệ với công suất phát theo hướng ấy. Vẽ trên giấy thì phải cắt lấy một mặt
+  phẳng, và một mặt phẳng không nói hết được hình dạng. Kéo thử con quay bên dưới rồi so với hình
+  số tám quen thuộc trong sách.</p>
+
+  <canvas id="cv" width="1180" height="620"></canvas>
+
+  <div class="ctl">
+    <span class="nhom">
+      <button data-a="iso" class="on">Isotropic</button>
+      <button data-a="dipole">Half-wave dipole</button>
+      <button data-a="mono">Quarter-wave vertical</button>
+      <button data-a="dish">Parabolic dish</button>
+    </span>
+    <label>Độ rộng búp <input id="bup" type="range" min="10" max="90" value="24"> <b id="vbup">24°</b></label>
+    <label><input id="quay" type="checkbox" checked> Tự xoay</label>
+    <label><input id="catmp" type="checkbox"> Vẽ mặt cắt như trong sách</label>
+  </div>
+
+  <div class="state" id="st"></div>
+
+  <div class="note">
+    <b>Bốn điều nên chỉ cho lớp thấy:</b>
+    <ol>
+      <li><b>Lưỡng cực không phải hình số tám.</b> Nó là một cái <i>vòng xuyến</i> quấn quanh sợi
+          dây. Hình số tám trong sách chỉ là mặt cắt chứa sợi dây. Bật ô "vẽ mặt cắt" rồi xoay:
+          cùng một vật thể, cắt dọc ra số tám, cắt ngang ra đường tròn.</li>
+      <li><b>Chỗ không có sóng nằm đúng dọc sợi dây.</b> Xoay cho sợi dây hướng thẳng vào mắt: ở
+          giữa là một lỗ. Ăng-ten lưỡng cực không phát theo phương của chính nó, nên dựng ăng-ten
+          thẳng đứng thì năng lượng đi ngang, đúng chỗ người dùng ngồi.</li>
+      <li><b>Quarter-wave vertical chỉ là nửa trên.</b> Mặt đất phản xạ phần dưới lên, nên nửa vòng
+          xuyến phía trên nhận được năng lượng của cả hai. Đó là lý do một cây ăng-ten ngắn bằng
+          nửa vẫn dùng được.</li>
+      <li><b>Kéo thanh độ rộng búp của chảo.</b> Búp hẹp lại thì nó dài ra. Thể tích bao quanh gần
+          như không đổi: năng lượng chỉ được dồn lại chứ không sinh thêm.</li>
+    </ol>
+  </div>
+</main>
+
+<footer>INT3303 · Buổi 3 Tiết 1. Hàm phương hướng lấy đúng công thức, không vẽ phỏng:
+vô hướng F = 1; lưỡng cực nửa bước sóng đặt dọc trục z có
+F(θ) = cos(½π·cos θ) / sin θ; quarter-wave vertical là chính hàm ấy nhưng chỉ giữ nửa trên, mô hình
+mặt đất phản xạ lý tưởng; chảo parabol dùng một búp Gauss quanh trục chính với độ rộng chỉnh được.
+Mặt cong vẽ bằng cách chia lưới rồi sắp xếp các ô theo chiều sâu, không dùng thư viện đồ hoạ nào,
+nên trang này mở được cả khi không có Internet. <b>Một chỗ đã đơn giản hoá:</b> hình chiếu là song
+song chứ không phải phối cảnh, và độ sáng của mỗi ô tính từ pháp tuyến với một nguồn sáng cố định,
+đủ để thấy hình khối chứ không nhằm mô phỏng ánh sáng thật.</footer>
+
+<script>
+(function(){
+var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+var W=cv.width, H=cv.height;
+var INK='#1A1F36', ACC='#FF6B35', TEAL='#2A9D8F', PUR='#6C5CE7',
+    MUT='#5A6272', LINE='#E4E8EF';
+
+// ---------- ham phuong huong ----------
+// th: goc thien dinh tinh tu truc z.  ph: goc phuong vi quanh truc z.
+function F_iso(){ return 1; }
+function F_dipole(th){
+  var s=Math.sin(th);
+  if(Math.abs(s)<1e-6) return 0;
+  return Math.abs(Math.cos(Math.PI/2*Math.cos(th))/s);
+}
+function F_mono(th){
+  // Quarter-wave vertical tren mat dat dan ly tuong: chi con nua tren.
+  if(th>Math.PI/2) return 0;
+  return F_dipole(th);
+}
+var bupDo=24;
+function F_dish(th, ph){
+  // Bup chinh huong theo truc +x. Goc lech so voi +x:
+  var cx=Math.sin(th)*Math.cos(ph);
+  var g=Math.acos(Math.max(-1,Math.min(1,cx)));
+  var sg=bupDo*Math.PI/180/2.355;        // doi do rong nua cong suat sang sigma
+  return 0.03+Math.exp(-(g*g)/(2*sg*sg));
+}
+var LOAI={
+  iso:   {f:F_iso,    mau:[42,157,143],  ten:'Isotropic'},
+  dipole:{f:F_dipole, mau:[108,92,231],  ten:'Half-wave dipole'},
+  mono:  {f:F_mono,   mau:[46,111,217],  ten:'Quarter-wave vertical'},
+  dish:  {f:F_dish,   mau:[255,107,53],  ten:'Parabolic dish'}
+};
+var chon='iso', tuQuay=true, veCat=false;
+var yaw=-0.95, pitch=0.32, keo=false, mx=0, my=0;
+
+// ---------- luoi mat cong ----------
+var NT=34, NP=56;                        // so o theo thien dinh va phuong vi
+function diem(th, ph, f){
+  var r=f(th, ph);
+  return [r*Math.sin(th)*Math.cos(ph), r*Math.sin(th)*Math.sin(ph), r*Math.cos(th)];
+}
+function xoay(p){
+  var ca=Math.cos(yaw), sa=Math.sin(yaw);
+  var x=p[0]*ca-p[1]*sa, y=p[0]*sa+p[1]*ca, z=p[2];
+  var cb=Math.cos(pitch), sb=Math.sin(pitch);
+  return [x, y*cb-z*sb, y*sb+z*cb];
+}
+var S=215, CX=W/2, CY=H/2-10;
+function chieu(q){ return [CX+S*q[0], CY-S*q[2]]; }
+
+function veTruc(sau){
+  var L=1.35, truc=[[[-L,0,0],[L,0,0]],[[0,-L,0],[0,L,0]],[[0,0,-L],[0,0,L]]];
+  ctx.save(); ctx.strokeStyle='#C9D0DB'; ctx.lineWidth=1.1;
+  truc.forEach(function(t){
+    var a=xoay(t[0]), b=xoay(t[1]);
+    var gi=(a[1]+b[1])/2;
+    if((sau && gi>0) || (!sau && gi<=0)) return;
+    var p=chieu(a), q=chieu(b);
+    ctx.beginPath(); ctx.moveTo(p[0],p[1]); ctx.lineTo(q[0],q[1]); ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function veVatThe(){
+  var L=LOAI[chon], f=L.f, m=L.mau, o=[], i, j;
+  for(i=0;i<NT;i++){
+    var t0=Math.PI*i/NT + 1e-4, t1=Math.PI*(i+1)/NT - 1e-4;
+    for(j=0;j<NP;j++){
+      var p0=2*Math.PI*j/NP, p1=2*Math.PI*(j+1)/NP;
+      var a=xoay(diem(t0,p0,f)), b=xoay(diem(t0,p1,f)),
+          c=xoay(diem(t1,p1,f)), d=xoay(diem(t1,p0,f));
+      var r=Math.max(f(t0,p0), f(t1,p1));
+      if(r<0.012) continue;
+      // phap tuyen xap xi bang tich co huong hai duong cheo
+      var u=[c[0]-a[0], c[1]-a[1], c[2]-a[2]], v=[d[0]-b[0], d[1]-b[1], d[2]-b[2]];
+      var nx=u[1]*v[2]-u[2]*v[1], ny=u[2]*v[0]-u[0]*v[2], nz=u[0]*v[1]-u[1]*v[0];
+      var nl=Math.sqrt(nx*nx+ny*ny+nz*nz)||1;
+      var sang=Math.abs((-0.35*nx + -0.62*ny + 0.70*nz)/nl);
+      o.push({z:(a[1]+b[1]+c[1]+d[1])/4, p:[a,b,c,d], s:0.42+0.58*sang});
+    }
+  }
+  o.sort(function(p,q){ return q.z-p.z; });      // xa ve truoc
+  for(i=0;i<o.length;i++){
+    var q=o[i], P=q.p.map(chieu), s=q.s;
+    ctx.beginPath(); ctx.moveTo(P[0][0],P[0][1]);
+    for(j=1;j<4;j++) ctx.lineTo(P[j][0],P[j][1]);
+    ctx.closePath();
+    ctx.fillStyle='rgba('+Math.round(m[0]*s)+','+Math.round(m[1]*s)+','+Math.round(m[2]*s)+',0.93)';
+    ctx.fill();
+    ctx.strokeStyle='rgba('+Math.round(m[0]*s*0.75)+','+Math.round(m[1]*s*0.75)+','+
+                     Math.round(m[2]*s*0.75)+',0.5)';
+    ctx.lineWidth=0.5; ctx.stroke();
+  }
+}
+
+function veMatCat(){
+  if(!veCat) return;
+  var f=LOAI[chon].f, i, p, q;
+  // mat cat DOC, chua truc z: cho ra hinh so tam quen thuoc
+  ctx.save(); ctx.strokeStyle=INK; ctx.lineWidth=2.4; ctx.beginPath();
+  for(i=0;i<=240;i++){
+    var t=Math.PI*2*i/240;
+    var th=t<=Math.PI? t : 2*Math.PI-t, ph=t<=Math.PI? 0 : Math.PI;
+    p=chieu(xoay(diem(th,ph,f)));
+    if(i===0) ctx.moveTo(p[0],p[1]); else ctx.lineTo(p[0],p[1]);
+  }
+  ctx.stroke();
+  // mat cat NGANG, vuong goc truc z: cho ra duong tron
+  ctx.strokeStyle='#D7263D'; ctx.beginPath();
+  for(i=0;i<=240;i++){
+    q=chieu(xoay(diem(Math.PI/2, 2*Math.PI*i/240, f)));
+    if(i===0) ctx.moveTo(q[0],q[1]); else ctx.lineTo(q[0],q[1]);
+  }
+  ctx.stroke(); ctx.restore();
+}
+
+function veDay(){
+  // Vat the that: soi day cua luong cuc nam doc truc z.
+  if(chon!=='dipole' && chon!=='mono') return;
+  var z0 = chon==='dipole' ? -0.46 : 0.0;
+  var a=chieu(xoay([0,0,z0])), b=chieu(xoay([0,0,0.46]));
+  ctx.save(); ctx.strokeStyle=INK; ctx.lineWidth=5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+  if(chon==='mono'){
+    var g1=chieu(xoay([-1.1,0,0])), g2=chieu(xoay([1.1,0,0]));
+    ctx.strokeStyle='#9AA4B2'; ctx.lineWidth=2; ctx.setLineDash([6,5]);
+    ctx.beginPath(); ctx.moveTo(g1[0],g1[1]); ctx.lineTo(g2[0],g2[1]); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function txt(s,x,y,sz,c,al,bo){
+  ctx.fillStyle=c; ctx.textAlign=al||'left'; ctx.textBaseline='middle';
+  ctx.font=(bo?'700 ':'')+sz+'px Calibri, Segoe UI, sans-serif'; ctx.fillText(s,x,y);
+}
+
+var LOI={
+ iso:'<b>Vô hướng.</b> Một quả cầu hoàn hảo. Không có ăng-ten nào làm được, nhưng mọi ăng-ten khác đều đo so với nó.',
+ dipole:'<b>Lưỡng cực nửa bước sóng.</b> Một <i>vòng xuyến</i> quấn quanh sợi dây, không phải hình số tám. Dọc theo sợi dây không có sóng, nên dựng đứng thì năng lượng đi ngang.',
+ mono:'<b>Quarter-wave vertical.</b> Chỉ còn nửa trên: mặt đất phản xạ phần dưới lên, nên cây ăng-ten ngắn bằng nửa vẫn cho dạng bức xạ tương đương.',
+ dish:'<b>Chảo parabol.</b> Một búp hẹp theo một hướng. Kéo thanh độ rộng búp: hẹp lại thì dài ra, vì năng lượng chỉ dồn chỗ chứ không sinh thêm.'
+};
+
+function ve(){
+  ctx.clearRect(0,0,W,H);
+  veTruc(true);
+  veVatThe();
+  veDay();
+  veMatCat();
+  veTruc(false);
+  txt(LOAI[chon].ten, 26, 34, 19, INK, 'left', true);
+  txt('kéo để xoay', W-26, 34, 13.5, MUT, 'right');
+  if(veCat){
+    txt('mặt cắt dọc, chứa trục z', 26, H-46, 13, INK, 'left', true);
+    txt('mặt cắt ngang, vuông góc trục z', 26, H-26, 13, '#D7263D', 'left', true);
+  }
+  document.getElementById('st').innerHTML=LOI[chon];
+}
+
+cv.addEventListener('pointerdown', function(e){
+  keo=true; mx=e.clientX; my=e.clientY; cv.classList.add('keo');
+  cv.setPointerCapture(e.pointerId);
+});
+cv.addEventListener('pointermove', function(e){
+  if(!keo) return;
+  yaw += (e.clientX-mx)*0.009; pitch += (e.clientY-my)*0.009;
+  pitch = Math.max(-1.35, Math.min(1.35, pitch));
+  mx=e.clientX; my=e.clientY;
+});
+cv.addEventListener('pointerup', function(e){
+  keo=false; cv.classList.remove('keo');
+});
+document.querySelectorAll('.nhom button').forEach(function(b){
+  b.onclick=function(){
+    document.querySelectorAll('.nhom button').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on'); chon=b.dataset.a;
+  };
+});
+document.getElementById('bup').oninput=function(){
+  bupDo=+this.value; document.getElementById('vbup').textContent=bupDo+'°'; };
+document.getElementById('quay').onchange=function(){ tuQuay=this.checked; };
+document.getElementById('catmp').onchange=function(){ veCat=this.checked; };
+
+var truoc=0;
+function khung(ts){
+  var dt=Math.min((ts-truoc)/1000, 0.05); truoc=ts;
+  if(tuQuay && !keo) yaw += dt*0.35;
+  ve(); requestAnimationFrame(khung);
+}
+requestAnimationFrame(khung);
+})();
+</script>
+</body>
+</html>

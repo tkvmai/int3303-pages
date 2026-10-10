@@ -45,6 +45,8 @@ buoi02/vi-sao-song-tu-lan-ra-xa.html       vì sao sóng tự duy trì khi đi x
 buoi02/ba-cach-bien-doi-song-mang.html     ASK, FSK, PSK trên cùng một dãy bit, dùng ở Tiết 2
 buoi02/chom-sao-va-mat-phang-iq.html       chòm sao BPSK, QPSK, 4-ASK, 16-QAM, dùng ở Tiết 3
 
+buoi03/radiation-pattern.html              giản đồ bức xạ 3 chiều, xoay được, dùng ở Buổi 3 Tiết 1
+
 lab/index.html                             mục lục riêng cho các bài thực hành
 lab/tu-day-bit-toi-tin-hieu-dieu-che.html  Phần 1, dãy bit thành NRZ rồi thành OOK, BPSK, BFSK
 lab/pho-bien-do-va-bang-thong.html         Phần 2, phổ biên độ và phép đo băng thông búp chính
