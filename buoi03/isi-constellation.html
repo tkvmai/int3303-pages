@@ -86,19 +86,26 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
 <div class="duoi">
   <div>
     <canvas id="cs" width="760" height="760"></canvas>
+    <label style="display:block;margin-top:10px;font-size:14px;color:var(--mut)">
+      <input type="checkbox" id="fan"> Show every symbol that could have come before symbol 2
+    </label>
   </div>
   <div>
     <h2 style="margin-top:0">What the receiver ends up with</h2>
     <p class="sub">Each symbol is one point of the 16-QAM constellation from session 2 part 3. The
     receiver measures the amplitude and the phase of whatever is in the slot, so when a piece of the
-    previous symbol is still there, it measures the wrong point.</p>
-    <p class="sub">Grey dots are the 16 points that can be sent. Each one splits into a small group
-    of 16, one per possible preceding symbol. The orange group belongs to symbol 2 of the drawing
-    above, and the ring marks the one case drawn there: symbol 2 received after symbol 1. The faint
-    grid is the decision boundary, so a group that reaches it is a group the receiver can read as
-    the wrong symbol.</p>
-    <p class="sub">There is no randomness on this page. All 256 combinations are computed, so the
-    picture is complete rather than a sample.</p>
+    previous symbol is still there, it measures the wrong point. Pale grey marks the 16 points the
+    transmitter is allowed to send, and the faint grid is the decision boundary.</p>
+    <p class="sub">The three arrows are the three symbols of the drawing above: dark is where each
+    one was sent, pink is where it was received. Symbol 1 has nothing before it, so it arrives
+    undamaged and its arrow has no length. Symbols 2 and 3 are each pushed away from their own
+    point by the symbol that came before.</p>
+    <p class="sub"><b>Why this cannot simply be subtracted out.</b> How far symbol 2 is pushed
+    depends on which symbol happened to precede it, and that is data, not a property of the channel.
+    Tick the box under the picture to see every possibility at once. There are sixteen of them
+    because 16-QAM has sixteen symbols and any one of them could have been the previous one. The
+    receiver has no way of knowing which arrow it is on, and that is why a late copy behaves like
+    noise.</p>
   </div>
 </div>
 
@@ -260,24 +267,75 @@ figure 5.12, and Steenkiste 2023 section 2.6.3. The 16-QAM constellation follows
     g.beginPath(); g.moveTo(X(-R), Y(0)); g.lineTo(X(R), Y(0)); g.stroke();
     g.beginPath(); g.moveTo(X(0), Y(-R)); g.lineTo(X(0), Y(R)); g.stroke();
 
-    // all 256 combinations: current symbol cu, preceding symbol tr
-    for (var cu=0;cu<16;cu++){
-      var rieng = (cu === SEQ[1]);                  // the group drawn in the time view
-      g.fillStyle = rieng ? '#FF6B35' : 'rgba(216,30,91,0.45)';
-      for (var tr=0;tr<16;tr++){
-        var yi = PI[cu] + c.g*PI[tr], yq = PQ[cu] + c.g*PQ[tr];
-        g.beginPath(); g.arc(X(yi), Y(yq), rieng ? 4.6 : 3.4, 0, 6.2832); g.fill();
-      }
-    }
-    // the 16 points that can be sent
-    g.fillStyle = '#8D95A6';
+    // the 16 points the transmitter is allowed to send
+    g.fillStyle = '#C6CBD6';
     for (var k=0;k<16;k++){
-      g.beginPath(); g.arc(X(PI[k]), Y(PQ[k]), 5.5, 0, 6.2832); g.fill();
+      g.beginPath(); g.arc(X(PI[k]), Y(PQ[k]), 5.0, 0, 6.2832); g.fill();
     }
-    // the case drawn in the time view: symbol 2 received after symbol 1
-    var ri = PI[SEQ[1]] + c.g*PI[SEQ[0]], rq = PQ[SEQ[1]] + c.g*PQ[SEQ[0]];
-    g.strokeStyle = '#FF6B35'; g.lineWidth = 3;
-    g.beginPath(); g.arc(X(ri), Y(rq), 13, 0, 6.2832); g.stroke();
+
+    // an arrow from where a symbol was sent to where it was received
+    function muiten(x0,y0,x1,y1,col){
+      var dx = x1-x0, dy = y1-y0, L = Math.hypot(dx,dy);
+      if (L < 3) return;
+      g.strokeStyle = col; g.lineWidth = 2.5;
+      g.beginPath(); g.moveTo(x0,y0); g.lineTo(x1,y1); g.stroke();
+      var a = Math.atan2(dy,dx);
+      g.beginPath(); g.moveTo(x1,y1);
+      g.lineTo(x1-11*Math.cos(a-0.42), y1-11*Math.sin(a-0.42));
+      g.lineTo(x1-11*Math.cos(a+0.42), y1-11*Math.sin(a+0.42));
+      g.fillStyle = col; g.fill();
+    }
+
+    if (!E('fan').checked){
+      // the three symbols of the drawing above, and where each one is received.
+      // Symbol 1 has nothing before it, so it arrives undamaged.
+      for (var j=0;j<3;j++){
+        var cu = SEQ[j], tr = (j===0) ? -1 : SEQ[j-1];
+        var yi = PI[cu] + (tr<0 ? 0 : c.g*PI[tr]);
+        var yq = PQ[cu] + (tr<0 ? 0 : c.g*PQ[tr]);
+        var xa = X(PI[cu]), ya = Y(PQ[cu]), xb = X(yi), yb = Y(yq);
+        muiten(xa, ya, xb, yb, '#FF6B35');
+        // received first, sent on top: when the two coincide, as they do for
+        // symbol 1, the result still reads as one dot inside a pink rim.
+        g.fillStyle = '#D81E5B';
+        g.beginPath(); g.arc(xb, yb, 9.0, 0, 6.2832); g.fill();
+        g.fillStyle = '#1A1F36';
+        g.beginPath(); g.arc(xa, ya, 6.0, 0, 6.2832); g.fill();
+        // put the label on whichever side is clear of the arrow and of the edges
+        g.font = '23px Calibri, sans-serif';
+        var nhan = 'symbol '+(j+1), wn = g.measureText(nhan).width;
+        var cand = [[xa+16, ya-14],[xa-16-wn, ya-14],[xa-wn/2, ya-22],[xa-wn/2, ya+34]];
+        var dat = cand[0];
+        for (var ci=0; ci<cand.length; ci++){
+          var px0 = cand[ci][0], py0 = cand[ci][1];
+          var hop = (px0 > 6) && (px0+wn < W-6) && (py0-23 > 6) && (py0+6 < H-70);
+          var cham = (px0 < xb+13) && (xb-13 < px0+wn) && (py0-23 < yb+13) && (yb-13 < py0+6);
+          if (hop && !cham){ dat = cand[ci]; break; }
+        }
+        g.fillStyle = '#1A1F36';
+        g.fillText(nhan, dat[0], dat[1]);
+      }
+      g.fillStyle = '#5A6272'; g.font = '21px Calibri, sans-serif';
+      g.fillText('dark dot: sent symbol   ·   pink dot: what the receiver measures', m, H-20);
+    } else {
+      // every symbol that could have come before symbol 2, all sixteen of them
+      var c2 = SEQ[1];
+      for (var tr2=0;tr2<16;tr2++){
+        var zi = PI[c2] + c.g*PI[tr2], zq = PQ[c2] + c.g*PQ[tr2];
+        g.strokeStyle = 'rgba(255,107,53,0.50)'; g.lineWidth = 1.5;
+        g.beginPath(); g.moveTo(X(PI[c2]), Y(PQ[c2])); g.lineTo(X(zi), Y(zq)); g.stroke();
+        g.fillStyle = '#FF6B35';
+        g.beginPath(); g.arc(X(zi), Y(zq), 6.0, 0, 6.2832); g.fill();
+      }
+      g.fillStyle = '#1A1F36';
+      g.beginPath(); g.arc(X(PI[c2]), Y(PQ[c2]), 6.5, 0, 6.2832); g.fill();
+      var ri = PI[c2] + c.g*PI[SEQ[0]], rq = PQ[c2] + c.g*PQ[SEQ[0]];
+      g.strokeStyle = '#D81E5B'; g.lineWidth = 3;
+      g.beginPath(); g.arc(X(ri), Y(rq), 13, 0, 6.2832); g.stroke();
+      g.fillStyle = '#5A6272'; g.font = '21px Calibri, sans-serif';
+      g.fillText('one spot per possible previous symbol, so sixteen of them', m, H-56);
+      g.fillText('the ring is the one case drawn above', m, H-20);
+    }
 
     g.fillStyle = '#5A6272'; g.font = '22px Calibri, sans-serif';
     g.fillText('I', W-m+10, Y(0)+8);
@@ -301,6 +359,7 @@ figure 5.12, and Steenkiste 2023 section 2.6.3. The 16-QAM constellation follows
   }
 
   ['t','r'].forEach(function(k){ sl[k].addEventListener('input', ve); });
+  E('fan').addEventListener('change', ve);
   Array.prototype.forEach.call(document.querySelectorAll('.nut'), function(b){
     b.addEventListener('click', function(){
       sl.t.value = b.dataset.t; sl.r.value = b.dataset.r; ve();
