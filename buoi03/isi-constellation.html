@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>INT3303 · Inter-symbol interference on the constellation</title>
+<title>INT3303 · A late symbol landing on the next one</title>
 <style>
 :root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;
       --mut:#5A6272;--line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
@@ -12,14 +12,15 @@ body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink)
 header{background:var(--dark);color:#fff;padding:18px 26px}
 header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
 header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
-header p{margin:5px 0 0;font-size:14px;color:#AEB8CE;max-width:860px;line-height:1.5}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE;max-width:900px;line-height:1.5}
 main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
 p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.55}
 canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
-.khung{display:grid;grid-template-columns:minmax(300px,1fr) minmax(300px,1.15fr);gap:18px;align-items:start}
-@media (max-width:860px){.khung{grid-template-columns:1fr}}
-.dk{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:0 0 18px;background:var(--tint)}
-.hang{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px 22px}
+.duoi{display:grid;grid-template-columns:minmax(260px,0.9fr) minmax(300px,1.1fr);gap:22px;
+      align-items:start;margin-top:22px}
+@media (max-width:820px){.duoi{grid-template-columns:1fr}}
+.dk{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:0 0 16px;background:var(--tint)}
+.hang{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px 24px}
 label.t{display:block;font-size:13.5px;color:var(--mut);margin:0 0 3px}
 label.t b{color:var(--ink);font-size:14.5px}
 input[type=range]{width:100%;accent-color:var(--acc)}
@@ -28,14 +29,13 @@ input[type=range]{width:100%;accent-color:var(--acc)}
 .chip b{color:var(--ink)}
 .chip.xau b{color:var(--mag)}
 .chip.tot b{color:var(--teal)}
-h2{font-family:Cambria,Georgia,serif;font-size:19px;margin:26px 0 8px;padding-bottom:6px;
+h2{font-family:Cambria,Georgia,serif;font-size:19px;margin:24px 0 8px;padding-bottom:6px;
    border-bottom:1px solid var(--line)}
 ul{margin:8px 0 0;padding-left:20px;font-size:14.5px;color:var(--mut);line-height:1.65}
 ul b{color:var(--ink)}
 .nut{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:8px;
   padding:6px 12px;font-size:13.5px;color:var(--ink);cursor:pointer;margin:0 6px 6px 0}
 .nut:hover{border-color:var(--acc)}
-code{background:var(--tint);padding:1px 5px;border-radius:4px;font-size:13.5px}
 a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
   text-decoration:none;border-bottom:1px solid #E4E8EF}
 a.veml:hover{color:#FF6B35}
@@ -45,213 +45,211 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
 <body>
 <header>
   <div class="k">INT3303 · SESSION 3 · PART 3</div>
-  <h1>Inter-symbol interference on the constellation</h1>
-  <p>A late copy of the previous symbol does not corrupt one bit. It pulls a whole constellation
-  point out of place. This page runs that calculation for 16-QAM: move the sliders and watch the
-  cloud of received points spread out.</p>
+  <h1>A late symbol landing on the next one</h1>
+  <p>Each symbol is a stretch of carrier held at one amplitude and one phase. An echo arrives a
+  little later, so part of one symbol's carrier is still arriving while the next symbol is being
+  received. Watch what the sum looks like inside that second slot.</p>
 </header>
 <a class="veml" href="../index.html">Back to the INT3303 simulation index</a>
 
 <main>
-<p class="sub">The channel has two paths: the direct one, and a weaker echo that arrives later.
-The receiver integrates over each symbol slot, so once the echo spills into the following slot,
-the sample of the current symbol carries a piece of the previous one.</p>
 
 <div class="dk">
   <div class="hang">
     <div>
-      <label class="t">Echo strength <b><span id="la">0.40</span></b> of the direct path</label>
-      <input type="range" id="a" min="0" max="100" value="40">
-    </div>
-    <div>
       <label class="t">Echo delay <b><span id="lt">200</span> ns</b></label>
-      <input type="range" id="t" min="0" max="400" step="10" value="200">
+      <input type="range" id="t" min="0" max="400" step="50" value="200">
     </div>
     <div>
-      <label class="t">Symbol rate <b><span id="lr">2.00</span> Msym/s</b></label>
-      <input type="range" id="r" min="25" max="400" step="5" value="200">
+      <label class="t">Symbol length <b><span id="lts">500</span> ns</b>,
+        which is a symbol rate of <b><span id="lr">2.00</span> Msym/s</b></label>
+      <input type="range" id="r" min="400" max="2000" step="50" value="500">
     </div>
-    <div>
-      <label class="t">Echo phase <b><span id="lp">0</span>°</b></label>
-      <input type="range" id="p" min="0" max="359" value="0">
-    </div>
-    <div>
-      <label class="t">Noise floor E<sub>s</sub>/N<sub>0</sub> <b><span id="ln">22 dB</span></b></label>
-      <input type="range" id="n" min="10" max="45" value="22">
-    </div>
-  </div>
-  <div style="margin-top:12px">
-    <label style="font-size:13.5px;color:var(--mut)">
-      <input type="checkbox" id="eq" checked> Undo the main tap, which is what an equalizer does
-    </label>
   </div>
   <div style="margin-top:10px">
-    <span class="nut" data-a="0"   data-t="200" data-r="200" data-n="45">Clean channel, noise off</span>
-    <span class="nut" data-a="70"  data-t="0"   data-r="200" data-n="45">Strong echo, zero delay</span>
-    <span class="nut" data-a="40"  data-t="40"  data-r="50"  data-n="22">Short delay, long symbols</span>
-    <span class="nut" data-a="40"  data-t="200" data-r="200" data-n="22">Moderate</span>
-    <span class="nut" data-a="40"  data-t="200" data-r="400" data-n="22">Same delay, shorter symbols</span>
-    <span class="nut" data-a="70"  data-t="300" data-r="200" data-n="22">Indoors, many reflectors</span>
+    <span class="nut" data-t="0"   data-r="500">No delay</span>
+    <span class="nut" data-t="200" data-r="2000">Same delay, long symbols</span>
+    <span class="nut" data-t="200" data-r="800">Same delay, shorter symbols</span>
+    <span class="nut" data-t="200" data-r="400">Same delay, shorter still</span>
+    <span class="nut" data-t="400" data-r="450">Far enough to be unreadable</span>
   </div>
 </div>
 
 <div style="margin:0 0 14px">
-  <span class="chip">Symbol time <b><span id="cts">500</span> ns</b></span>
-  <span class="chip">Spill into the next slot <b>β = <span id="cb">0.40</span></b></span>
-  <span class="chip" id="cevm">EVM <b>not computed</b></span>
-  <span class="chip" id="cerr">Symbol errors <b>not computed</b></span>
+  <span class="chip">Echo strength <b>0.50</b> of the direct path, fixed</span>
+  <span class="chip" id="cb">Of one symbol, <b>0%</b> lands in the next slot</span>
+  <span class="chip" id="cx">Groups reaching a decision boundary: <b>no</b></span>
 </div>
 
-<div class="khung">
+<canvas id="ct" width="1280" height="830"></canvas>
+
+<div class="duoi">
   <div>
-    <canvas id="cs" width="1040" height="1040"></canvas>
-    <p class="sub" style="margin-top:8px;font-size:13.5px">The received constellation. Dark dots are
-    the 16 transmitted points, the coloured cloud is 2000 symbols after the channel. The faint grid
-    marks the decision boundaries.</p>
+    <canvas id="cs" width="760" height="760"></canvas>
   </div>
   <div>
-    <canvas id="ct" width="1280" height="520"></canvas>
-    <p class="sub" style="margin-top:8px;font-size:13.5px">The I branch against time. Solid blocks
-    are the direct signal, pale blocks are the echo. The darker overlap is where the echo of one
-    symbol sits inside the next symbol's slot, and that overlap is exactly what is added to the
-    received sample.</p>
+    <h2 style="margin-top:0">What the receiver ends up with</h2>
+    <p class="sub">Each symbol is one point of the 16-QAM constellation from session 2 part 3. The
+    receiver measures the amplitude and the phase of whatever is in the slot, so when a piece of the
+    previous symbol is still there, it measures the wrong point.</p>
+    <p class="sub">Grey dots are the 16 points that can be sent. Each one splits into a small group
+    of 16, one per possible preceding symbol. The orange group belongs to symbol 2 of the drawing
+    above, and the ring marks the one case drawn there: symbol 2 received after symbol 1. The faint
+    grid is the decision boundary, so a group that reaches it is a group the receiver can read as
+    the wrong symbol.</p>
+    <p class="sub">There is no randomness on this page. All 256 combinations are computed, so the
+    picture is complete rather than a sample.</p>
   </div>
 </div>
 
-<h2>What this page computes</h2>
+<h2>Two things the drawing simplifies, said out loud</h2>
 <ul>
-  <li>Two-path channel, rectangular pulses, a receiver that integrates over one whole symbol slot.
-      Write the echo as <code>h = a·e^{jφ}</code> and the fraction of it that spills into the next
-      slot as <code>β = τ·R<sub>s</sub></code>.</li>
-  <li>The sample for symbol k is
-      <code>y[k] = s[k]·(1 + h·(1 − β)) + s[k−1]·(h·β)</code>.
-      The first term is the wanted symbol, distorted; the second is
-      <b>inter-symbol interference</b>.</li>
-  <li>At <b>β = 0</b> the echo stays inside its own slot: it changes amplitude and phase, and
-      interferes with nothing. Undo the main tap, turn the noise floor off, and the EVM is exactly
-      zero. That is why a strong echo is not necessarily a harmful one.</li>
-  <li>Hold the delay <b>τ</b> fixed and raise the symbol rate <b>R<sub>s</sub></b>: β rises with it
-      and the cloud spreads. The environment did not change, only the rate did.</li>
-  <li>The <b>noise floor</b> is added Gaussian noise set by E<sub>s</sub>/N<sub>0</sub>, with the
-      symbol power normalised to one. This is the noise margin from part 2.</li>
-  <li><b>EVM</b> is the RMS error vector divided by the RMS signal. <b>Symbol errors</b> are counted
-      by nearest-neighbour decision over 2000 symbols.</li>
+  <li>The carrier is drawn at <b>20 MHz</b> so that individual cycles are visible. A real 2.4 GHz
+      carrier fits roughly 1200 cycles into a 500 ns symbol, which cannot be drawn.</li>
+  <li>Both the delay and the symbol length move in steps of 50 ns, which is exactly one cycle of
+      that drawn carrier. So the echo always arrives <b>in phase</b> with the direct path, and a
+      symbol always holds a whole number of cycles. Whether two copies add or cancel is the question
+      of the previous slide, about path differences of λ/2; this page is about the much longer
+      delays that make one symbol reach into the next.</li>
+  <li>The receiver is assumed to have corrected for the gain of the current symbol's own two copies.
+      What is left on the constellation is interference from the previous symbol and nothing else.</li>
 </ul>
 
-<h2>Four things worth trying</h2>
+<h2>Three things worth trying</h2>
 <ul>
-  <li>Set a strong echo of 0.70 with zero delay and the noise floor off. The constellation stays
-      perfectly clean. Ask the class why.</li>
-  <li>Hold τ at 200 ns and drag the symbol rate from 0.25 to 4 Msym/s. This is the slide
-      <i>Short symbols suffer more</i>, seen on the constellation.</li>
-  <li>With the noise floor off, raise β: the cloud spreads a long way and the symbol error count
-      stays at zero, because the interference has not yet crossed half the decision distance. Turn
-      the noise floor on at 22 dB and repeat: errors appear far sooner.
-      <b>Inter-symbol interference spends the noise margin before it causes errors on its own.</b></li>
-  <li>Clear the main-tap checkbox. The whole constellation rotates and shrinks. An equalizer fixes
-      that part, and does nothing about the cloud.</li>
+  <li>Set the delay to zero. The echo lands entirely inside its own slot, the groups collapse back
+      to points, and nothing is damaged. A strong echo is not automatically a harmful one.</li>
+  <li>Hold the delay at 200 ns and raise the symbol rate. The environment has not changed and the
+      echo has not changed, yet the groups keep growing. This is the slide
+      <i>Short symbols suffer more</i>.</li>
+  <li>Push the delay to 400 ns and the symbol length down to 450 ns. The orange group now reaches
+      the decision boundary, so the receiver can read that symbol as one of its neighbours. That is
+      the point at which the room, not the bandwidth, is what limits the symbol rate.</li>
 </ul>
 
 <footer>
 Tran Truc Mai, VNU University of Engineering and Technology.<br>
-Model after Stallings, <i>Wireless Communications and Networks</i>, 2nd edition, section 5.4
-page 116, and Steenkiste 2023 section 2.6.3. The 16-QAM constellation follows session 2 part 3.
+After Stallings, <i>Wireless Communications and Networks</i>, 2nd edition, section 5.4 page 116,
+figure 5.12, and Steenkiste 2023 section 2.6.3. The 16-QAM constellation follows session 2 part 3.
 </footer>
 </main>
 
 <script>
 (function(){
   "use strict";
-  var N = 2000;
 
-  // Seeded generator, so the cloud keeps its shape as the sliders move:
-  // only the channel changes, never the symbol sequence.
-  function mulberry32(a){ return function(){
-    a |= 0; a = a + 0x6D2B79F5 | 0;
-    var t = Math.imul(a ^ a >>> 15, 1 | a);
-    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
-    return ((t ^ t >>> 14) >>> 0) / 4294967296;
-  };}
-
-  // 16-QAM, levels +-1 and +-3, normalised to unit mean power.
+  // ---- 16-QAM, levels +-1 and +-3, normalised to unit mean power -------------
   var LV = [-3,-1,1,3], PI = [], PQ = [];
   for (var i=0;i<4;i++) for (var q=0;q<4;q++){ PI.push(LV[i]); PQ.push(LV[q]); }
   var cs = 0;
   for (var k=0;k<16;k++) cs += PI[k]*PI[k] + PQ[k]*PQ[k];
-  var SC = Math.sqrt(cs/16);                       // = sqrt(10)
+  var SC = Math.sqrt(cs/16);                        // = sqrt(10)
   for (var k2=0;k2<16;k2++){ PI[k2]/=SC; PQ[k2]/=SC; }
   var DMIN = 2/SC;                                  // distance between adjacent points
 
-  var rnd = mulberry32(20261011), idx = new Int32Array(N);
-  for (var n=0;n<N;n++) idx[n] = Math.floor(rnd()*16) % 16;
+  // The three symbols drawn in the time view. Index into the table above.
+  // Chosen so the second one is small: interference from a large neighbour shows.
+  var SEQ = [15, 9, 2];                             // (3,3), (1,-1), (-3,1)
+  var AMP = SEQ.map(function(s){ return Math.hypot(PI[s], PQ[s]); });
+  var PHA = SEQ.map(function(s){ return Math.atan2(PQ[s], PI[s]); });
 
-  // Gaussian noise floor, its own seed, unit variance per axis (Box-Muller).
-  var rn = mulberry32(77001), gI = new Float64Array(N), gQ = new Float64Array(N);
-  for (var n4=0;n4<N;n4++){
-    var u1 = Math.max(rn(), 1e-12), u2 = rn();
-    var rr = Math.sqrt(-2*Math.log(u1));
-    gI[n4] = rr*Math.cos(6.283185307179586*u2);
-    gQ[n4] = rr*Math.sin(6.283185307179586*u2);
-  }
+  var A_ECHO = 0.5;                                 // echo strength, fixed and stated on the page
+  var FC = 20e6;                                    // drawn carrier, 20 MHz, stated on the page
 
   var E = function(id){ return document.getElementById(id); };
-  var sl = { a:E('a'), t:E('t'), r:E('r'), p:E('p'), n:E('n') };
+  var sl = { t:E('t'), r:E('r') };
 
   function tinh(){
-    var a = +sl.a.value/100;
     var tau = +sl.t.value;                          // ns
-    var Rs  = +sl.r.value/100;                      // Msym/s
-    var phi = +sl.p.value*Math.PI/180;
-    var Ts  = 1000/Rs;                              // ns
-    var beta = Math.min(1, tau/Ts);
-    var hr = a*Math.cos(phi), hi = a*Math.sin(phi);
-    var mr = 1 + hr*(1-beta), mi = hi*(1-beta);     // main tap
-    var ir = hr*beta,         ii = hi*beta;         // inter-symbol interference tap
-    // Es = 1 because the constellation is normalised, so the noise variance
-    // per axis is 10^(-snr/10)/2.
-    var sv = +sl.n.value, tat = sv >= 45;
-    var sg = tat ? 0 : Math.sqrt(Math.pow(10, -sv/10)/2);
-    return {a:a, tau:tau, Rs:Rs, Ts:Ts, beta:beta, phi:phi, sv:sv, tat:tat, sg:sg,
-            mr:mr, mi:mi, ir:ir, ii:ii, eq:E('eq').checked};
+    var Ts  = +sl.r.value;                          // ns, always a multiple of 50
+    var Rs  = 1000/Ts;                              // Msym/s
+    var beta = Math.min(1, tau/Ts);                 // fraction spilling into the next slot
+    // The receiver corrects the current symbol's own gain, so only the previous
+    // symbol's contribution is left: coefficient g, applied to s[k-1].
+    var g = (A_ECHO*beta) / (1 + A_ECHO*(1-beta));
+    // A group reaches a decision boundary when the worst preceding symbol pushes
+    // a point by half the distance between neighbours: g*3 >= 1, i.e. g >= 1/3.
+    var cham = (g*3/SC) >= (DMIN/2) - 1e-12;
+    return {tau:tau, Rs:Rs, Ts:Ts, beta:beta, g:g, cham:cham};
   }
 
-  function chay(c){
-    var yi = new Float64Array(N), yq = new Float64Array(N);
-    var dr = c.mr, di = c.mi;
-    var nr = 1, ni = 0;
-    if (c.eq){                                      // divide by the main tap
-      var d2 = c.mr*c.mr + c.mi*c.mi;
-      nr = c.mr/d2; ni = -c.mi/d2;
+  // Direct-path passband signal at time t in ns, zero outside the three slots.
+  function truc(t, Ts){
+    var k = Math.floor(t/Ts);
+    if (k < 0 || k > 2) return 0;
+    return AMP[k]*Math.cos(2*Math.PI*FC*(t*1e-9) + PHA[k]);
+  }
+
+  function veSong(c){
+    var cv = E('ct'), g = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    g.clearRect(0,0,W,H);
+    var m = 36, xr = W-36, pw = xr-m;
+    var Twin = 3*c.Ts;                              // the window always holds three symbols
+    var AM = 2.15;                                  // largest value the sum can reach
+    var sc = 96/AM;                                 // pixels per unit
+    var yc = [190, 430, 670];
+    var ten = ['transmitted: three symbols, one carrier each',
+               'echo: the same signal again, later and weaker',
+               'received: the two added together'];
+    function X(t){ return m + t/Twin*pw; }
+
+    // slot boundaries and labels
+    g.strokeStyle = '#E4E8EF'; g.lineWidth = 2;
+    for (var b=0;b<=3;b++){
+      var xb = X(b*c.Ts);
+      g.beginPath(); g.moveTo(xb, 128); g.lineTo(xb, 790); g.stroke();
     }
-    var se = 0, ss = 0, loi = 0;
-    for (var n=0;n<N;n++){
-      var s1 = idx[n], s0 = idx[(n-1+N)%N];
-      var ar = PI[s1]*dr - PQ[s1]*di + PI[s0]*c.ir - PQ[s0]*c.ii + c.sg*gI[n];
-      var ai = PI[s1]*di + PQ[s1]*dr + PI[s0]*c.ii + PQ[s0]*c.ir + c.sg*gQ[n];
-      var br = ar*nr - ai*ni, bi = ar*ni + ai*nr;
-      yi[n] = br; yq[n] = bi;
-      var er = br - PI[s1], ei = bi - PQ[s1];
-      se += er*er + ei*ei;
-      ss += PI[s1]*PI[s1] + PQ[s1]*PQ[s1];
-      // nearest-neighbour decision
-      var best = 0, bd = 1e9;
-      for (var k=0;k<16;k++){
-        var u = br-PI[k], v = bi-PQ[k], d = u*u+v*v;
-        if (d < bd){ bd = d; best = k; }
+    g.fillStyle = '#5A6272'; g.font = '23px Calibri, sans-serif';
+    for (var s=0;s<3;s++) g.fillText('symbol '+(s+1), X((s+0.5)*c.Ts)-52, 814);
+
+    // the window where the echo of symbol 1 sits inside the slot of symbol 2
+    var dx = c.beta*c.Ts;
+    if (dx > 0.5){
+      g.fillStyle = 'rgba(255,107,53,0.13)';
+      g.fillRect(X(c.Ts), 128, X(c.Ts+dx)-X(c.Ts), 662);
+    }
+
+    var mau = ['#2A9D8F','#6C5CE7','#D81E5B'];
+    for (var r=0;r<3;r++){
+      // zero line
+      g.strokeStyle = '#EFF2F7'; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(m, yc[r]); g.lineTo(xr, yc[r]); g.stroke();
+      // the waveform
+      g.strokeStyle = mau[r]; g.lineWidth = 2;
+      g.beginPath();
+      for (var px=0; px<=pw; px++){
+        var t = px/pw*Twin;
+        var v = (r===0) ? truc(t, c.Ts)
+              : (r===1) ? A_ECHO*truc(t-c.tau, c.Ts)
+              :           truc(t, c.Ts) + A_ECHO*truc(t-c.tau, c.Ts);
+        var x = m+px, y = yc[r] - v*sc;
+        if (px===0) g.moveTo(x,y); else g.lineTo(x,y);
       }
-      if (best !== s1) loi++;
+      g.stroke();
+      g.fillStyle = '#1A1F36'; g.font = '23px Calibri, sans-serif';
+      g.fillText(ten[r], m, yc[r]-112);
     }
-    return {yi:yi, yq:yq, evm:Math.sqrt(se/N)/Math.sqrt(ss/N)*100, loi:loi};
+
+    // the one sentence the picture is for
+    g.font = '24px Calibri, sans-serif';
+    if (dx > 0.5){
+      g.fillStyle = '#D81E5B';
+      g.fillText('inside the shaded strip the receiver hears symbol 1 and symbol 2 at once',
+                 m, 42);
+    } else {
+      g.fillStyle = '#2A9D8F';
+      g.fillText('the echo stays inside its own slot, so no symbol reaches into another', m, 42);
+    }
   }
 
-  function veChom(kq){
+  function veChom(c){
     var cv = E('cs'), g = cv.getContext('2d');
     var W = cv.width, H = cv.height;
     g.clearRect(0,0,W,H);
-    var R = 1.75, m = 70;                           // largest value shown on either axis
+    var R = 1.55, m = 52;
     function X(v){ return m + (v+R)/(2*R)*(W-2*m); }
     function Y(v){ return H - m - (v+R)/(2*R)*(H-2*m); }
-    // decision boundaries
     g.strokeStyle = '#EFF2F7'; g.lineWidth = 2;
     for (var b=-1;b<=1;b++){
       var t = b*DMIN;
@@ -261,105 +259,51 @@ page 116, and Steenkiste 2023 section 2.6.3. The 16-QAM constellation follows se
     g.strokeStyle = '#D8DEE9'; g.lineWidth = 2;
     g.beginPath(); g.moveTo(X(-R), Y(0)); g.lineTo(X(R), Y(0)); g.stroke();
     g.beginPath(); g.moveTo(X(0), Y(-R)); g.lineTo(X(0), Y(R)); g.stroke();
-    // the received cloud; points outside the frame are not drawn, and are counted honestly
-    g.fillStyle = 'rgba(216,30,91,0.30)';
-    var ngoai = 0;
-    for (var n=0;n<N;n++){
-      if (Math.abs(kq.yi[n]) > R || Math.abs(kq.yq[n]) > R){ ngoai++; continue; }
-      g.beginPath(); g.arc(X(kq.yi[n]), Y(kq.yq[n]), 3.0, 0, 6.2832); g.fill();
-    }
-    // the 16 transmitted points
-    g.fillStyle = '#1A1F36';
-    for (var k=0;k<16;k++){
-      g.beginPath(); g.arc(X(PI[k]), Y(PQ[k]), 6.5, 0, 6.2832); g.fill();
-    }
-    g.fillStyle = '#5A6272'; g.font = '26px Calibri, sans-serif';
-    g.fillText('I', W-m+14, Y(0)+9);
-    g.fillText('Q', X(0)-9, m-18);
-    if (ngoai > 0){
-      g.fillStyle = '#D81E5B'; g.font = '24px Calibri, sans-serif';
-      g.fillText(ngoai + ' points fall outside the frame', m, H-18);
-    }
-  }
 
-  function veThoiGian(c){
-    var cv = E('ct'), g = cv.getContext('2d');
-    var W = cv.width, H = cv.height;
-    g.clearRect(0,0,W,H);
-    var m = 64, y0 = 330, hh = 140;
-    var nk = 3, wk = (W-2*m)/nk;
-    var mau = ['#2A9D8F','#6C5CE7','#D81E5B'];
-    var lv = [0.9, -0.45, 0.6];                     // three illustrative I levels
-    // axis
-    g.strokeStyle = '#D8DEE9'; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(m, y0); g.lineTo(W-m, y0); g.stroke();
-    for (var k=0;k<=nk;k++){
-      g.beginPath(); g.moveTo(m+k*wk, y0-hh-40); g.lineTo(m+k*wk, y0+14); g.stroke();
-    }
-    // the echo, drawn FIRST so it sits underneath
-    var dx = c.beta*wk;
-    for (var k2=0;k2<nk;k2++){
-      var x = m+k2*wk+dx, hgt = lv[k2]*hh*c.a;
-      var wv = Math.min(wk, (W-m) - x);             // clipped at the right edge of the frame
-      if (wv > 0){
-        g.fillStyle = mau[k2]; g.globalAlpha = 0.30;
-        g.fillRect(x, y0 - Math.max(hgt,0), wv, Math.abs(hgt));
-        g.globalAlpha = 1;
+    // all 256 combinations: current symbol cu, preceding symbol tr
+    for (var cu=0;cu<16;cu++){
+      var rieng = (cu === SEQ[1]);                  // the group drawn in the time view
+      g.fillStyle = rieng ? '#FF6B35' : 'rgba(216,30,91,0.45)';
+      for (var tr=0;tr<16;tr++){
+        var yi = PI[cu] + c.g*PI[tr], yq = PQ[cu] + c.g*PQ[tr];
+        g.beginPath(); g.arc(X(yi), Y(yq), rieng ? 4.6 : 3.4, 0, 6.2832); g.fill();
       }
     }
-    // the part that spills into the next slot, drawn darker
-    if (c.beta > 0.002 && c.a > 0.002){
-      for (var k3=0;k3<nk-1;k3++){
-        var x2 = m+(k3+1)*wk, hgt2 = lv[k3]*hh*c.a;
-        g.fillStyle = mau[k3]; g.globalAlpha = 0.72;
-        g.fillRect(x2, y0 - Math.max(hgt2,0), dx, Math.abs(hgt2));
-        g.globalAlpha = 1;
-      }
+    // the 16 points that can be sent
+    g.fillStyle = '#8D95A6';
+    for (var k=0;k<16;k++){
+      g.beginPath(); g.arc(X(PI[k]), Y(PQ[k]), 5.5, 0, 6.2832); g.fill();
     }
-    // the direct signal
-    for (var k4=0;k4<nk;k4++){
-      var x3 = m+k4*wk, h3 = lv[k4]*hh;
-      g.fillStyle = mau[k4];
-      g.fillRect(x3, y0 - Math.max(h3,0), wk, Math.abs(h3));
-      g.fillStyle = '#1A1F36'; g.font = '24px Calibri, sans-serif';
-      g.fillText('symbol '+(k4+1), x3+10, y0+100);
-    }
-    g.fillStyle = '#5A6272'; g.font = '24px Calibri, sans-serif';
-    g.fillText('I branch', m, 42);
-    g.fillText('solid: direct path      pale: echo', m+200, 42);
-    if (c.beta > 0.002 && c.a > 0.002){
-      g.fillStyle = '#D81E5B';
-      g.fillText('the darker overlap is inter-symbol interference', m, y0+150);
-    } else {
-      g.fillStyle = '#2A9D8F';
-      g.fillText('nothing spills into the next slot', m, y0+150);
-    }
+    // the case drawn in the time view: symbol 2 received after symbol 1
+    var ri = PI[SEQ[1]] + c.g*PI[SEQ[0]], rq = PQ[SEQ[1]] + c.g*PQ[SEQ[0]];
+    g.strokeStyle = '#FF6B35'; g.lineWidth = 3;
+    g.beginPath(); g.arc(X(ri), Y(rq), 13, 0, 6.2832); g.stroke();
+
+    g.fillStyle = '#5A6272'; g.font = '22px Calibri, sans-serif';
+    g.fillText('I', W-m+10, Y(0)+8);
+    g.fillText('Q', X(0)-8, m-14);
   }
 
   function ve(){
-    var c = tinh(), kq = chay(c);
-    E('la').textContent = c.a.toFixed(2);
+    var c = tinh();
     E('lt').textContent = c.tau;
     E('lr').textContent = c.Rs.toFixed(2);
-    E('lp').textContent = sl.p.value;
-    E('ln').textContent = c.tat ? 'off' : (c.sv + ' dB');
-    E('cts').textContent = c.Ts.toFixed(0);
-    E('cb').textContent = c.beta.toFixed(2);
-    var ce = E('cevm'), cr = E('cerr');
-    ce.innerHTML = 'EVM <b>' + kq.evm.toFixed(1) + '%</b>';
-    cr.innerHTML = 'Symbol errors <b>' + kq.loi + ' / ' + N + '</b>';
-    ce.className = 'chip ' + (kq.evm < 8 ? 'tot' : (kq.evm > 18 ? 'xau' : ''));
-    cr.className = 'chip ' + (kq.loi === 0 ? 'tot' : 'xau');
-    veChom(kq); veThoiGian(c);
+    E('lts').textContent = c.Ts.toFixed(0);
+    var cb = E('cb');
+    cb.innerHTML = 'Of one symbol, <b>' + (c.beta*100).toFixed(0) +
+                   '%</b> lands in the next slot';
+    cb.className = 'chip ' + (c.beta < 0.01 ? 'tot' : (c.beta > 0.5 ? 'xau' : ''));
+    var cx = E('cx');
+    cx.innerHTML = 'Groups reaching a decision boundary: <b>' +
+                   (c.cham ? 'yes' : 'no') + '</b>';
+    cx.className = 'chip ' + (c.cham ? 'xau' : 'tot');
+    veSong(c); veChom(c);
   }
 
-  ['a','t','r','p','n'].forEach(function(k){ sl[k].addEventListener('input', ve); });
-  E('eq').addEventListener('change', ve);
+  ['t','r'].forEach(function(k){ sl[k].addEventListener('input', ve); });
   Array.prototype.forEach.call(document.querySelectorAll('.nut'), function(b){
     b.addEventListener('click', function(){
-      sl.a.value = b.dataset.a; sl.t.value = b.dataset.t;
-      sl.r.value = b.dataset.r; sl.n.value = b.dataset.n;
-      ve();
+      sl.t.value = b.dataset.t; sl.r.value = b.dataset.r; ve();
     });
   });
   ve();
