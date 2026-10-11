@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>INT3303 · Nhiễu liên ký tự nhìn trên chòm sao</title>
+<title>INT3303 · Inter-symbol interference on the constellation</title>
 <style>
 :root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;
       --mut:#5A6272;--line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
@@ -44,112 +44,118 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
 </head>
 <body>
 <header>
-  <div class="k">INT3303 · BUỔI 3 · TIẾT 3</div>
-  <h1>Nhiễu liên ký tự nhìn trên chòm sao</h1>
-  <p>Một bản sao tới muộn của ký tự trước không làm hỏng một bit, nó kéo lệch cả một điểm chòm sao.
-  Trang này dựng đúng phép tính ấy cho 16-QAM: kéo thanh trượt và xem đám mây điểm nở ra.</p>
+  <div class="k">INT3303 · SESSION 3 · PART 3</div>
+  <h1>Inter-symbol interference on the constellation</h1>
+  <p>A late copy of the previous symbol does not corrupt one bit. It pulls a whole constellation
+  point out of place. This page runs that calculation for 16-QAM: move the sliders and watch the
+  cloud of received points spread out.</p>
 </header>
-<a class="veml" href="../index.html">Về mục lục mô phỏng INT3303</a>
+<a class="veml" href="../index.html">Back to the INT3303 simulation index</a>
 
 <main>
-<p class="sub">Kênh truyền có hai đường: đường thẳng, và một tiếng vọng yếu hơn tới muộn.
-Máy thu lấy tích phân trên từng khe ký tự, nên khi tiếng vọng tràn sang khe sau, mẫu của ký tự
-hiện tại bị cộng thêm một phần của ký tự trước.</p>
+<p class="sub">The channel has two paths: the direct one, and a weaker echo that arrives later.
+The receiver integrates over each symbol slot, so once the echo spills into the following slot,
+the sample of the current symbol carries a piece of the previous one.</p>
 
 <div class="dk">
   <div class="hang">
     <div>
-      <label class="t">Độ mạnh tiếng vọng <b><span id="la">0.40</span></b> lần đường thẳng</label>
+      <label class="t">Echo strength <b><span id="la">0.40</span></b> of the direct path</label>
       <input type="range" id="a" min="0" max="100" value="40">
     </div>
     <div>
-      <label class="t">Độ trễ tiếng vọng <b><span id="lt">200</span> ns</b></label>
+      <label class="t">Echo delay <b><span id="lt">200</span> ns</b></label>
       <input type="range" id="t" min="0" max="400" step="10" value="200">
     </div>
     <div>
-      <label class="t">Tốc độ ký tự <b><span id="lr">2.00</span> Msym/s</b></label>
+      <label class="t">Symbol rate <b><span id="lr">2.00</span> Msym/s</b></label>
       <input type="range" id="r" min="25" max="400" step="5" value="200">
     </div>
     <div>
-      <label class="t">Pha của tiếng vọng <b><span id="lp">0</span>°</b></label>
+      <label class="t">Echo phase <b><span id="lp">0</span>°</b></label>
       <input type="range" id="p" min="0" max="359" value="0">
     </div>
     <div>
-      <label class="t">Nhiễu nền E<sub>s</sub>/N<sub>0</sub> <b><span id="ln">22 dB</span></b></label>
+      <label class="t">Noise floor E<sub>s</sub>/N<sub>0</sub> <b><span id="ln">22 dB</span></b></label>
       <input type="range" id="n" min="10" max="45" value="22">
     </div>
   </div>
   <div style="margin-top:12px">
     <label style="font-size:13.5px;color:var(--mut)">
-      <input type="checkbox" id="eq" checked> Bù méo của nhánh chính, tức việc mà bộ cân bằng làm
+      <input type="checkbox" id="eq" checked> Undo the main tap, which is what an equalizer does
     </label>
   </div>
   <div style="margin-top:10px">
-    <span class="nut" data-a="0"   data-t="200" data-r="200" data-n="45">Kênh sạch, tắt nhiễu nền</span>
-    <span class="nut" data-a="70"  data-t="0"   data-r="200" data-n="45">Tiếng vọng mạnh nhưng trễ 0</span>
-    <span class="nut" data-a="40"  data-t="40"  data-r="50"  data-n="22">Trễ ngắn, ký tự dài</span>
-    <span class="nut" data-a="40"  data-t="200" data-r="200" data-n="22">Vừa phải</span>
-    <span class="nut" data-a="40"  data-t="200" data-r="400" data-n="22">Cùng trễ, ký tự ngắn hơn</span>
-    <span class="nut" data-a="70"  data-t="300" data-r="200" data-n="22">Trong nhà, nhiều vật phản xạ</span>
+    <span class="nut" data-a="0"   data-t="200" data-r="200" data-n="45">Clean channel, noise off</span>
+    <span class="nut" data-a="70"  data-t="0"   data-r="200" data-n="45">Strong echo, zero delay</span>
+    <span class="nut" data-a="40"  data-t="40"  data-r="50"  data-n="22">Short delay, long symbols</span>
+    <span class="nut" data-a="40"  data-t="200" data-r="200" data-n="22">Moderate</span>
+    <span class="nut" data-a="40"  data-t="200" data-r="400" data-n="22">Same delay, shorter symbols</span>
+    <span class="nut" data-a="70"  data-t="300" data-r="200" data-n="22">Indoors, many reflectors</span>
   </div>
 </div>
 
 <div style="margin:0 0 14px">
-  <span class="chip">Thời gian một ký tự <b><span id="cts">500</span> ns</b></span>
-  <span class="chip">Phần tràn sang khe sau <b>β = <span id="cb">0.40</span></b></span>
-  <span class="chip" id="cevm">EVM <b>chưa tính</b></span>
-  <span class="chip" id="cerr">Ký tự sai <b>chưa tính</b></span>
+  <span class="chip">Symbol time <b><span id="cts">500</span> ns</b></span>
+  <span class="chip">Spill into the next slot <b>β = <span id="cb">0.40</span></b></span>
+  <span class="chip" id="cevm">EVM <b>not computed</b></span>
+  <span class="chip" id="cerr">Symbol errors <b>not computed</b></span>
 </div>
 
 <div class="khung">
   <div>
     <canvas id="cs" width="1040" height="1040"></canvas>
-    <p class="sub" style="margin-top:8px;font-size:13.5px">Chòm sao thu được. Chấm đậm là 16 điểm
-    phát đi, đám mây màu là 2000 ký tự sau khi qua kênh. Lưới nhạt là ranh giới quyết định.</p>
+    <p class="sub" style="margin-top:8px;font-size:13.5px">The received constellation. Dark dots are
+    the 16 transmitted points, the coloured cloud is 2000 symbols after the channel. The faint grid
+    marks the decision boundaries.</p>
   </div>
   <div>
     <canvas id="ct" width="1280" height="520"></canvas>
-    <p class="sub" style="margin-top:8px;font-size:13.5px">Nhánh I theo thời gian. Khối đặc là tín
-    hiệu đường thẳng, khối nhạt là tiếng vọng. Phần tô đậm là chỗ tiếng vọng của ký tự trước nằm
-    trong khe của ký tự sau, và đúng phần ấy là thứ cộng vào mẫu thu.</p>
+    <p class="sub" style="margin-top:8px;font-size:13.5px">The I branch against time. Solid blocks
+    are the direct signal, pale blocks are the echo. The darker overlap is where the echo of one
+    symbol sits inside the next symbol's slot, and that overlap is exactly what is added to the
+    received sample.</p>
   </div>
 </div>
 
-<h2>Phép tính trên trang này</h2>
+<h2>What this page computes</h2>
 <ul>
-  <li>Kênh hai tia, xung chữ nhật, máy thu tích phân trọn một khe ký tự. Gọi <code>h = a·e^{jφ}</code>
-      là tiếng vọng và <code>β = τ·R<sub>s</sub></code> là phần của tiếng vọng tràn sang khe sau.</li>
-  <li>Mẫu thu của ký tự thứ k là
+  <li>Two-path channel, rectangular pulses, a receiver that integrates over one whole symbol slot.
+      Write the echo as <code>h = a·e^{jφ}</code> and the fraction of it that spills into the next
+      slot as <code>β = τ·R<sub>s</sub></code>.</li>
+  <li>The sample for symbol k is
       <code>y[k] = s[k]·(1 + h·(1 − β)) + s[k−1]·(h·β)</code>.
-      Số hạng đầu là ký tự cần nhận đã bị méo, số hạng sau là <b>nhiễu liên ký tự</b>.</li>
-  <li>Khi <b>β = 0</b> tiếng vọng nằm trọn trong khe của chính nó: nó chỉ đổi biên độ và pha, không
-      gây nhiễu liên ký tự. Bù méo nhánh chính và tắt nhiễu nền thì EVM về đúng 0. Đó là lý do một
-      tiếng vọng mạnh chưa chắc đã hại.</li>
-  <li>Giữ nguyên độ trễ <b>τ</b> rồi tăng tốc độ ký tự <b>R<sub>s</sub></b>: β tăng theo, đám mây nở
-      ra. Môi trường không đổi, chỉ tốc độ đổi.</li>
-  <li><b>Nhiễu nền</b> là nhiễu Gauss cộng thêm, đặt theo E<sub>s</sub>/N<sub>0</sub>, với công suất
-      ký tự đã chuẩn hoá về 1. Đây là biên nhiễu đã học ở Tiết 2.</li>
-  <li><b>EVM</b> là độ lớn hiệu dụng của véc tơ sai so với độ lớn hiệu dụng của tín hiệu.
-      <b>Ký tự sai</b> đếm bằng quyết định lân cận gần nhất trên 2000 ký tự.</li>
+      The first term is the wanted symbol, distorted; the second is
+      <b>inter-symbol interference</b>.</li>
+  <li>At <b>β = 0</b> the echo stays inside its own slot: it changes amplitude and phase, and
+      interferes with nothing. Undo the main tap, turn the noise floor off, and the EVM is exactly
+      zero. That is why a strong echo is not necessarily a harmful one.</li>
+  <li>Hold the delay <b>τ</b> fixed and raise the symbol rate <b>R<sub>s</sub></b>: β rises with it
+      and the cloud spreads. The environment did not change, only the rate did.</li>
+  <li>The <b>noise floor</b> is added Gaussian noise set by E<sub>s</sub>/N<sub>0</sub>, with the
+      symbol power normalised to one. This is the noise margin from part 2.</li>
+  <li><b>EVM</b> is the RMS error vector divided by the RMS signal. <b>Symbol errors</b> are counted
+      by nearest-neighbour decision over 2000 symbols.</li>
 </ul>
 
-<h2>Bốn việc nên thử</h2>
+<h2>Four things worth trying</h2>
 <ul>
-  <li>Đặt tiếng vọng mạnh 0.70 nhưng trễ 0 ns, nhiễu nền tắt. Chòm sao vẫn sạch tuyệt đối.
-      Hỏi lớp vì sao.</li>
-  <li>Giữ τ = 200 ns, kéo tốc độ ký tự từ 0.25 lên 4 Msym/s. Đây chính là slide
-      <i>Short symbols suffer more</i>, nhưng nhìn trên chòm sao.</li>
-  <li>Tắt nhiễu nền rồi kéo β lên: đám mây nở rất rộng mà số ký tự sai vẫn bằng 0, vì nhiễu liên ký
-      tự chưa vượt nửa khoảng cách quyết định. Bật nhiễu nền 22 dB và làm lại: lỗi xuất hiện sớm hơn
-      nhiều. <b>Nhiễu liên ký tự ăn vào biên nhiễu trước khi nó tự gây lỗi.</b></li>
-  <li>Bỏ dấu ô bù méo nhánh chính. Cả chòm sao xoay và co lại. Bộ cân bằng sửa được phần ấy,
-      nhưng không sửa được đám mây.</li>
+  <li>Set a strong echo of 0.70 with zero delay and the noise floor off. The constellation stays
+      perfectly clean. Ask the class why.</li>
+  <li>Hold τ at 200 ns and drag the symbol rate from 0.25 to 4 Msym/s. This is the slide
+      <i>Short symbols suffer more</i>, seen on the constellation.</li>
+  <li>With the noise floor off, raise β: the cloud spreads a long way and the symbol error count
+      stays at zero, because the interference has not yet crossed half the decision distance. Turn
+      the noise floor on at 22 dB and repeat: errors appear far sooner.
+      <b>Inter-symbol interference spends the noise margin before it causes errors on its own.</b></li>
+  <li>Clear the main-tap checkbox. The whole constellation rotates and shrinks. An equalizer fixes
+      that part, and does nothing about the cloud.</li>
 </ul>
 
 <footer>
-Trần Trúc Mai, Trường Đại học Công nghệ, Đại học Quốc gia Hà Nội.<br>
-Mô hình theo Stallings, <i>Wireless Communications and Networks</i>, 2nd edition, mục 5.4 trang 116,
-và Steenkiste 2023 mục 2.6.3. Chòm sao 16-QAM theo Buổi 2 Tiết 3.
+Tran Truc Mai, VNU University of Engineering and Technology.<br>
+Model after Stallings, <i>Wireless Communications and Networks</i>, 2nd edition, section 5.4
+page 116, and Steenkiste 2023 section 2.6.3. The 16-QAM constellation follows session 2 part 3.
 </footer>
 </main>
 
@@ -158,8 +164,8 @@ và Steenkiste 2023 mục 2.6.3. Chòm sao 16-QAM theo Buổi 2 Tiết 3.
   "use strict";
   var N = 2000;
 
-  // Bo sinh so ngau nhien co hat giong, de dam may giu nguyen hinh dang khi
-  // keo thanh truot: chi kenh truyen doi, chuoi ky tu thi khong.
+  // Seeded generator, so the cloud keeps its shape as the sliders move:
+  // only the channel changes, never the symbol sequence.
   function mulberry32(a){ return function(){
     a |= 0; a = a + 0x6D2B79F5 | 0;
     var t = Math.imul(a ^ a >>> 15, 1 | a);
@@ -167,19 +173,19 @@ và Steenkiste 2023 mục 2.6.3. Chòm sao 16-QAM theo Buổi 2 Tiết 3.
     return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };}
 
-  // 16-QAM, muc +-1 va +-3, chuan hoa cong suat trung binh bang 1.
+  // 16-QAM, levels +-1 and +-3, normalised to unit mean power.
   var LV = [-3,-1,1,3], PI = [], PQ = [];
   for (var i=0;i<4;i++) for (var q=0;q<4;q++){ PI.push(LV[i]); PQ.push(LV[q]); }
   var cs = 0;
   for (var k=0;k<16;k++) cs += PI[k]*PI[k] + PQ[k]*PQ[k];
   var SC = Math.sqrt(cs/16);                       // = sqrt(10)
   for (var k2=0;k2<16;k2++){ PI[k2]/=SC; PQ[k2]/=SC; }
-  var DMIN = 2/SC;                                  // khoang cach giua hai diem ke
+  var DMIN = 2/SC;                                  // distance between adjacent points
 
   var rnd = mulberry32(20261011), idx = new Int32Array(N);
   for (var n=0;n<N;n++) idx[n] = Math.floor(rnd()*16) % 16;
 
-  // Nhieu nen Gauss, hat giong rieng, phuong sai 1 tren moi truc (Box-Muller).
+  // Gaussian noise floor, its own seed, unit variance per axis (Box-Muller).
   var rn = mulberry32(77001), gI = new Float64Array(N), gQ = new Float64Array(N);
   for (var n4=0;n4<N;n4++){
     var u1 = Math.max(rn(), 1e-12), u2 = rn();
@@ -199,9 +205,10 @@ và Steenkiste 2023 mục 2.6.3. Chòm sao 16-QAM theo Buổi 2 Tiết 3.
     var Ts  = 1000/Rs;                              // ns
     var beta = Math.min(1, tau/Ts);
     var hr = a*Math.cos(phi), hi = a*Math.sin(phi);
-    var mr = 1 + hr*(1-beta), mi = hi*(1-beta);     // nhanh chinh
-    var ir = hr*beta,         ii = hi*beta;         // he so nhieu lien ky tu
-    // Es = 1 do chom sao da chuan hoa, nen phuong sai nhieu moi truc = 10^(-snr/10)/2.
+    var mr = 1 + hr*(1-beta), mi = hi*(1-beta);     // main tap
+    var ir = hr*beta,         ii = hi*beta;         // inter-symbol interference tap
+    // Es = 1 because the constellation is normalised, so the noise variance
+    // per axis is 10^(-snr/10)/2.
     var sv = +sl.n.value, tat = sv >= 45;
     var sg = tat ? 0 : Math.sqrt(Math.pow(10, -sv/10)/2);
     return {a:a, tau:tau, Rs:Rs, Ts:Ts, beta:beta, phi:phi, sv:sv, tat:tat, sg:sg,
@@ -212,7 +219,7 @@ và Steenkiste 2023 mục 2.6.3. Chòm sao 16-QAM theo Buổi 2 Tiết 3.
     var yi = new Float64Array(N), yq = new Float64Array(N);
     var dr = c.mr, di = c.mi;
     var nr = 1, ni = 0;
-    if (c.eq){                                      // chia cho nhanh chinh
+    if (c.eq){                                      // divide by the main tap
       var d2 = c.mr*c.mr + c.mi*c.mi;
       nr = c.mr/d2; ni = -c.mi/d2;
     }
@@ -226,7 +233,7 @@ và Steenkiste 2023 mục 2.6.3. Chòm sao 16-QAM theo Buổi 2 Tiết 3.
       var er = br - PI[s1], ei = bi - PQ[s1];
       se += er*er + ei*ei;
       ss += PI[s1]*PI[s1] + PQ[s1]*PQ[s1];
-      // quyet dinh lan can gan nhat
+      // nearest-neighbour decision
       var best = 0, bd = 1e9;
       for (var k=0;k<16;k++){
         var u = br-PI[k], v = bi-PQ[k], d = u*u+v*v;
@@ -241,10 +248,10 @@ và Steenkiste 2023 mục 2.6.3. Chòm sao 16-QAM theo Buổi 2 Tiết 3.
     var cv = E('cs'), g = cv.getContext('2d');
     var W = cv.width, H = cv.height;
     g.clearRect(0,0,W,H);
-    var R = 1.75, m = 70;                           // bien do toi da tren truc
+    var R = 1.75, m = 70;                           // largest value shown on either axis
     function X(v){ return m + (v+R)/(2*R)*(W-2*m); }
     function Y(v){ return H - m - (v+R)/(2*R)*(H-2*m); }
-    // luoi ranh gioi quyet dinh
+    // decision boundaries
     g.strokeStyle = '#EFF2F7'; g.lineWidth = 2;
     for (var b=-1;b<=1;b++){
       var t = b*DMIN;
@@ -254,14 +261,14 @@ và Steenkiste 2023 mục 2.6.3. Chòm sao 16-QAM theo Buổi 2 Tiết 3.
     g.strokeStyle = '#D8DEE9'; g.lineWidth = 2;
     g.beginPath(); g.moveTo(X(-R), Y(0)); g.lineTo(X(R), Y(0)); g.stroke();
     g.beginPath(); g.moveTo(X(0), Y(-R)); g.lineTo(X(0), Y(R)); g.stroke();
-    // dam may thu duoc; diem ra ngoai khung thi khong ve, va dem lai cho trung thuc
+    // the received cloud; points outside the frame are not drawn, and are counted honestly
     g.fillStyle = 'rgba(216,30,91,0.30)';
     var ngoai = 0;
     for (var n=0;n<N;n++){
       if (Math.abs(kq.yi[n]) > R || Math.abs(kq.yq[n]) > R){ ngoai++; continue; }
       g.beginPath(); g.arc(X(kq.yi[n]), Y(kq.yq[n]), 3.0, 0, 6.2832); g.fill();
     }
-    // 16 diem ly tuong
+    // the 16 transmitted points
     g.fillStyle = '#1A1F36';
     for (var k=0;k<16;k++){
       g.beginPath(); g.arc(X(PI[k]), Y(PQ[k]), 6.5, 0, 6.2832); g.fill();
@@ -271,7 +278,7 @@ và Steenkiste 2023 mục 2.6.3. Chòm sao 16-QAM theo Buổi 2 Tiết 3.
     g.fillText('Q', X(0)-9, m-18);
     if (ngoai > 0){
       g.fillStyle = '#D81E5B'; g.font = '24px Calibri, sans-serif';
-      g.fillText(ngoai + ' điểm nằm ngoài khung', m, H-18);
+      g.fillText(ngoai + ' points fall outside the frame', m, H-18);
     }
   }
 
@@ -282,25 +289,25 @@ và Steenkiste 2023 mục 2.6.3. Chòm sao 16-QAM theo Buổi 2 Tiết 3.
     var m = 64, y0 = 330, hh = 140;
     var nk = 3, wk = (W-2*m)/nk;
     var mau = ['#2A9D8F','#6C5CE7','#D81E5B'];
-    var lv = [0.9, -0.45, 0.6];                     // ba muc I minh hoa
-    // truc
+    var lv = [0.9, -0.45, 0.6];                     // three illustrative I levels
+    // axis
     g.strokeStyle = '#D8DEE9'; g.lineWidth = 2;
     g.beginPath(); g.moveTo(m, y0); g.lineTo(W-m, y0); g.stroke();
     for (var k=0;k<=nk;k++){
       g.beginPath(); g.moveTo(m+k*wk, y0-hh-40); g.lineTo(m+k*wk, y0+14); g.stroke();
     }
-    // tieng vong, ve TRUOC de nam duoi
+    // the echo, drawn FIRST so it sits underneath
     var dx = c.beta*wk;
     for (var k2=0;k2<nk;k2++){
       var x = m+k2*wk+dx, hgt = lv[k2]*hh*c.a;
-      var wv = Math.min(wk, (W-m) - x);             // cat o canh phai cua khung
+      var wv = Math.min(wk, (W-m) - x);             // clipped at the right edge of the frame
       if (wv > 0){
         g.fillStyle = mau[k2]; g.globalAlpha = 0.30;
         g.fillRect(x, y0 - Math.max(hgt,0), wv, Math.abs(hgt));
         g.globalAlpha = 1;
       }
     }
-    // phan tran sang khe sau, to dam
+    // the part that spills into the next slot, drawn darker
     if (c.beta > 0.002 && c.a > 0.002){
       for (var k3=0;k3<nk-1;k3++){
         var x2 = m+(k3+1)*wk, hgt2 = lv[k3]*hh*c.a;
@@ -309,23 +316,23 @@ và Steenkiste 2023 mục 2.6.3. Chòm sao 16-QAM theo Buổi 2 Tiết 3.
         g.globalAlpha = 1;
       }
     }
-    // tin hieu duong thang
+    // the direct signal
     for (var k4=0;k4<nk;k4++){
       var x3 = m+k4*wk, h3 = lv[k4]*hh;
       g.fillStyle = mau[k4];
       g.fillRect(x3, y0 - Math.max(h3,0), wk, Math.abs(h3));
       g.fillStyle = '#1A1F36'; g.font = '24px Calibri, sans-serif';
-      g.fillText('ký tự '+(k4+1), x3+10, y0+100);
+      g.fillText('symbol '+(k4+1), x3+10, y0+100);
     }
     g.fillStyle = '#5A6272'; g.font = '24px Calibri, sans-serif';
-    g.fillText('nhánh I', m, 42);
-    g.fillText('đặc: đường thẳng      nhạt: tiếng vọng', m+200, 42);
+    g.fillText('I branch', m, 42);
+    g.fillText('solid: direct path      pale: echo', m+200, 42);
     if (c.beta > 0.002 && c.a > 0.002){
       g.fillStyle = '#D81E5B';
-      g.fillText('phần tô đậm là nhiễu liên ký tự', m, y0+150);
+      g.fillText('the darker overlap is inter-symbol interference', m, y0+150);
     } else {
       g.fillStyle = '#2A9D8F';
-      g.fillText('không có phần nào tràn sang khe sau', m, y0+150);
+      g.fillText('nothing spills into the next slot', m, y0+150);
     }
   }
 
@@ -335,12 +342,12 @@ và Steenkiste 2023 mục 2.6.3. Chòm sao 16-QAM theo Buổi 2 Tiết 3.
     E('lt').textContent = c.tau;
     E('lr').textContent = c.Rs.toFixed(2);
     E('lp').textContent = sl.p.value;
-    E('ln').textContent = c.tat ? 'tắt' : (c.sv + ' dB');
+    E('ln').textContent = c.tat ? 'off' : (c.sv + ' dB');
     E('cts').textContent = c.Ts.toFixed(0);
     E('cb').textContent = c.beta.toFixed(2);
     var ce = E('cevm'), cr = E('cerr');
     ce.innerHTML = 'EVM <b>' + kq.evm.toFixed(1) + '%</b>';
-    cr.innerHTML = 'Ký tự sai <b>' + kq.loi + ' / ' + N + '</b>';
+    cr.innerHTML = 'Symbol errors <b>' + kq.loi + ' / ' + N + '</b>';
     ce.className = 'chip ' + (kq.evm < 8 ? 'tot' : (kq.evm > 18 ? 'xau' : ''));
     cr.className = 'chip ' + (kq.loi === 0 ? 'tot' : 'xau');
     veChom(kq); veThoiGian(c);
