@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Slow and fast fading</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;
+      --mut:#5A6272;--line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE;max-width:900px;line-height:1.5}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.55}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+.dk{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:0 0 16px;background:var(--tint)}
+.hang{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px 24px}
+label.t{display:block;font-size:13.5px;color:var(--mut);margin:0 0 3px}
+label.t b{color:var(--ink);font-size:14.5px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 11px;
+  font-size:13px;color:var(--mut);background:#fff;margin:0 6px 6px 0}
+.chip b{color:var(--ink)}
+.chip.xau b{color:var(--mag)}
+.chip.tot b{color:var(--teal)}
+h2{font-family:Cambria,Georgia,serif;font-size:19px;margin:24px 0 8px;padding-bottom:6px;
+   border-bottom:1px solid var(--line)}
+ul{margin:8px 0 0;padding-left:20px;font-size:14.5px;color:var(--mut);line-height:1.65}
+ul b{color:var(--ink)}
+.nut{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:8px;
+  padding:6px 12px;font-size:13.5px;color:var(--ink);cursor:pointer;margin:0 6px 6px 0}
+.nut:hover{border-color:var(--acc)}
+code{background:var(--tint);padding:1px 5px;border-radius:4px;font-size:13.5px}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13.5px;line-height:1.6}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · SESSION 3 · PART 3</div>
+  <h1>Slow and fast fading</h1>
+  <p>One walk down a corridor, one received power trace. Slow fading is the path loss equation
+  itself changing as the geometry changes. Fast fading is what the other paths add on top. Turn
+  each cause on and off and watch which part of the trace responds.</p>
+</header>
+<a class="veml" href="../index.html">Back to the INT3303 simulation index</a>
+
+<main>
+
+<div class="dk">
+  <div class="hang">
+    <div>
+      <label class="t">Walking speed <b><span id="lv">5.0</span> km/h</b>,
+        so the distance grows <b><span id="lvm">1.39</span> m/s</b></label>
+      <input type="range" id="v" min="0" max="120" step="5" value="50">
+    </div>
+    <div>
+      <label class="t">Carrier <b><span id="lf">900</span> MHz</b>,
+        wavelength <b><span id="llam">33</span> cm</b></label>
+      <input type="range" id="f" min="1" max="2" step="1" value="1">
+    </div>
+    <div>
+      <label class="t">Reflecting objects <b><span id="lk">8</span></b></label>
+      <input type="range" id="k" min="0" max="16" step="1" value="8">
+    </div>
+    <div>
+      <label class="t">Blockage during the shaded stretch, n goes 3.0 to
+        <b><span id="ln">3.4</span></b></label>
+      <input type="range" id="n" min="30" max="40" step="1" value="34">
+    </div>
+  </div>
+  <div style="margin-top:10px">
+    <span class="nut" data-v="50" data-f="1" data-k="0"  data-n="30">Nothing moves but the walker</span>
+    <span class="nut" data-v="50" data-f="1" data-k="0"  data-n="40">Add a blockage: slow fading only</span>
+    <span class="nut" data-v="50" data-f="1" data-k="8"  data-n="40">Add the other paths: fast fading</span>
+    <span class="nut" data-v="50" data-f="2" data-k="8"  data-n="40">Same walk at 5 GHz</span>
+    <span class="nut" data-v="0"  data-f="1" data-k="8"  data-n="30">Stand still</span>
+  </div>
+</div>
+
+<div style="margin:0 0 14px">
+  <span class="chip" id="cd">Distance walked <b>83 m</b> in one minute</span>
+  <span class="chip" id="cs">Slow fading range <b>0 dB</b></span>
+  <span class="chip" id="cf">Fast fading swing over five seconds <b>0 dB</b></span>
+  <span class="chip" id="cw">Wavelengths passed per second <b>0</b></span>
+</div>
+
+<canvas id="cv" width="1280" height="520"></canvas>
+
+<h2>What the two curves are</h2>
+<ul>
+  <li>The teal curve is Steenkiste's path loss equation and nothing else:
+      <code>path loss = G<sub>t</sub> G<sub>r</sub> λ² / (4πd)<sup>n</sup></code>. Walking changes
+      <b>d</b>. Turning the handset would change <b>G</b>. Something stepping into the line of
+      sight raises <b>n</b>, which is the shaded stretch. All three are slow because a body has to
+      physically move. This is <b>slow fading</b>.</li>
+  <li>The magenta trace adds the other paths. The direct signal and one reflection off each object
+      are summed as waves, with their real phases, so where the path lengths differ by a whole
+      wavelength they add and where they differ by half a wavelength they cancel. Walking changes
+      every path length, so the sum swings constantly. This is <b>fast fading</b>.</li>
+  <li>Set the reflecting objects to zero and the magenta trace collapses exactly onto the teal one.
+      That is the whole difference between the two: fast fading needs more than one path, slow
+      fading does not.</li>
+  <li>Watch the blockage with the reflections switched on. The teal curve, which is the direct path
+      alone, falls a long way. The magenta trace falls much less, because the reflected copies are
+      not blocked and carry the link through. A blockage only attenuates what it stands in front
+      of, and that is one reason multipath is not purely a nuisance.</li>
+  <li>Stand still and both go flat. Fading is not a property of the room on its own, it is a
+      property of the room plus movement.</li>
+  <li>The swing is measured over one fixed five second window, so it depends on how far you walk
+      inside it. At a stroll it is around twenty decibels and at the fastest setting here it passes
+      forty, because the faster walk crosses more wavelengths in the same five seconds. Stallings
+      quotes 20 to 30 dB over a short distance, which is the same statement with the distance left
+      implicit.</li>
+</ul>
+
+<h2>Three things worth trying</h2>
+<ul>
+  <li>Start with no reflectors and no blockage: a smooth slide downhill, pure distance. Add the
+      blockage, then add the reflectors, one cause at a time. The first two buttons do this.</li>
+  <li>Switch the same walk from 900 MHz to 5 GHz. The teal curve barely moves, but the magenta
+      trace becomes far busier: the wavelength is five and a half times shorter, so the same
+      footstep crosses five and a half times as many wavelengths. The readout counts them.</li>
+  <li>Raise the walking speed. Nothing about the room changed, and the same ground is covered
+      either way, but the channel now changes that much faster per second, which is what the
+      receiver has to keep up with.</li>
+</ul>
+
+<footer>
+Tran Truc Mai, VNU University of Engineering and Technology.<br>
+After Steenkiste, <i>Introduction to Wireless Networking and Its Impact on Applications</i>,
+2nd edition, sections 2.7, 2.7.1, 2.7.2 and 2.7.3, with the path loss equation 2.3. Every curve is
+computed from that equation and from a sum of the direct path and the reflections; nothing is
+drawn by hand and no noise is added.
+</footer>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var C0 = 3.0e8, TMAX = 60, D0 = 10;
+  var CHAN = [25, 35];                              // s, the blocked stretch
+
+  var E = function(id){ return document.getElementById(id); };
+  var sl = { v:E('v'), f:E('f'), k:E('k'), n:E('n') };
+
+  // Reflector positions are fixed once, so moving a slider changes the channel
+  // and not the room. Same generator as the figures on the slides.
+  function mulberry32(a){ return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };}
+  var rng = mulberry32(20261012), RX = [], RY = [], RH = [];
+  for (var i=0;i<16;i++){
+    RX.push(5 + rng()*85); RY.push(-30 + rng()*60); RH.push(0.3 + rng()*0.4);
+  }
+
+  function tinh(){
+    var vkmh = +sl.v.value/10;                      // km/h
+    var fHz  = (+sl.f.value === 1) ? 900e6 : 5e9;
+    var nref = +sl.k.value;
+    var nmax = +sl.n.value/10;
+    var lam = C0/fHz, v = vkmh/3.6;
+    // The ripple repeats every half wavelength of travel, so the sample step
+    // has to be far finer than that or the trace is an alias rather than the
+    // signal. At 5 GHz half a wavelength is 3 cm, which a fixed 2400 samples
+    // over a 200 m walk would miss completely.
+    var N = 4000;
+    if (v > 0){
+      var canN = Math.ceil(8 * (v*TMAX) / (lam/2));
+      N = Math.max(N, Math.min(120000, canN));
+    }
+    var t = new Float64Array(N), d = new Float64Array(N);
+    var cham = new Float64Array(N), nhanh = new Float64Array(N);
+    var j, m;
+    for (j=0;j<N;j++){ t[j] = j/(N-1)*TMAX; d[j] = D0 + v*t[j]; }
+    // n rises over the blocked stretch, smoothed so there is no silly step
+    var nn = new Float64Array(N);
+    for (j=0;j<N;j++){
+      var u = 0;
+      if (t[j] > CHAN[0]-2 && t[j] < CHAN[1]+2){
+        u = Math.min(1, Math.min(t[j]-(CHAN[0]-2), (CHAN[1]+2)-t[j])/2);
+      }
+      nn[j] = 3.0 + (nmax-3.0)*u;
+    }
+    // Plot everything relative to the level at the start of the walk. The
+    // absolute path loss is not the point here, the variation is, and in
+    // relative terms lambda cancels out of the slow curve entirely.
+    var ref = 10*Math.log10(lam*lam) - 10*3.0*Math.log10(4*Math.PI*D0);
+    for (j=0;j<N;j++){
+      cham[j] = 10*Math.log10(lam*lam)
+              - 10*nn[j]*Math.log10(4*Math.PI*d[j]) - ref;
+    }
+    // the other paths, summed as waves with their real phases
+    var tong = 0, dem = 0;
+    for (j=0;j<N;j++){
+      // A blockage attenuates the DIRECT ray, not the reflections. Applying it
+      // to the whole sum would be wrong, and applying it to neither would make
+      // the magenta trace ignore a dip the teal curve shows.
+      var gi = Math.pow(10, (-10*(nn[j]-3.0)*Math.log10(4*Math.PI*d[j]))/20);
+      var re = gi*Math.cos(-2*Math.PI*d[j]/lam)/d[j];
+      var im = gi*Math.sin(-2*Math.PI*d[j]/lam)/d[j];
+      for (m=0;m<nref;m++){
+        var L = Math.hypot(RX[m], RY[m]) + Math.hypot(d[j]-RX[m], RY[m]);
+        re += RH[m]*Math.cos(-2*Math.PI*L/lam)/L;
+        im += RH[m]*Math.sin(-2*Math.PI*L/lam)/L;
+      }
+      nhanh[j] = 20*Math.log10(Math.hypot(re, im));
+      tong += nhanh[j]; dem++;
+    }
+    // line the two up so they can be compared on one axis
+    var tbN = tong/dem, tbC = 0;
+    for (j=0;j<N;j++) tbC += cham[j];
+    tbC /= N;
+    for (j=0;j<N;j++) nhanh[j] += tbC - tbN;
+    // how far anything falls below the window, so the gate can catch clipping
+    var sau = 0;
+    for (j=0;j<N;j++){
+      if (cham[j] < sau) sau = cham[j];
+      if (nref && nhanh[j] < sau) sau = nhanh[j];
+    }
+    // the swing over a five second window, the way the slides measure it
+    var lo = 1e9, hi = -1e9;
+    for (j=0;j<N;j++) if (t[j]>=10 && t[j]<=15){
+      if (nhanh[j]<lo) lo=nhanh[j];
+      if (nhanh[j]>hi) hi=nhanh[j];
+    }
+    // The slow curve can both drift and dip, so report its whole range: the
+    // first-minus-last difference would miss a blockage that ends in time.
+    var cl = 1e9, ch = -1e9;
+    for (j=0;j<N;j++){ if (cham[j]<cl) cl=cham[j]; if (cham[j]>ch) ch=cham[j]; }
+    return {t:t, d:d, N:N, cham:cham, nhanh:nhanh, lam:lam, vkmh:vkmh, v:v,
+            fHz:fHz, nref:nref, nmax:nmax, swing:(nref?hi-lo:0),
+            dai:ch-cl, buoc:v/lam, sau:sau};
+  }
+
+  function ve(c){
+    var cv = E('cv'), g = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    g.clearRect(0,0,W,H);
+    var x0 = 92, x1 = W-150, y0 = H-70, y1 = 56;
+    // one fixed vertical scale, so turning a cause on does not rescale the plot
+    var lo = -84, hi = 6;
+    function X(tt){ return x0 + tt/TMAX*(x1-x0); }
+    function Y(v){ return y0 + (v-lo)/(hi-lo)*(y1-y0); }
+    if (c.nmax > 3.001){
+      // n is ramped over two seconds at each end, so shade the whole stretch
+      // that is actually affected, not just the flat middle.
+      g.fillStyle = 'rgba(216,30,91,0.08)';
+      g.fillRect(X(CHAN[0]-2), y1, X(CHAN[1]+2)-X(CHAN[0]-2), y0-y1);
+      g.fillStyle = '#D81E5B'; g.font = '19px Calibri, sans-serif';
+      g.fillText('blocked', X(CHAN[0]-2)+6, y1-10);
+    }
+    g.strokeStyle = '#1A1F36'; g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y0); g.stroke();
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x0, y1); g.stroke();
+    g.fillStyle = '#5A6272'; g.font = '18px Calibri, sans-serif';
+    for (var tt=0; tt<=TMAX; tt+=15){
+      g.beginPath(); g.moveTo(X(tt), y0); g.lineTo(X(tt), y0+6); g.stroke();
+      // right-align the last one, or it runs under the curve labels
+      g.fillText(tt+' s', X(tt) - (tt===TMAX ? 40 : 12), y0+28);
+    }
+    for (var vv=-80; vv<=0; vv+=20){
+      g.beginPath(); g.moveTo(x0-6, Y(vv)); g.lineTo(x0, Y(vv)); g.stroke();
+      g.fillText(String(vv), x0-48, Y(vv)+6);
+    }
+    g.fillText('received power, dB below the start of the walk', x0-40, y1-16);
+    // More samples than pixels means a polyline would draw an alias. Collapse
+    // each pixel column to its own min and max instead, so the real depth of
+    // the nulls survives at any carrier frequency.
+    function duong(a, mau, lw, al, bao){
+      var np = Math.round(x1-x0), kc = c.N/np;
+      g.strokeStyle = mau; g.lineWidth = lw; g.globalAlpha = al;
+      g.beginPath();
+      if (!bao){
+        // smooth curve: draw it as one polyline, subsampled to about two
+        // points per pixel. Drawing it as an envelope leaves it dotted
+        // wherever it is steep.
+        var bc = Math.max(1, Math.floor(c.N/(2*np)));
+        var dau = true;
+        for (var jj2=0; jj2<c.N; jj2+=bc){
+          var xs2 = X(c.t[jj2]), ys2 = Math.max(y1, Math.min(y0, Y(a[jj2])));
+          if (dau){ g.moveTo(xs2, ys2); dau = false; } else g.lineTo(xs2, ys2);
+        }
+      } else if (kc <= 1.5){
+        for (var j=0;j<c.N;j++){
+          var x = X(c.t[j]), y = Math.max(y1, Math.min(y0, Y(a[j])));
+          if (j===0) g.moveTo(x,y); else g.lineTo(x,y);
+        }
+      } else {
+        for (var q=0;q<np;q++){
+          var ja = Math.floor(q*kc), jb = Math.min(c.N, Math.floor((q+1)*kc));
+          var lo2 = 1e9, hi2 = -1e9;
+          for (var jj=ja;jj<jb;jj++){
+            if (a[jj]<lo2) lo2=a[jj];
+            if (a[jj]>hi2) hi2=a[jj];
+          }
+          var xq = x0+q;
+          g.moveTo(xq, Math.max(y1, Math.min(y0, Y(hi2))));
+          g.lineTo(xq, Math.max(y1, Math.min(y0, Y(lo2))));
+        }
+      }
+      g.stroke(); g.globalAlpha = 1;
+    }
+    if (c.nref > 0) duong(c.nhanh, '#D81E5B', 1.0, 1, true);
+    duong(c.cham, '#2A9D8F', 3.0, c.nref > 0 ? 0.85 : 1, false);
+    // Keep the two end labels apart: when the curves finish at the same level,
+    // as they do when nothing moves, they would otherwise sit on top of each other.
+    g.font = '19px Calibri, sans-serif';
+    var yA = Math.max(y1+14, Math.min(y0-6, Y(c.cham[c.N-1])+6));
+    var yB = Math.max(y1+14, Math.min(y0-6, Y(c.nhanh[c.N-1])-22));
+    if (yB > yA - 26) yB = yA - 26;
+    if (yB < y1+14){ yB = y1+14; if (yA < yB+26) yA = yB+26; }
+    if (c.nref > 0){
+      g.fillStyle = '#D81E5B'; g.fillText('with multipath', x1+10, yB);
+      g.fillStyle = '#2A9D8F'; g.fillText('slow fading', x1+10, yA);
+    } else {
+      g.fillStyle = '#2A9D8F'; g.fillText('slow fading', x1+10, yA);
+      g.fillStyle = '#5A6272'; g.fillText('no other paths', x1+10, yA+26);
+    }
+  }
+
+  function chay(){
+    var c = tinh();
+    E('lv').textContent = c.vkmh.toFixed(1);
+    E('lvm').textContent = c.v.toFixed(2);
+    E('lf').textContent = (c.fHz >= 1e9) ? '5000' : '900';
+    E('llam').textContent = (c.lam*100).toFixed(0);
+    E('lk').textContent = c.nref;
+    E('ln').textContent = c.nmax.toFixed(1);
+    var cd = E('cd'), cs = E('cs'), cf = E('cf'), cw = E('cw');
+    cd.innerHTML = 'Distance walked <b>' + (c.v*TMAX).toFixed(0) +
+                   ' m</b> in one minute';
+    cs.innerHTML = 'Slow fading range <b>' + c.dai.toFixed(1) + ' dB</b>';
+    cs.className = 'chip ' + (c.dai < 0.05 ? 'tot' : '');
+    cf.innerHTML = 'Fast fading swing over five seconds <b>' +
+                   c.swing.toFixed(1) + ' dB</b>';
+    cf.className = 'chip ' + (c.swing < 0.05 ? 'tot' : 'xau');
+    cw.innerHTML = 'Wavelengths passed per second <b>' + c.buoc.toFixed(1) +
+                   '</b>';
+    ve(c);
+  }
+
+  ['v','f','k','n'].forEach(function(x){ sl[x].addEventListener('input', chay); });
+  Array.prototype.forEach.call(document.querySelectorAll('.nut'), function(b){
+    b.addEventListener('click', function(){
+      sl.v.value = b.dataset.v; sl.f.value = b.dataset.f;
+      sl.k.value = b.dataset.k; sl.n.value = b.dataset.n;
+      chay();
+    });
+  });
+  chay();
+})();
+</script>
+</body>
+</html>
