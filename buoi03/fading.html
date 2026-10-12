@@ -106,16 +106,23 @@ free space <i>formula</i>, and only because that formula describes a single path
 
 <h2>What the two curves are</h2>
 <ul>
-  <li>The teal curve is Steenkiste's path loss equation and nothing else:
+  <li><b>Is slow fading only the one-path case?</b> That is how Steenkiste derives it, and his
+      section opens with the condition "when there is no multi-path effect". But it is a derivation
+      setting, not a definition. Slow fading is the slowly varying part, and it is still there when
+      many rays arrive: his own figure 2.13 has two stationary devices with people walking around,
+      and the short-term average still drifts. Switch the reflectors on here and the teal curve
+      becomes that average rather than the direct ray, and it sits about six decibels above the
+      grey one, because the reflected copies carry power too.</li>
+  <li>With the reflectors off, the one curve is Steenkiste's path loss equation and nothing else:
       <code>path loss = G<sub>t</sub> G<sub>r</sub> λ² / (4πd)<sup>n</sup></code>. Walking changes
       <b>d</b>. Turning the handset would change <b>G</b>. Something stepping into the line of
-      sight raises <b>n</b>, which is the shaded stretch. All three are slow because a body has to
-      physically move. This is <b>slow fading</b>.</li>
+      sight raises <b>n</b>, which is the shaded stretch and is drawn here as a loss in decibels on
+      the direct ray. All of it is slow because a body has to physically move.</li>
   <li>The magenta trace adds the other paths. The direct signal and one reflection off each object
       are summed as waves, with their real phases, so where the path lengths differ by a whole
       wavelength they add and where they differ by half a wavelength they cancel. Walking changes
       every path length, so the sum swings constantly. This is <b>fast fading</b>.</li>
-  <li>Set the reflecting objects to zero and the magenta trace collapses exactly onto the teal one.
+  <li>Set the reflecting objects to zero and every curve collapses onto one.
       That is the whole difference between the two: fast fading needs more than one path, slow
       fading does not.</li>
   <li>Watch the blockage with the reflections switched on. The teal curve, which is the direct path
@@ -254,6 +261,24 @@ drawn by hand and no noise is added.
       }
       nhanh[j] = 20*Math.log10(Math.hypot(re, im)) - ref;
     }
+    // The real SLOW component: the received power averaged over a window many
+    // wavelengths long. This is Steenkiste's short-term average of figures
+    // 2.13 and 2.14, and once there is multipath it is NOT the direct ray:
+    // reflected power lifts it, by about 6 dB with eight reflectors here.
+    var CSL = 20;                                   // window, in wavelengths
+    var kw = Math.max(3, Math.round(CSL*lam/(v > 0 ? v*(TMAX/(N-1)) : 1e9)));
+    var tb = new Float64Array(N);
+    if (v > 0 && kw < N){
+      var tich = new Float64Array(N+1);
+      for (j=0;j<N;j++) tich[j+1] = tich[j] + Math.pow(10, nhanh[j]/10);
+      for (j=0;j<N;j++){
+        var ja = Math.max(0, j - (kw>>1)), jb = Math.min(N, ja + kw);
+        ja = Math.max(0, jb - kw);
+        tb[j] = 10*Math.log10((tich[jb]-tich[ja])/(jb-ja));
+      }
+    } else {
+      for (j=0;j<N;j++) tb[j] = nhanh[j];
+    }
     // how far anything falls below the window, so the gate can catch clipping
     var sau = 0;
     for (j=0;j<N;j++){
@@ -270,7 +295,8 @@ drawn by hand and no noise is added.
     // first-minus-last difference would miss a blockage that ends in time.
     var cl = 1e9, ch = -1e9;
     for (j=0;j<N;j++){ if (cham[j]<cl) cl=cham[j]; if (cham[j]>ch) ch=cham[j]; }
-    return {t:t, d:d, N:N, cham:cham, nhanh:nhanh, lam:lam, vkmh:vkmh, v:v,
+    return {t:t, d:d, N:N, cham:cham, nhanh:nhanh, tb:tb, kw:kw,
+            lam:lam, vkmh:vkmh, v:v,
             fHz:fHz, nref:nref, nmax:nmax, swing:(nref?hi-lo:0),
             dai:ch-cl, buoc:v/lam, sau:sau};
   }
@@ -344,20 +370,26 @@ drawn by hand and no noise is added.
       g.stroke(); g.globalAlpha = 1;
     }
     if (c.nref > 0) duong(c.nhanh, '#D81E5B', 1.0, 1, true);
-    duong(c.cham, '#2A9D8F', 3.0, c.nref > 0 ? 0.85 : 1, false);
+    // direct ray in grey; it is only the slow component when nothing reflects
+    duong(c.cham, c.nref > 0 ? '#C6CBD6' : '#2A9D8F', c.nref > 0 ? 2.0 : 3.0,
+          1, false);
+    if (c.nref > 0) duong(c.tb, '#2A9D8F', 3.0, 1, false);
     // Keep the two end labels apart: when the curves finish at the same level,
     // as they do when nothing moves, they would otherwise sit on top of each other.
+    // Legend stacked in the empty lower left: putting labels beside the
+    // curves gets them eaten by the trace.
     g.font = '19px Calibri, sans-serif';
-    var yA = Math.max(y1+14, Math.min(y0-6, Y(c.cham[c.N-1])+6));
-    var yB = Math.max(y1+14, Math.min(y0-6, Y(c.nhanh[c.N-1])-22));
-    if (yB > yA - 26) yB = yA - 26;
-    if (yB < y1+14){ yB = y1+14; if (yA < yB+26) yA = yB+26; }
+    var yL = Y(-52);
     if (c.nref > 0){
-      g.fillStyle = '#D81E5B'; g.fillText('with multipath', x1+10, yB);
-      g.fillStyle = '#2A9D8F'; g.fillText('slow fading', x1+10, yA);
+      g.fillStyle = '#D81E5B';
+      g.fillText('what the receiver gets', x0+18, yL);
+      g.fillStyle = '#2A9D8F';
+      g.fillText('its short-term average: the slow fading', x0+18, yL+26);
+      g.fillStyle = '#8D95A6';
+      g.fillText('the direct ray alone', x0+18, yL+52);
     } else {
-      g.fillStyle = '#2A9D8F'; g.fillText('slow fading', x1+10, yA);
-      g.fillStyle = '#5A6272'; g.fillText('no other paths', x1+10, yA+26);
+      g.fillStyle = '#2A9D8F';
+      g.fillText('one path only, so this is all there is', x0+18, yL+26);
     }
   }
 
