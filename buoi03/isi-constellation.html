@@ -83,6 +83,15 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
 
 <canvas id="ct" width="1280" height="930"></canvas>
 
+<canvas id="cd" width="1280" height="394" style="margin-top:18px"></canvas>
+
+<p class="sub" style="margin-top:14px">The receiver never compares waveforms. It multiplies the
+slot by the carrier twice, once against a cosine and once against a sine, averages each product
+over one whole symbol, and is left with two numbers. That pair is the point. Multipath changes the
+waveform a great deal and still moves the pair only a little, which is why the symbol usually
+survives: the decision asks only which of the 16 points the pair is nearest to, and there is room
+to be wrong by almost half the distance to the neighbour before the answer changes.</p>
+
 <div class="duoi">
   <div>
     <canvas id="cs" width="760" height="760"></canvas>
@@ -92,7 +101,7 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
   </div>
   <div>
     <h2 style="margin-top:0">What the receiver ends up with</h2>
-    <p class="sub">Each symbol is one point of the 16-QAM constellation from session 2 part 3. The
+    <p class="sub">Each symbol is one point of the 16-QAM constellation from session 2 part 2. The
     receiver measures the amplitude and the phase of whatever is in the slot, so when a piece of the
     previous symbol is still there, it measures the wrong point. Pale grey marks the 16 points the
     transmitter is allowed to send, and the faint grid is the decision boundary.</p>
@@ -120,6 +129,9 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
       delays that make one symbol reach into the next.</li>
   <li>The receiver is assumed to have corrected for the gain of the current symbol's own two copies.
       What is left on the constellation is interference from the previous symbol and nothing else.</li>
+  <li>The two low-pass filters of the textbook's demodulator are drawn here as an average over one
+      whole symbol, which is the same idea stated as one step: both remove the double-frequency
+      term and leave one value per symbol.</li>
 </ul>
 
 <h2>Three things worth trying</h2>
@@ -137,7 +149,9 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
 <footer>
 Tran Truc Mai, VNU University of Engineering and Technology.<br>
 After Stallings, <i>Wireless Communications and Networks</i>, 2nd edition, section 5.4 page 116,
-figure 5.12, and Steenkiste 2023 section 2.6.3. The 16-QAM constellation follows session 2 part 3.
+figure 5.12, and Steenkiste 2023 section 2.6.3. The demodulator follows Stallings figure 6.20,
+QAM Demodulator, page 156, which is the receiving counterpart of figure 6.10, QAM Modulator,
+page 142. The 16-QAM constellation follows session 2 part 2.
 </footer>
 </main>
 
@@ -257,6 +271,79 @@ figure 5.12, and Steenkiste 2023 section 2.6.3. The 16-QAM constellation follows
     }
   }
 
+  // How the receiver turns a slot of waveform into one point, and why that point
+  // can be in the wrong place and still be read correctly.
+  function veGiai(c){
+    var cv = E('cd'), g = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    g.clearRect(0,0,W,H);
+    function hop(x,y,w,h,col){
+      g.strokeStyle = col; g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(x,y); g.lineTo(x+w,y); g.lineTo(x+w,y+h); g.lineTo(x,y+h); g.lineTo(x,y);
+      g.stroke();
+    }
+    function ten(x0,y0,x1,y1){
+      g.strokeStyle = '#8D95A6'; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(x0,y0); g.lineTo(x1,y1); g.stroke();
+      g.beginPath(); g.moveTo(x1,y1); g.lineTo(x1-10,y1-5); g.lineTo(x1-10,y1+5);
+      g.fillStyle = '#8D95A6'; g.fill();
+    }
+    var yI = 150, yQ = 250;
+
+    g.fillStyle = '#1A1F36'; g.font = '24px Calibri, sans-serif';
+    g.fillText('How the receiver turns that slot of waveform into one point', 30, 40);
+
+    hop(30, 110, 200, 180, '#D81E5B');
+    g.fillStyle = '#D81E5B'; g.font = '20px Calibri, sans-serif';
+    g.fillText('the bottom row,', 44, 180);
+    g.fillText('slot of symbol 2,', 44, 208);
+    g.fillText('one whole symbol', 44, 236);
+
+    ten(230, yI, 290, yI); ten(230, yQ, 290, yQ);
+    g.strokeStyle = '#2A9D8F'; g.lineWidth = 2;
+    g.beginPath(); g.arc(314, yI, 24, 0, 6.2832); g.stroke();
+    g.beginPath(); g.arc(314, yQ, 24, 0, 6.2832); g.stroke();
+    g.fillStyle = '#2A9D8F'; g.font = '26px Calibri, sans-serif';
+    g.fillText('\u00d7', 306, yI+9); g.fillText('\u00d7', 306, yQ+9);
+    g.font = '20px Calibri, sans-serif';
+    g.fillText('cos 2\u03c0f t', 268, yI-38);
+    g.fillText('sin 2\u03c0f t', 270, yQ+50);
+
+    ten(338, yI, 396, yI); ten(338, yQ, 396, yQ);
+    hop(396, yI-34, 290, 68, '#6C5CE7');
+    hop(396, yQ-34, 290, 68, '#6C5CE7');
+    g.fillStyle = '#6C5CE7'; g.font = '20px Calibri, sans-serif';
+    g.fillText('average over', 420, yI-4); g.fillText('one whole symbol', 420, yI+24);
+    g.fillText('average over', 420, yQ-4); g.fillText('one whole symbol', 420, yQ+24);
+
+    var cu = SEQ[1], tr = SEQ[0];
+    var yi = PI[cu] + c.g*PI[tr], yq = PQ[cu] + c.g*PQ[tr];
+    ten(686, yI, 744, yI); ten(686, yQ, 744, yQ);
+    g.fillStyle = '#1A1F36'; g.font = '24px Calibri, sans-serif';
+    g.fillText('I = ' + yi.toFixed(3).replace('-','\u2212'), 754, yI+8);
+    g.fillText('Q = ' + yq.toFixed(3).replace('-','\u2212'), 754, yQ+8);
+
+    var lech = Math.max(Math.abs(yi-PI[cu]), Math.abs(yq-PQ[cu]));
+    var bien = DMIN/2;
+    var dung = lech < bien - 1e-12;
+    ten(912, yI, 962, yI); ten(912, yQ, 962, yQ);
+    hop(962, 110, 288, 180, dung ? '#2A9D8F' : '#D81E5B');
+    g.fillStyle = '#1A1F36'; g.font = '20px Calibri, sans-serif';
+    g.fillText('the point moved ' + lech.toFixed(3), 980, 152);
+    g.fillText('it must move ' + bien.toFixed(3) + ' to be', 980, 182);
+    g.fillText('read as a different symbol', 980, 210);
+    g.fillStyle = dung ? '#2A9D8F' : '#D81E5B';
+    g.font = '23px Calibri, sans-serif';
+    g.fillText(dung ? 'still read as symbol 2' : 'read as the wrong symbol', 980, 256);
+
+    g.fillStyle = '#5A6272'; g.font = '20px Calibri, sans-serif';
+    g.fillText('The test is not whether the waveform matches. It is which of the 16 points the '
+             + 'measured pair is nearest to.', 30, 334);
+    g.fillText('f is the carrier frequency, and the two low-pass filters of the textbook figure '
+             + 'are drawn here as one averaging step.', 30, 366);
+  }
+
   function veChom(c){
     var cv = E('cs'), g = cv.getContext('2d');
     var W = cv.width, H = cv.height;
@@ -362,7 +449,7 @@ figure 5.12, and Steenkiste 2023 section 2.6.3. The 16-QAM constellation follows
     cx.innerHTML = 'Groups reaching a decision boundary: <b>' +
                    (c.cham ? 'yes' : 'no') + '</b>';
     cx.className = 'chip ' + (c.cham ? 'xau' : 'tot');
-    veSong(c); veChom(c);
+    veSong(c); veGiai(c); veChom(c);
   }
 
   ['t','r'].forEach(function(k){ sl[k].addEventListener('input', ve); });
