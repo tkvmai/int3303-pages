@@ -65,20 +65,31 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
         which is a symbol rate of <b><span id="lr">2.00</span> Msym/s</b></label>
       <input type="range" id="r" min="400" max="2000" step="50" value="500">
     </div>
+    <div>
+      <label class="t">Echo strength <b><span id="la">0.50</span></b> of the direct path</label>
+      <input type="range" id="a" min="0" max="100" step="5" value="50">
+    </div>
+    <div>
+      <label class="t">Modulation <b><span id="lm">16-QAM</span></b>,
+        <b><span id="lb">4</span></b> bits per symbol</label>
+      <input type="range" id="mo" min="1" max="3" step="1" value="2">
+    </div>
   </div>
   <div style="margin-top:10px">
-    <span class="nut" data-t="0"   data-r="500">No delay</span>
-    <span class="nut" data-t="200" data-r="2000">Same delay, long symbols</span>
-    <span class="nut" data-t="200" data-r="800">Same delay, shorter symbols</span>
-    <span class="nut" data-t="200" data-r="400">Same delay, shorter still</span>
-    <span class="nut" data-t="400" data-r="450">Far enough to be unreadable</span>
+    <span class="nut" data-t="0"   data-r="500"  data-a="50" data-mo="2">No delay</span>
+    <span class="nut" data-t="200" data-r="2000" data-a="50" data-mo="2">Same delay, long symbols</span>
+    <span class="nut" data-t="200" data-r="800"  data-a="50" data-mo="2">Same delay, shorter symbols</span>
+    <span class="nut" data-t="200" data-r="400"  data-a="50" data-mo="2">Same delay, shorter still</span>
+    <span class="nut" data-t="400" data-r="450"  data-a="50" data-mo="2">Far enough to be unreadable</span>
+    <span class="nut" data-t="200" data-r="500"  data-a="50" data-mo="1">Same channel on QPSK</span>
+    <span class="nut" data-t="200" data-r="500"  data-a="50" data-mo="3">Same channel on 64-QAM</span>
   </div>
 </div>
 
 <div style="margin:0 0 14px">
-  <span class="chip">Echo strength <b>0.50</b> of the direct path, fixed</span>
   <span class="chip" id="cb">Of one symbol, <b>0%</b> lands in the next slot</span>
-  <span class="chip" id="cx">Groups reaching a decision boundary: <b>no</b></span>
+  <span class="chip" id="cg">Leftover from the previous symbol, g = <b>0.00</b></span>
+  <span class="chip" id="cx">This modulation tolerates g up to <b>0.33</b></span>
 </div>
 
 <canvas id="ct" width="1280" height="930"></canvas>
@@ -118,6 +129,26 @@ to be wrong by almost half the distance to the neighbour before the answer chang
   </div>
 </div>
 
+<h2>What decides whether the symbol is misread</h2>
+<p class="sub">Only one thing: whether the point is pushed more than <b>half the distance to the
+neighbouring point</b>. Everything else feeds one of those two sides.</p>
+<ul>
+  <li>The push is <code>g × (the previous symbol's coordinate)</code>, where
+      <code>g = a·β / (1 + a(1 − β))</code> is what is left of the previous symbol after the
+      receiver has corrected the current one's own gain. So <b>echo strength</b> and
+      <b>spill fraction</b> both feed it, and the readout prints g directly.</li>
+  <li><b>Which symbol came before</b> feeds it too, and that is data, not channel. Tick the box
+      under the constellation: at 16-QAM a corner symbol pushes three times as hard as one next to
+      the origin, and at 64-QAM seven times. The receiver cannot know which case it is in.</li>
+  <li>The other side, <b>the distance to the neighbour</b>, is set by the modulation. Packing more
+      bits into a symbol packs the points closer together, with nothing else changed.</li>
+  <li>Putting the two together gives one clean threshold. With L amplitude levels on each axis, a
+      symbol is misread once <code>g &gt; 1/(L − 1)</code>:
+      <b>1 for QPSK, 1/3 for 16-QAM, 1/7 for 64-QAM</b>. Same room, same echo, and 64-QAM gives way
+      seven times sooner than QPSK. That is the price of the extra bits promised in session 2
+      part 2.</li>
+</ul>
+
 <h2>Two things the drawing simplifies, said out loud</h2>
 <ul>
   <li>The carrier is drawn at <b>20 MHz</b> so that individual cycles are visible. A real 2.4 GHz
@@ -134,16 +165,20 @@ to be wrong by almost half the distance to the neighbour before the answer chang
       term and leave one value per symbol.</li>
 </ul>
 
-<h2>Three things worth trying</h2>
+<h2>Four things worth trying</h2>
 <ul>
-  <li>Set the delay to zero. The echo lands entirely inside its own slot, the groups collapse back
-      to points, and nothing is damaged. A strong echo is not automatically a harmful one.</li>
-  <li>Hold the delay at 200 ns and raise the symbol rate. The environment has not changed and the
-      echo has not changed, yet the groups keep growing. This is the slide
+  <li>Set the delay to zero. The echo lands entirely inside its own slot, nothing is damaged, and
+      the gauge stays empty however strong the echo is. A strong echo is not automatically a
+      harmful one.</li>
+  <li>Hold the delay at 200 ns and shorten the symbols. The environment has not changed and the
+      echo has not changed, yet the gauge keeps filling. This is the slide
       <i>Short symbols suffer more</i>.</li>
-  <li>Push the delay to 400 ns and the symbol length down to 450 ns. The orange group now reaches
-      the decision boundary, so the receiver can read that symbol as one of its neighbours. That is
-      the point at which the room, not the bandwidth, is what limits the symbol rate.</li>
+  <li>Push the delay to 400 ns and the symbol length down to 450 ns. The gauge passes its limit and
+      the receiver reads a different symbol. That is the point at which the room, not the
+      bandwidth, is what limits the symbol rate.</li>
+  <li>Leave the channel exactly as it is and change only the modulation. QPSK survives anything
+      this model can produce; 64-QAM fails while 16-QAM is still comfortable. Nothing about the
+      radio or the room changed, only how closely the points were packed.</li>
 </ul>
 
 <footer>
@@ -159,39 +194,47 @@ page 142. The 16-QAM constellation follows session 2 part 2.
 (function(){
   "use strict";
 
-  // ---- 16-QAM, levels +-1 and +-3, normalised to unit mean power -------------
-  var LV = [-3,-1,1,3], PI = [], PQ = [];
-  for (var i=0;i<4;i++) for (var q=0;q<4;q++){ PI.push(LV[i]); PQ.push(LV[q]); }
-  var cs = 0;
-  for (var k=0;k<16;k++) cs += PI[k]*PI[k] + PQ[k]*PQ[k];
-  var SC = Math.sqrt(cs/16);                        // = sqrt(10)
-  for (var k2=0;k2<16;k2++){ PI[k2]/=SC; PQ[k2]/=SC; }
-  var DMIN = 2/SC;                                  // distance between adjacent points
+  // ---- square M-QAM with L amplitude levels per axis, unit mean power --------
+  // L = 2 is QPSK, L = 4 is 16-QAM, L = 8 is 64-QAM.
+  var L, PI, PQ, SC, DMIN, MAXC, SEQ, AMP, PHA, TEN;
+  function dungChom(Lm){
+    L = Lm;
+    var lv = []; for (var i=0;i<L;i++) lv.push(2*i - (L-1));
+    PI = []; PQ = [];
+    for (var a=0;a<L;a++) for (var b=0;b<L;b++){ PI.push(lv[a]); PQ.push(lv[b]); }
+    var cs = 0, N = PI.length;
+    for (var k=0;k<N;k++) cs += PI[k]*PI[k] + PQ[k]*PQ[k];
+    SC = Math.sqrt(cs/N);
+    for (var k2=0;k2<N;k2++){ PI[k2]/=SC; PQ[k2]/=SC; }
+    DMIN = 2/SC;                                    // distance between adjacent points
+    MAXC = (L-1)/SC;                                // largest coordinate on one axis
+    // Three symbols for the time view: a corner, then a small inner one so that
+    // interference from a large neighbour shows, then one on the far side.
+    SEQ = [(L-1)*L + (L-1), (L/2)*L + (L/2-1), 0*L + (L/2)];
+    AMP = SEQ.map(function(x){ return Math.hypot(PI[x], PQ[x]); });
+    PHA = SEQ.map(function(x){ return Math.atan2(PQ[x], PI[x]); });
+    TEN = (L === 2) ? 'QPSK' : ((L*L) + '-QAM');
+  }
+  // A symbol is misread once the worst preceding symbol pushes it half the way
+  // to its neighbour. That happens at exactly g = 1 / (L - 1).
+  function nguong(){ return 1/(L-1); }
 
-  // The three symbols drawn in the time view. Index into the table above.
-  // Chosen so the second one is small: interference from a large neighbour shows.
-  var SEQ = [15, 9, 2];                             // (3,3), (1,-1), (-3,1)
-  var AMP = SEQ.map(function(s){ return Math.hypot(PI[s], PQ[s]); });
-  var PHA = SEQ.map(function(s){ return Math.atan2(PQ[s], PI[s]); });
-
-  var A_ECHO = 0.5;                                 // echo strength, fixed and stated on the page
   var FC = 20e6;                                    // drawn carrier, 20 MHz, stated on the page
 
   var E = function(id){ return document.getElementById(id); };
-  var sl = { t:E('t'), r:E('r') };
+  var sl = { t:E('t'), r:E('r'), a:E('a') };
 
   function tinh(){
     var tau = +sl.t.value;                          // ns
     var Ts  = +sl.r.value;                          // ns, always a multiple of 50
     var Rs  = 1000/Ts;                              // Msym/s
+    var A = +sl.a.value/100;                        // echo strength
     var beta = Math.min(1, tau/Ts);                 // fraction spilling into the next slot
     // The receiver corrects the current symbol's own gain, so only the previous
     // symbol's contribution is left: coefficient g, applied to s[k-1].
-    var g = (A_ECHO*beta) / (1 + A_ECHO*(1-beta));
-    // A group reaches a decision boundary when the worst preceding symbol pushes
-    // a point by half the distance between neighbours: g*3 >= 1, i.e. g >= 1/3.
-    var cham = (g*3/SC) >= (DMIN/2) - 1e-12;
-    return {tau:tau, Rs:Rs, Ts:Ts, beta:beta, g:g, cham:cham};
+    var g = (A*beta) / (1 + A*(1-beta));
+    var cham = g >= nguong() - 1e-12;
+    return {tau:tau, Rs:Rs, Ts:Ts, A:A, beta:beta, g:g, cham:cham};
   }
 
   // Direct-path passband signal at time t in ns, zero outside the three slots.
@@ -207,7 +250,7 @@ page 142. The 16-QAM constellation follows session 2 part 2.
     g.clearRect(0,0,W,H);
     var m = 36, xr = W-36, pw = xr-m;
     var Twin = 3*c.Ts;                              // the window always holds three symbols
-    var AM = 2.15;                                  // largest value the sum can reach
+    var AM = Math.max.apply(null, AMP) * (1 + c.A) * 1.04;  // largest the sum can reach
     var sc = 78/AM;                                 // pixels per unit
     var yc = [165, 395, 595, 795];
     var ten = ['AT THE TRANSMITTER: three symbols go out, one carrier each',
@@ -249,8 +292,8 @@ page 142. The 16-QAM constellation follows session 2 part 2.
       for (var px=0; px<=pw; px++){
         var t = px/pw*Twin;
         var v = (r===0 || r===1) ? truc(t, c.Ts)
-              : (r===2)          ? A_ECHO*truc(t-c.tau, c.Ts)
-              :                    truc(t, c.Ts) + A_ECHO*truc(t-c.tau, c.Ts);
+              : (r===2)          ? c.A*truc(t-c.tau, c.Ts)
+              :                    truc(t, c.Ts) + c.A*truc(t-c.tau, c.Ts);
         var x = m+px, y = yc[r] - v*sc;
         if (px===0) g.moveTo(x,y); else g.lineTo(x,y);
       }
@@ -329,17 +372,31 @@ page 142. The 16-QAM constellation follows session 2 part 2.
     var dung = lech < bien - 1e-12;
     ten(912, yI, 962, yI); ten(912, yQ, 962, yQ);
     hop(962, 110, 288, 180, dung ? '#2A9D8F' : '#D81E5B');
+
+    // The margin gauge: how far the point moved against how far it may move.
+    // The track is always one whole half-spacing wide, so the threshold tick
+    // never moves and only the filled part does.
+    var gx = 982, gy = 196, gw = 248, gh = 26;
     g.fillStyle = '#1A1F36'; g.font = '20px Calibri, sans-serif';
-    g.fillText('the point moved ' + lech.toFixed(3), 980, 152);
-    g.fillText('it must move ' + bien.toFixed(3) + ' to be', 980, 182);
-    g.fillText('read as a different symbol', 980, 210);
+    g.fillText('how far the point moved', gx, 148);
+    g.fillStyle = '#EFF2F7';
+    g.fillRect(gx, gy, gw, gh);
+    var ti = Math.min(1.25, lech/bien);
+    g.fillStyle = dung ? '#2A9D8F' : '#D81E5B';
+    g.fillRect(gx, gy, gw*ti/1.25, gh);
+    g.strokeStyle = '#1A1F36'; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(gx + gw/1.25, gy-7); g.lineTo(gx + gw/1.25, gy+gh+7); g.stroke();
+    g.fillStyle = '#5A6272'; g.font = '18px Calibri, sans-serif';
+    g.fillText(lech.toFixed(3) + ' out of ' + bien.toFixed(3) + ' allowed', gx, 180);
+    g.fillStyle = '#1A1F36';
+    g.fillText('limit', gx + gw/1.25 - 23, gy + gh + 26);
     g.fillStyle = dung ? '#2A9D8F' : '#D81E5B';
     g.font = '23px Calibri, sans-serif';
-    g.fillText(dung ? 'still read as symbol 2' : 'read as the wrong symbol', 980, 256);
+    g.fillText(dung ? 'still read as symbol 2' : 'read as the wrong symbol', gx, 278);
 
     g.fillStyle = '#5A6272'; g.font = '20px Calibri, sans-serif';
-    g.fillText('The test is not whether the waveform matches. It is which of the 16 points the '
-             + 'measured pair is nearest to.', 30, 334);
+    g.fillText('The test is not whether the waveform matches. It is which of the ' + (L*L)
+             + ' points the measured pair is nearest to.', 30, 334);
     g.fillText('f is the carrier frequency, and the two low-pass filters of the textbook figure '
              + 'are drawn here as one averaging step.', 30, 366);
   }
@@ -348,11 +405,15 @@ page 142. The 16-QAM constellation follows session 2 part 2.
     var cv = E('cs'), g = cv.getContext('2d');
     var W = cv.width, H = cv.height;
     g.clearRect(0,0,W,H);
-    var R = 1.55, m = 52;
+    var R = MAXC*(1+c.A)*1.03, m = 52, mb = 96, rc = (L===8) ? 3.6 : 5.0;
     function X(v){ return m + (v+R)/(2*R)*(W-2*m); }
-    function Y(v){ return H - m - (v+R)/(2*R)*(H-2*m); }
+    function Y(v){ return H - mb - (v+R)/(2*R)*(H-mb-m); }
+    // Decision boundaries sit midway between neighbouring levels, so at b*DMIN
+    // for b from -(L/2-1) to +(L/2-1). QPSK has only the two axes; 64-QAM has
+    // three boundaries each side of them.
     g.strokeStyle = '#EFF2F7'; g.lineWidth = 2;
-    for (var b=-1;b<=1;b++){
+    var nb = L/2 - 1;
+    for (var b=-nb;b<=nb;b++){
       var t = b*DMIN;
       g.beginPath(); g.moveTo(X(t), Y(-R)); g.lineTo(X(t), Y(R)); g.stroke();
       g.beginPath(); g.moveTo(X(-R), Y(t)); g.lineTo(X(R), Y(t)); g.stroke();
@@ -363,8 +424,8 @@ page 142. The 16-QAM constellation follows session 2 part 2.
 
     // the 16 points the transmitter is allowed to send
     g.fillStyle = '#C6CBD6';
-    for (var k=0;k<16;k++){
-      g.beginPath(); g.arc(X(PI[k]), Y(PQ[k]), 5.0, 0, 6.2832); g.fill();
+    for (var k=0;k<PI.length;k++){
+      g.beginPath(); g.arc(X(PI[k]), Y(PQ[k]), rc, 0, 6.2832); g.fill();
     }
 
     // an arrow from where a symbol was sent to where it was received
@@ -402,10 +463,12 @@ page 142. The 16-QAM constellation follows session 2 part 2.
         var dat = cand[0];
         for (var ci=0; ci<cand.length; ci++){
           var px0 = cand[ci][0], py0 = cand[ci][1];
-          var hop = (px0 > 6) && (px0+wn < W-6) && (py0-23 > 6) && (py0+6 < H-70);
+          var hop = (px0 > 6) && (px0+wn < W-6) && (py0-23 > 6) && (py0+6 < H-100);
           var cham = (px0 < xb+13) && (xb-13 < px0+wn) && (py0-23 < yb+13) && (yb-13 < py0+6);
           if (hop && !cham){ dat = cand[ci]; break; }
         }
+        g.fillStyle = '#ffffff';                 // plate, so the grid cannot cut the label
+        g.fillRect(dat[0]-6, dat[1]-26, wn+12, 34);
         g.fillStyle = '#1A1F36';
         g.fillText(nhan, dat[0], dat[1]);
       }
@@ -413,13 +476,24 @@ page 142. The 16-QAM constellation follows session 2 part 2.
       g.fillText('dark dot: sent symbol   ·   pink dot: what the receiver measures', m, H-20);
     } else {
       // every symbol that could have come before symbol 2, all sixteen of them
-      var c2 = SEQ[1];
-      for (var tr2=0;tr2<16;tr2++){
+      var c2 = SEQ[1], M = PI.length;
+      // longest and shortest spoke: the previous symbol at a corner pushes
+      // hardest, the one nearest the origin barely pushes at all.
+      // The hardest push is any corner symbol; pick the one actually drawn above,
+      // so the long solid spoke and the ring are the same case.
+      var xa = SEQ[0], xb2 = 0, dmx = Math.hypot(PI[xa], PQ[xa]), dmn = 1e9;
+      for (var j2=0;j2<M;j2++){
+        var d2 = Math.hypot(PI[j2], PQ[j2]);
+        if (d2 < dmn){ dmn = d2; xb2 = j2; }
+      }
+      for (var tr2=0;tr2<M;tr2++){
         var zi = PI[c2] + c.g*PI[tr2], zq = PQ[c2] + c.g*PQ[tr2];
-        g.strokeStyle = 'rgba(255,107,53,0.50)'; g.lineWidth = 1.5;
+        var dac = (tr2===xa || tr2===xb2);
+        g.strokeStyle = dac ? '#FF6B35' : 'rgba(255,107,53,0.35)';
+        g.lineWidth = dac ? 3 : 1.5;
         g.beginPath(); g.moveTo(X(PI[c2]), Y(PQ[c2])); g.lineTo(X(zi), Y(zq)); g.stroke();
-        g.fillStyle = '#FF6B35';
-        g.beginPath(); g.arc(X(zi), Y(zq), 6.0, 0, 6.2832); g.fill();
+        g.fillStyle = dac ? '#FF6B35' : 'rgba(255,107,53,0.55)';
+        g.beginPath(); g.arc(X(zi), Y(zq), dac ? 7.0 : 4.6, 0, 6.2832); g.fill();
       }
       g.fillStyle = '#1A1F36';
       g.beginPath(); g.arc(X(PI[c2]), Y(PQ[c2]), 6.5, 0, 6.2832); g.fill();
@@ -427,8 +501,12 @@ page 142. The 16-QAM constellation follows session 2 part 2.
       g.strokeStyle = '#D81E5B'; g.lineWidth = 3;
       g.beginPath(); g.arc(X(ri), Y(rq), 13, 0, 6.2832); g.stroke();
       g.fillStyle = '#5A6272'; g.font = '21px Calibri, sans-serif';
-      g.fillText('one spot per possible previous symbol, so sixteen of them', m, H-56);
-      g.fillText('the ring is the one case drawn above', m, H-20);
+      g.fillText('one spot per possible previous symbol, so ' + M + ' of them', m, H-56);
+      // At QPSK every point sits the same distance from the origin, so every
+      // preceding symbol pushes exactly as hard. Say that instead of a ratio of 1.
+      g.fillText(L === 2 ? 'every previous symbol pushes exactly as hard here'
+                         : ('the hardest push is ' + (dmx/dmn).toFixed(0) +
+                            ' times the gentlest'), m, H-20);
     }
 
     g.fillStyle = '#5A6272'; g.font = '22px Calibri, sans-serif';
@@ -437,26 +515,34 @@ page 142. The 16-QAM constellation follows session 2 part 2.
   }
 
   function ve(){
+    dungChom([2,4,8][+sl.mo.value - 1]);
     var c = tinh();
     E('lt').textContent = c.tau;
     E('lr').textContent = c.Rs.toFixed(2);
     E('lts').textContent = c.Ts.toFixed(0);
+    E('la').textContent = c.A.toFixed(2);
+    E('lm').textContent = TEN;
+    E('lb').textContent = Math.round(Math.log(L*L)/Math.LN2);
     var cb = E('cb');
     cb.innerHTML = 'Of one symbol, <b>' + (c.beta*100).toFixed(0) +
                    '%</b> lands in the next slot';
     cb.className = 'chip ' + (c.beta < 0.01 ? 'tot' : (c.beta > 0.5 ? 'xau' : ''));
+    var cg = E('cg');
+    cg.innerHTML = 'Leftover from the previous symbol, g = <b>' + c.g.toFixed(2) + '</b>';
+    cg.className = 'chip ' + (c.cham ? 'xau' : '');
     var cx = E('cx');
-    cx.innerHTML = 'Groups reaching a decision boundary: <b>' +
-                   (c.cham ? 'yes' : 'no') + '</b>';
+    cx.innerHTML = TEN + ' tolerates g up to <b>' + nguong().toFixed(2) + '</b>';
     cx.className = 'chip ' + (c.cham ? 'xau' : 'tot');
     veSong(c); veGiai(c); veChom(c);
   }
 
-  ['t','r'].forEach(function(k){ sl[k].addEventListener('input', ve); });
+  sl.mo = E('mo');
+  ['t','r','a','mo'].forEach(function(k){ sl[k].addEventListener('input', ve); });
   E('fan').addEventListener('change', ve);
   Array.prototype.forEach.call(document.querySelectorAll('.nut'), function(b){
     b.addEventListener('click', function(){
-      sl.t.value = b.dataset.t; sl.r.value = b.dataset.r; ve();
+      sl.t.value = b.dataset.t; sl.r.value = b.dataset.r;
+      sl.a.value = b.dataset.a; sl.mo.value = b.dataset.mo; ve();
     });
   });
   ve();
