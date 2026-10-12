@@ -48,7 +48,9 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
   <h1>A late symbol landing on the next one</h1>
   <p>Each symbol is a stretch of carrier held at one amplitude and one phase. One signal leaves the
   transmitter, two copies arrive, and the receiver only ever has their sum. Because the second copy
-  is late, part of one symbol is still arriving while the next symbol is being received.</p>
+  is late, part of one symbol is still arriving while the next symbol is being received. The time
+  window stays the same length whatever you do, so the delay keeps one width on screen and only the
+  symbol boundaries move.</p>
 </header>
 <a class="veml" href="../index.html">Back to the INT3303 simulation index</a>
 
@@ -61,9 +63,9 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
       <input type="range" id="t" min="0" max="400" step="100" value="200">
     </div>
     <div>
-      <label class="t">Symbol length <b><span id="lts">500</span> ns</b>,
+      <label class="t">Symbol length <b><span id="lts">800</span> ns</b>,
         which is a symbol rate of <b><span id="lr">2.00</span> Msym/s</b></label>
-      <input type="range" id="r" min="400" max="2000" step="100" value="500">
+      <input type="range" id="r" min="400" max="1200" step="100" value="800">
     </div>
     <div>
       <label class="t">Echo strength <b><span id="la">0.50</span></b> of the direct path</label>
@@ -76,13 +78,13 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
     </div>
   </div>
   <div style="margin-top:10px">
-    <span class="nut" data-t="0"   data-r="500"  data-a="50" data-mo="2">No delay</span>
-    <span class="nut" data-t="200" data-r="2000" data-a="50" data-mo="2">Same delay, long symbols</span>
-    <span class="nut" data-t="200" data-r="800"  data-a="50" data-mo="2">Same delay, shorter symbols</span>
-    <span class="nut" data-t="200" data-r="400"  data-a="50" data-mo="2">Same delay, shorter still</span>
-    <span class="nut" data-t="400" data-r="500"  data-a="50" data-mo="2">Far enough to be unreadable</span>
-    <span class="nut" data-t="200" data-r="500"  data-a="50" data-mo="1">Same channel on QPSK</span>
-    <span class="nut" data-t="200" data-r="500"  data-a="50" data-mo="3">Same channel on 64-QAM</span>
+    <span class="nut" data-t="0"   data-r="800"  data-a="50" data-mo="2">No delay</span>
+    <span class="nut" data-t="200" data-r="800"  data-a="50" data-mo="2">As on this slide: 800 ns symbols</span>
+    <span class="nut" data-t="200" data-r="400"  data-a="50" data-mo="2">As on the next slide: 400 ns</span>
+    <span class="nut" data-t="300" data-r="400"  data-a="50" data-mo="2">A longer delay still</span>
+    <span class="nut" data-t="400" data-r="500"  data-a="50" data-mo="2">Far enough to be misread</span>
+    <span class="nut" data-t="200" data-r="400"  data-a="50" data-mo="1">Same channel on QPSK</span>
+    <span class="nut" data-t="200" data-r="400"  data-a="50" data-mo="3">Same channel on 64-QAM</span>
   </div>
 </div>
 
@@ -238,41 +240,52 @@ page 142. The 16-QAM constellation follows session 2 part 2.
   }
 
   // Direct-path passband signal at time t in ns, zero outside the three slots.
+  var TWIN = 2400;                                  // ns, fixed window, as on the slides
+
   function truc(t, Ts){
     var k = Math.floor(t/Ts);
-    if (k < 0 || k > 2) return 0;
-    return AMP[k]*Math.cos(2*Math.PI*FC*(t*1e-9) + PHA[k]);
-  }
+    if (k < 0 || t >= TWIN) return 0;
+    var j = k % AMP.length;                         // the window can hold more
+    return AMP[j]*Math.cos(2*Math.PI*FC*(t*1e-9) + PHA[j]);   // symbols than the
+  }                                                 // three-symbol sequence
 
   function veSong(c){
     var cv = E('ct'), g = cv.getContext('2d');
     var W = cv.width, H = cv.height;
     g.clearRect(0,0,W,H);
     var m = 36, xr = W-36, pw = xr-m;
-    var Twin = 3*c.Ts;                              // the window always holds three symbols
+    var Twin = TWIN;                                // fixed, so the delay keeps one width
+    var nk = Math.ceil(Twin/c.Ts);                  // how many symbols fit in it
     var AM = Math.max.apply(null, AMP) * (1 + c.A) * 1.04;  // largest the sum can reach
     var sc = 78/AM;                                 // pixels per unit
     var yc = [165, 395, 595, 795];
-    var ten = ['AT THE TRANSMITTER: three symbols go out, one carrier each',
+    var ten = ['AT THE TRANSMITTER: the symbols go out, one carrier each',
                'at the receiver, first copy to arrive: the direct path',
                'at the receiver, second copy: the echo, later and weaker',
                'what the receiver actually has: the two copies added'];
     function X(t){ return m + t/Twin*pw; }
 
     // slot boundaries and labels
-    g.strokeStyle = '#E4E8EF'; g.lineWidth = 2;
-    for (var b=0;b<=3;b++){
-      var xb = X(b*c.Ts);
+    g.strokeStyle = '#C6CBD6'; g.lineWidth = 1.6;
+    for (var b=0;b<=nk;b++){
+      var xb = X(Math.min(Twin, b*c.Ts));
       g.beginPath(); g.moveTo(xb, 100); g.lineTo(xb, 878); g.stroke();
     }
     g.fillStyle = '#5A6272'; g.font = '23px Calibri, sans-serif';
-    for (var s=0;s<3;s++) g.fillText('symbol '+(s+1), X((s+0.5)*c.Ts)-52, 902);
+    g.fillText('symbol', m, 902);
+    for (var s=0;s<nk;s++){
+      if ((s+0.5)*c.Ts > Twin) break;
+      g.fillText(String(s+1), X((s+0.5)*c.Ts)-6, 902);
+    }
 
     // the window where the echo of symbol 1 sits inside the slot of symbol 2
     var dx = c.beta*c.Ts;
     if (dx > 0.5){
       g.fillStyle = 'rgba(255,107,53,0.13)';
-      g.fillRect(X(c.Ts), 100, X(c.Ts+dx)-X(c.Ts), 778);
+      for (var bb=1; bb<nk; bb++){
+        var xs = X(bb*c.Ts), xe = X(Math.min(Twin, bb*c.Ts + dx));
+        if (xe > xs) g.fillRect(xs, 100, xe-xs, 778);
+      }
     }
 
     // the hop across the channel: everything below this line is at the receiver
@@ -306,7 +319,7 @@ page 142. The 16-QAM constellation follows session 2 part 2.
     g.font = '24px Calibri, sans-serif';
     if (dx > 0.5){
       g.fillStyle = '#D81E5B';
-      g.fillText('in the shaded strip the bottom row carries symbol 1 and symbol 2 at once',
+      g.fillText('in each shaded strip the bottom row carries two symbols at once',
                  m, 34);
     } else {
       g.fillStyle = '#2A9D8F';
