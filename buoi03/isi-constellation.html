@@ -58,12 +58,12 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
   <div class="hang">
     <div>
       <label class="t">Echo delay <b><span id="lt">200</span> ns</b></label>
-      <input type="range" id="t" min="0" max="400" step="50" value="200">
+      <input type="range" id="t" min="0" max="400" step="100" value="200">
     </div>
     <div>
       <label class="t">Symbol length <b><span id="lts">500</span> ns</b>,
         which is a symbol rate of <b><span id="lr">2.00</span> Msym/s</b></label>
-      <input type="range" id="r" min="400" max="2000" step="50" value="500">
+      <input type="range" id="r" min="400" max="2000" step="100" value="500">
     </div>
     <div>
       <label class="t">Echo strength <b><span id="la">0.50</span></b> of the direct path</label>
@@ -80,7 +80,7 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
     <span class="nut" data-t="200" data-r="2000" data-a="50" data-mo="2">Same delay, long symbols</span>
     <span class="nut" data-t="200" data-r="800"  data-a="50" data-mo="2">Same delay, shorter symbols</span>
     <span class="nut" data-t="200" data-r="400"  data-a="50" data-mo="2">Same delay, shorter still</span>
-    <span class="nut" data-t="400" data-r="450"  data-a="50" data-mo="2">Far enough to be unreadable</span>
+    <span class="nut" data-t="400" data-r="500"  data-a="50" data-mo="2">Far enough to be unreadable</span>
     <span class="nut" data-t="200" data-r="500"  data-a="50" data-mo="1">Same channel on QPSK</span>
     <span class="nut" data-t="200" data-r="500"  data-a="50" data-mo="3">Same channel on 64-QAM</span>
   </div>
@@ -151,9 +151,9 @@ neighbouring point</b>. Everything else feeds one of those two sides.</p>
 
 <h2>Two things the drawing simplifies, said out loud</h2>
 <ul>
-  <li>The carrier is drawn at <b>20 MHz</b> so that individual cycles are visible. A real 2.4 GHz
+  <li>The carrier is drawn at <b>10 MHz</b> so that individual cycles are visible. A real 2.4 GHz
       carrier fits roughly 1200 cycles into a 500 ns symbol, which cannot be drawn.</li>
-  <li>Both the delay and the symbol length move in steps of 50 ns, which is exactly one cycle of
+  <li>Both the delay and the symbol length move in steps of 100 ns, which is exactly one cycle of
       that drawn carrier. So the echo always arrives <b>in phase</b> with the direct path, and a
       symbol always holds a whole number of cycles. Whether two copies add or cancel is the question
       of the previous slide, about path differences of λ/2; this page is about the much longer
@@ -173,7 +173,7 @@ neighbouring point</b>. Everything else feeds one of those two sides.</p>
   <li>Hold the delay at 200 ns and shorten the symbols. The environment has not changed and the
       echo has not changed, yet the gauge keeps filling. This is the slide
       <i>Short symbols suffer more</i>.</li>
-  <li>Push the delay to 400 ns and the symbol length down to 450 ns. The gauge passes its limit and
+  <li>Push the delay to 400 ns and the symbol length down to 500 ns. The gauge passes its limit and
       the receiver reads a different symbol. That is the point at which the room, not the
       bandwidth, is what limits the symbol rate.</li>
   <li>Leave the channel exactly as it is and change only the modulation. QPSK survives anything
@@ -219,14 +219,14 @@ page 142. The 16-QAM constellation follows session 2 part 2.
   // to its neighbour. That happens at exactly g = 1 / (L - 1).
   function nguong(){ return 1/(L-1); }
 
-  var FC = 20e6;                                    // drawn carrier, 20 MHz, stated on the page
+  var FC = 10e6;                                    // drawn carrier, 10 MHz, stated on the page
 
   var E = function(id){ return document.getElementById(id); };
   var sl = { t:E('t'), r:E('r'), a:E('a') };
 
   function tinh(){
     var tau = +sl.t.value;                          // ns
-    var Ts  = +sl.r.value;                          // ns, always a multiple of 50
+    var Ts  = +sl.r.value;                          // ns, always a multiple of 100
     var Rs  = 1000/Ts;                              // Msym/s
     var A = +sl.a.value/100;                        // echo strength
     var beta = Math.min(1, tau/Ts);                 // fraction spilling into the next slot
