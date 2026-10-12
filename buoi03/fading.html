@@ -92,6 +92,18 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
 
 <canvas id="cv" width="1280" height="520"></canvas>
 
+<h2>What is on the vertical axis</h2>
+<p class="sub">Both curves are <b>P<sub>r</sub> / P<sub>t</sub></b>, the received power divided by
+the transmitted power, which is the same quantity part 2 called path loss. It is a ratio, so it has
+no unit and decibels are the right way to write it; dBm or dBW would be wrong here, because those
+are for an absolute power. The axis is drawn relative to the value at the start of the walk, and
+since the transmitter never changes on this page, a change in the ratio is exactly a change in the
+received power.</p>
+<p class="sub">Worth saying out loud, because it is easy to assume otherwise: this ratio
+<b>does</b> show fast fading. When two copies arrive out of phase they cancel, less power reaches
+the receiver for the same power sent, and the ratio falls. What cannot show fast fading is the
+free space <i>formula</i>, and only because that formula describes a single path.</p>
+
 <h2>What the two curves are</h2>
 <ul>
   <li>The teal curve is Steenkiste's path loss equation and nothing else:
@@ -112,11 +124,11 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
       of, and that is one reason multipath is not purely a nuisance.</li>
   <li>Stand still and both go flat. Fading is not a property of the room on its own, it is a
       property of the room plus movement.</li>
-  <li>The swing is measured over one fixed five second window, so it depends on how far you walk
-      inside it. At a stroll it is around twenty decibels and at the fastest setting here it passes
-      forty, because the faster walk crosses more wavelengths in the same five seconds. Stallings
-      quotes 20 to 30 dB over a short distance, which is the same statement with the distance left
-      implicit.</li>
+  <li>The swing is measured over one fixed five second window, so it depends both on how far you
+      walk inside it and on how rich the multipath is. Eight reflectors in a corridor give around
+      ten decibels; add more objects, or walk faster, and it grows past forty. Stallings quotes
+      20 to 30 dB for an urban mobile environment, which is a harsher room than the one modelled
+      here, and the reflector slider is where you can go and find that number.</li>
 </ul>
 
 <h2>Three things worth trying</h2>
@@ -190,36 +202,45 @@ drawn by hand and no noise is added.
       }
       nn[j] = 3.0 + (nmax-3.0)*u;
     }
-    // Plot everything relative to the level at the start of the walk. The
-    // absolute path loss is not the point here, the variation is, and in
-    // relative terms lambda cancels out of the slow curve entirely.
-    var ref = 10*Math.log10(lam*lam) - 10*3.0*Math.log10(4*Math.PI*D0);
+    // Everything is the SAME quantity: received power divided by transmitted
+    // power, which is dimensionless, so decibels are the right unit and dBm
+    // would be wrong. It is plotted against its own value at the start of the
+    // walk; the transmitter never changes here, so a change in the ratio is a
+    // change in the received power.
+    // The slow curve is the DIRECT ray on its own: free space spreading plus
+    // whatever the blockage takes off it. Written this way it is exactly the
+    // direct term of the sum below, so with no reflectors the two coincide.
+    var ref = 20*Math.log10(lam/(4*Math.PI*D0));
     for (j=0;j<N;j++){
-      cham[j] = 10*Math.log10(lam*lam)
-              - 10*nn[j]*Math.log10(4*Math.PI*d[j]) - ref;
+      cham[j] = 20*Math.log10(lam/(4*Math.PI*d[j]))
+              - 10*(nn[j]-3.0)*Math.log10(4*Math.PI*d[j]) - ref;
     }
-    // the other paths, summed as waves with their real phases
-    var tong = 0, dem = 0;
+    // All the paths summed as waves, each carrying the amplitude that the very
+    // same equation gives it. Writing the direct ray this way means that with
+    // no reflectors the sum IS equation 2.3, so the two curves coincide by
+    // construction instead of being slid onto each other afterwards.
+    //   amplitude of a ray of length L  =  lambda / (4 pi L)
+    // Every ray spreads in free space. The exponent n above 2 is an empirical
+    // law for a whole channel, and it already stands for reflections and
+    // obstructions, so applying it to each ray as well would count them twice.
+    // Here n is an outcome of adding the rays up, not an input.
+    // A blockage attenuates the direct ray only: it stands in front of the
+    // line of sight, not in front of the reflections. Its size comes from
+    // Steenkiste's own device of raising n, converted to dB.
+    function bienDo(L){ return lam/(4*Math.PI*L); }
     for (j=0;j<N;j++){
-      // A blockage attenuates the DIRECT ray, not the reflections. Applying it
-      // to the whole sum would be wrong, and applying it to neither would make
-      // the magenta trace ignore a dip the teal curve shows.
-      var gi = Math.pow(10, (-10*(nn[j]-3.0)*Math.log10(4*Math.PI*d[j]))/20);
-      var re = gi*Math.cos(-2*Math.PI*d[j]/lam)/d[j];
-      var im = gi*Math.sin(-2*Math.PI*d[j]/lam)/d[j];
+      var cdb = 10*(nn[j]-3.0)*Math.log10(4*Math.PI*d[j]);
+      var ad = bienDo(d[j])*Math.pow(10, -cdb/20);
+      var re = ad*Math.cos(-2*Math.PI*d[j]/lam);
+      var im = ad*Math.sin(-2*Math.PI*d[j]/lam);
       for (m=0;m<nref;m++){
         var L = Math.hypot(RX[m], RY[m]) + Math.hypot(d[j]-RX[m], RY[m]);
-        re += RH[m]*Math.cos(-2*Math.PI*L/lam)/L;
-        im += RH[m]*Math.sin(-2*Math.PI*L/lam)/L;
+        var ai = RH[m]*bienDo(L);
+        re += ai*Math.cos(-2*Math.PI*L/lam);
+        im += ai*Math.sin(-2*Math.PI*L/lam);
       }
-      nhanh[j] = 20*Math.log10(Math.hypot(re, im));
-      tong += nhanh[j]; dem++;
+      nhanh[j] = 20*Math.log10(Math.hypot(re, im)) - ref;
     }
-    // line the two up so they can be compared on one axis
-    var tbN = tong/dem, tbC = 0;
-    for (j=0;j<N;j++) tbC += cham[j];
-    tbC /= N;
-    for (j=0;j<N;j++) nhanh[j] += tbC - tbN;
     // how far anything falls below the window, so the gate can catch clipping
     var sau = 0;
     for (j=0;j<N;j++){
@@ -271,7 +292,7 @@ drawn by hand and no noise is added.
       g.beginPath(); g.moveTo(x0-6, Y(vv)); g.lineTo(x0, Y(vv)); g.stroke();
       g.fillText(String(vv), x0-48, Y(vv)+6);
     }
-    g.fillText('received power, dB below the start of the walk', x0-40, y1-16);
+    g.fillText('Pr / Pt in dB, relative to the start', x0-40, y1-16);
     // More samples than pixels means a polyline would draw an alias. Collapse
     // each pixel column to its own min and max instead, so the real depth of
     // the nulls survives at any carrier frequency.
