@@ -46,9 +46,9 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
 <header>
   <div class="k">INT3303 · SESSION 3 · PART 3</div>
   <h1>A late symbol landing on the next one</h1>
-  <p>Each symbol is a stretch of carrier held at one amplitude and one phase. An echo arrives a
-  little later, so part of one symbol's carrier is still arriving while the next symbol is being
-  received. Watch what the sum looks like inside that second slot.</p>
+  <p>Each symbol is a stretch of carrier held at one amplitude and one phase. One signal leaves the
+  transmitter, two copies arrive, and the receiver only ever has their sum. Because the second copy
+  is late, part of one symbol is still arriving while the next symbol is being received.</p>
 </header>
 <a class="veml" href="../index.html">Back to the INT3303 simulation index</a>
 
@@ -81,7 +81,7 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
   <span class="chip" id="cx">Groups reaching a decision boundary: <b>no</b></span>
 </div>
 
-<canvas id="ct" width="1280" height="830"></canvas>
+<canvas id="ct" width="1280" height="930"></canvas>
 
 <div class="duoi">
   <div>
@@ -194,31 +194,38 @@ figure 5.12, and Steenkiste 2023 section 2.6.3. The 16-QAM constellation follows
     var m = 36, xr = W-36, pw = xr-m;
     var Twin = 3*c.Ts;                              // the window always holds three symbols
     var AM = 2.15;                                  // largest value the sum can reach
-    var sc = 96/AM;                                 // pixels per unit
-    var yc = [190, 430, 670];
-    var ten = ['transmitted: three symbols, one carrier each',
-               'echo: the same signal again, later and weaker',
-               'received: the two added together'];
+    var sc = 78/AM;                                 // pixels per unit
+    var yc = [165, 395, 595, 795];
+    var ten = ['AT THE TRANSMITTER: three symbols go out, one carrier each',
+               'at the receiver, first copy to arrive: the direct path',
+               'at the receiver, second copy: the echo, later and weaker',
+               'what the receiver actually has: the two copies added'];
     function X(t){ return m + t/Twin*pw; }
 
     // slot boundaries and labels
     g.strokeStyle = '#E4E8EF'; g.lineWidth = 2;
     for (var b=0;b<=3;b++){
       var xb = X(b*c.Ts);
-      g.beginPath(); g.moveTo(xb, 128); g.lineTo(xb, 790); g.stroke();
+      g.beginPath(); g.moveTo(xb, 100); g.lineTo(xb, 878); g.stroke();
     }
     g.fillStyle = '#5A6272'; g.font = '23px Calibri, sans-serif';
-    for (var s=0;s<3;s++) g.fillText('symbol '+(s+1), X((s+0.5)*c.Ts)-52, 814);
+    for (var s=0;s<3;s++) g.fillText('symbol '+(s+1), X((s+0.5)*c.Ts)-52, 902);
 
     // the window where the echo of symbol 1 sits inside the slot of symbol 2
     var dx = c.beta*c.Ts;
     if (dx > 0.5){
       g.fillStyle = 'rgba(255,107,53,0.13)';
-      g.fillRect(X(c.Ts), 128, X(c.Ts+dx)-X(c.Ts), 662);
+      g.fillRect(X(c.Ts), 100, X(c.Ts+dx)-X(c.Ts), 778);
     }
 
-    var mau = ['#2A9D8F','#6C5CE7','#D81E5B'];
-    for (var r=0;r<3;r++){
+    // the hop across the channel: everything below this line is at the receiver
+    g.strokeStyle = '#C6CBD6'; g.lineWidth = 2;
+    g.beginPath();
+    for (var xd=m; xd<xr; xd+=16){ g.moveTo(xd, 258); g.lineTo(Math.min(xd+8, xr), 258); }
+    g.stroke();
+
+    var mau = ['#1A1F36','#2A9D8F','#6C5CE7','#D81E5B'];
+    for (var r=0;r<4;r++){
       // zero line
       g.strokeStyle = '#EFF2F7'; g.lineWidth = 2;
       g.beginPath(); g.moveTo(m, yc[r]); g.lineTo(xr, yc[r]); g.stroke();
@@ -227,26 +234,26 @@ figure 5.12, and Steenkiste 2023 section 2.6.3. The 16-QAM constellation follows
       g.beginPath();
       for (var px=0; px<=pw; px++){
         var t = px/pw*Twin;
-        var v = (r===0) ? truc(t, c.Ts)
-              : (r===1) ? A_ECHO*truc(t-c.tau, c.Ts)
-              :           truc(t, c.Ts) + A_ECHO*truc(t-c.tau, c.Ts);
+        var v = (r===0 || r===1) ? truc(t, c.Ts)
+              : (r===2)          ? A_ECHO*truc(t-c.tau, c.Ts)
+              :                    truc(t, c.Ts) + A_ECHO*truc(t-c.tau, c.Ts);
         var x = m+px, y = yc[r] - v*sc;
         if (px===0) g.moveTo(x,y); else g.lineTo(x,y);
       }
       g.stroke();
-      g.fillStyle = '#1A1F36'; g.font = '23px Calibri, sans-serif';
-      g.fillText(ten[r], m, yc[r]-112);
+      g.fillStyle = mau[r]; g.font = '23px Calibri, sans-serif';
+      g.fillText(ten[r], m, yc[r]-93);
     }
 
     // the one sentence the picture is for
     g.font = '24px Calibri, sans-serif';
     if (dx > 0.5){
       g.fillStyle = '#D81E5B';
-      g.fillText('inside the shaded strip the receiver hears symbol 1 and symbol 2 at once',
-                 m, 42);
+      g.fillText('in the shaded strip the bottom row carries symbol 1 and symbol 2 at once',
+                 m, 34);
     } else {
       g.fillStyle = '#2A9D8F';
-      g.fillText('the echo stays inside its own slot, so no symbol reaches into another', m, 42);
+      g.fillText('the echo stays inside its own slot, so no symbol reaches into another', m, 34);
     }
   }
 
