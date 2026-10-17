@@ -67,8 +67,9 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
       <input type="range" id="k" min="1" max="4" step="1" value="2">
     </div>
     <div>
-      <label class="t">The second path is longer by <b><span id="ld">1.5</span> m</b>,
-        so it is late by <b><span id="lt">5.00</span> ns</b></label>
+      <label class="t">The first echo travels <b><span id="ld">1.5</span> m</b> further,
+        so it is late by <b><span id="lt">5.00</span> ns</b>. Any further echoes
+        are fixed multiples of this.</label>
       <input type="range" id="d" min="3" max="40" step="1" value="15">
     </div>
     <div>
@@ -122,6 +123,16 @@ every tone comes out the same size. The ripple is not a property of the room, of
 of the equipment. It is a property of <b>having more than one copy arrive</b>. Put the paths back
 to 2 and it returns.</p>
 
+<h2>A word about the extra paths</h2>
+<p class="sub">The first echo is the one you control: its extra length is the slider, and at the
+default of 1.5 m it arrives 5 ns late. The second and third echoes, which appear when you raise
+the number of paths, sit at fixed multiples of that: <b>1.68</b> and <b>2.80</b> times the slider,
+so at the default they arrive <b>8.40 ns</b> and <b>14.00 ns</b> late, and each is weaker than the
+one before it. Those multipliers are an <b>illustrative set, not measurements</b>. They were chosen
+to be unevenly spaced, so that the channel comes out ragged rather than neatly periodic, and no
+textbook or measurement campaign is behind the particular values. What is real here is the
+mechanism, not the room. A real room would have its own lengths, and many more of them.</p>
+
 <h2>Things worth trying</h2>
 <ul>
   <li><b>Change how long the extra path is.</b> The delay changes, and so does the spacing of the
@@ -162,7 +173,7 @@ to 2 and it returns.</p>
 (function(){
   var C0 = 3.0e8;
   // Cung bang tia voi figs_b03t3.py va voi selective.html.
-  var TIA_R = [1.00, 0.41, 1.73, 2.28, 0.67, 1.19, 2.95];
+  var TIA_R = [1.00, 1.68, 2.80, 3.54, 4.48, 5.66, 6.30];  // xep tang dan
   var TIA_A = [0.90, 0.55, 0.45, 0.38, 0.32, 0.28, 0.25];
   var FA = 50e6, FB = 550e6;
   var DB_LO = -26, DB_HI = 8;
@@ -340,9 +351,15 @@ to 2 and it returns.</p>
     E('lt').textContent = s.tre.length ? (s.tre[0]*1e9).toFixed(2) : '0.00';
     E('la').textContent = s.ts.toFixed(2);
     if (s.tre.length){
-      E('c1').innerHTML = 'The echo is late by <b>' + (s.tre[0]*1e9).toFixed(2) + ' ns</b>';
-      E('c2').innerHTML = 'That lateness is <b>' + (s.tre[0]/s.chuky).toFixed(2) +
-                          '</b> cycles of this tone';
+      // Phai ke DU moi tieng vong. Ban cu chi in cai dau tien trong khi o muc
+      // 3 hay 4 duong di co hai hoac ba tieng vong, nen o thong tin ke thieu.
+      var dsNs = s.tre.map(function(t){ return (t*1e9).toFixed(2); }).join(', ');
+      var dsCk = s.tre.map(function(t){ return (t/s.chuky).toFixed(2); }).join(', ');
+      E('c1').innerHTML = (s.tre.length > 1 ? 'The echoes are late by <b>'
+                                            : 'The echo is late by <b>') +
+                          dsNs + ' ns</b>';
+      E('c2').innerHTML = 'That is <b>' + dsCk + '</b> cycle' +
+                          (s.tre.length > 1 ? 's' : '') + ' of this tone';
       E('c2').className = 'chip';
     } else {
       E('c1').innerHTML = 'There is <b>no echo</b>, only one path';
