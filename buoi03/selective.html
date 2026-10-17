@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Flat and selective fading</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;
+      --mut:#5A6272;--line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE;max-width:900px;line-height:1.5}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.55}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+.dk{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:0 0 16px;background:var(--tint)}
+.hang{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px 24px}
+label.t{display:block;font-size:13.5px;color:var(--mut);margin:0 0 3px}
+label.t b{color:var(--ink);font-size:14.5px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 11px;
+  font-size:13px;color:var(--mut);background:#fff;margin:0 6px 6px 0}
+.chip b{color:var(--ink)}
+.chip.xau b{color:var(--mag)}
+.chip.tot b{color:var(--teal)}
+h2{font-family:Cambria,Georgia,serif;font-size:19px;margin:24px 0 8px;padding-bottom:6px;
+   border-bottom:1px solid var(--line)}
+ul{margin:8px 0 0;padding-left:20px;font-size:14.5px;color:var(--mut);line-height:1.65}
+ul b{color:var(--ink)}
+.nut{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:8px;
+  padding:6px 12px;font-size:13.5px;color:var(--ink);cursor:pointer;margin:0 6px 6px 0}
+.nut:hover{border-color:var(--acc)}
+code{background:var(--tint);padding:1px 5px;border-radius:4px;font-size:13.5px}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13.5px;line-height:1.6}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · SESSION 3 · PART 3</div>
+  <h1>Flat and selective fading</h1>
+  <p>One room, one channel, and one question: does the whole of your signal move together, or do
+  parts of it get hit while other parts do not? The answer is not a property of the room alone. It
+  depends on how wide your signal is, and you can change that here without touching anything else.</p>
+</header>
+<a class="veml" href="../index.html">Back to the INT3303 simulation index</a>
+
+<main>
+
+<div class="dk">
+  <div class="hang">
+    <div>
+      <label class="t">Signal bandwidth <b><span id="lb">80</span> MHz</b></label>
+      <input type="range" id="b" min="0" max="6" step="1" value="5">
+    </div>
+    <div>
+      <label class="t">Signal sits at <b><span id="lc">5.040</span> GHz</b></label>
+      <input type="range" id="c" min="5000" max="5400" step="1" value="5040">
+    </div>
+    <div>
+      <label class="t">Path length difference <b><span id="ld">1.8</span> m</b>,
+        so notches every <b><span id="lsp">167</span> MHz</b></label>
+      <input type="range" id="d" min="3" max="60" step="1" value="18">
+    </div>
+    <div>
+      <label class="t">Number of paths <b><span id="lk">2</span></b></label>
+      <input type="range" id="k" min="2" max="8" step="1" value="2">
+    </div>
+  </div>
+  <div style="margin-top:10px">
+    <span class="nut" data-b="5" data-c="5040" data-d="18" data-k="2">The textbook example: 80 MHz, ΔL 1.8 m</span>
+    <span class="nut" data-b="1" data-c="5040" data-d="18" data-k="2">Same room, a 5 MHz radio</span>
+    <span class="nut" data-b="0" data-c="5083" data-d="18" data-k="2">A 1 MHz signal parked in a notch</span>
+    <span class="nut" data-b="0" data-c="5167" data-d="18" data-k="2">A 1 MHz signal parked on a peak</span>
+    <span class="nut" data-b="5" data-c="5200" data-d="60" data-k="2">A long echo: notches close together</span>
+    <span class="nut" data-b="5" data-c="5200" data-d="18" data-k="8">A rich room: eight paths</span>
+  </div>
+</div>
+
+<div style="margin:0 0 14px">
+  <span class="chip" id="cv">Gain varies <b>0 dB</b> across the signal</span>
+  <span class="chip" id="ck">Verdict <b>flat</b></span>
+  <span class="chip" id="cp">The signal covers <b>0%</b> of one period</span>
+  <span class="chip" id="cm">Mean gain over the signal <b>0 dB</b></span>
+</div>
+
+<canvas id="cv2" width="1280" height="600"></canvas>
+
+<h2>What you are looking at</h2>
+<p class="sub">The upper plot is the <b>channel</b>, drawn as gain against frequency. It is computed,
+not sketched: every path is summed as a wave with its real phase, exactly as the add-or-cancel
+slide did, and the only difference here is that the sum is evaluated at every frequency across the
+band instead of at one carrier. The shaded block is the stretch of spectrum your signal occupies.</p>
+<p class="sub">The lower plot is what comes out: the transmitted spectrum, drawn flat and dashed,
+multiplied by the channel. That product is the thing the receiver has to demodulate, and when it is
+no longer the shape that was sent, the signal has been <b>distorted</b> rather than merely
+weakened.</p>
+
+<h2>The one experiment to run</h2>
+<p class="sub">Press <b>The textbook example</b>, then <b>Same room, a 5 MHz radio</b>. Nothing about
+the room changed between those two: same paths, same path length difference, same notches in the
+same places. Only the width of the signal changed, and the verdict flipped. That is the whole of
+Stallings' point, and it is why the term selective is defined relative to the bandwidth of the
+signal rather than as a property of the channel.</p>
+
+<h2>Things worth noticing</h2>
+<ul>
+  <li><b>Flat does not mean harmless.</b> Press <b>A 1 MHz signal parked in a notch</b>. The
+      verdict is flat, because the whole of that narrow signal moves together: the gain varies by
+      only about 0.4 dB across it. But the mean gain is nearly twenty decibels down and the link is
+      in serious trouble. Then press <b>parked on a peak</b>: same width, same room, and the signal
+      is now about 5.6 dB stronger than it would have been with no multipath at all. Flat and
+      selective answer the question <i>is the band treated unevenly</i>, not the question <i>is the
+      signal any good</i>.</li>
+  <li><b>Narrow is relative to the notch, not an absolute.</b> Leave the signal on the notch and
+      widen it from 1 MHz to 5 MHz. The verdict flips to selective, because this notch is only
+      about 17 MHz wide at its ten decibel points, so a 5 MHz signal already straddles its walls.
+      A signal is narrowband or wideband with respect to the structure of the particular channel it
+      is sitting in, which is exactly why Stallings defines the term relative to the signal
+      bandwidth and refuses to attach a number to it.</li>
+  <li><b>Where the notch spacing comes from.</b> Two paths differing by ΔL put a whole extra
+      wavelength into the longer path every time the frequency rises by c / ΔL, so the pattern
+      repeats with that period. A long echo means a small period, which is why pushing the path
+      length difference up crowds the notches together and makes even a narrow signal look
+      selective.</li>
+  <li><b>More paths, less regularity.</b> With two paths the channel is a clean repeating shape.
+      Push the number of paths up and it becomes ragged: the notches are no longer evenly spaced
+      and no longer the same depth. A real indoor channel looks like the ragged one. The two-path
+      case is kept as the default only because its period can be written down.</li>
+  <li><b>The verdict needs a number, and neither textbook gives one.</b> This page calls the
+      channel selective when the gain varies by more than <b>3 dB</b> across the signal. That
+      three is a convention of this page and nothing more. Stallings states the test in words only:
+      if attenuation occurs over a portion of the bandwidth of the signal, the fading is selective;
+      nonselective fading implies the signal bandwidth is narrower than, and completely covered by,
+      the spectrum affected by the fading. The quantity that would make the boundary numerical is
+      the coherence bandwidth, which appears in neither book for this course and is therefore not
+      taught in it.</li>
+  <li><b>This is why wide channels are hard.</b> Every WiFi generation has widened the channel:
+      20, then 40, then 80, then 160 MHz. Hold the room fixed on this page and walk the bandwidth
+      up through those numbers. The capacity you are buying comes with a channel that is more
+      selective at every step, and session 4 is about what to do with that.</li>
+</ul>
+
+<footer>
+  Sources. The mechanism and the worked example are Steenkiste, <i>Introduction to Wireless
+  Networking and Its Impact on Applications</i>, 2nd edition, section 2.6.2 and figure 2.11, with
+  example 2.2: an 802.11n channel 80 MHz wide at 5 GHz, two paths differing by 1.8 m, giving 30.00
+  wavelengths at the lower edge and 30.48 at the upper one, so the two copies add at one edge and
+  are 173 degrees apart at the other. The book prints 5.91 cm and 30.46 because it rounds the
+  wavelength before dividing; computing straight from λ = c / f gives 5.9055 cm and 30.48. The
+  definitions of flat and selective fading, and the test against the signal bandwidth, are
+  Stallings, <i>Wireless Communications and Networks</i>, 2nd edition, section 5.4, printed page
+  118. Every number on this page is computed in the browser from the same model the lecture figures
+  use, and the two are compared point by point by the build chain.
+</footer>
+</main>
+
+<script>
+(function(){
+  var C0 = 3.0e8;
+  // Cung bang tia voi figs_b03t3.py. doichieu.py so tung diem giua hai ban.
+  var TIA_R = [1.00, 0.41, 1.73, 2.28, 0.67, 1.19, 2.95];
+  var TIA_A = [0.90, 0.55, 0.45, 0.38, 0.32, 0.28, 0.25];
+  var BW = [1, 5, 10, 20, 40, 80, 160];            // MHz
+  var FA = 5.00e9, FB = 5.40e9;
+  var DB_LO = -24, DB_HI = 6;
+  var NGUONG = 3.0;                                 // quy uoc cua rieng trang nay
+
+  function dapUng(f, dl, ntia){
+    var re = 1, im = 0;
+    for (var i = 0; i < ntia - 1; i++){
+      var p = -2*Math.PI*f*dl*TIA_R[i]/C0;
+      re += TIA_A[i]*Math.cos(p);
+      im += TIA_A[i]*Math.sin(p);
+    }
+    return 20*Math.log10(Math.sqrt(re*re + im*im));
+  }
+  window.dapUng = dapUng;                           // de cong doi chieu goi duoc
+
+  var E = function(id){ return document.getElementById(id); };
+  var sl = {b:E('b'), c:E('c'), d:E('d'), k:E('k')};
+  var cv = E('cv2'), g = cv.getContext('2d');
+
+  function tinh(){
+    var bw = BW[+sl.b.value]*1e6;
+    var dl = (+sl.d.value)/10;
+    var ntia = +sl.k.value;
+    var fc = (+sl.c.value)*1e6;
+    // Giu ca dai tin hieu nam trong khung ve, neu khong thi phep do bien
+    // thien se chi do phan nhin thay duoc, tuc do nham mot thu khac.
+    fc = Math.max(FA + bw/2, Math.min(FB - bw/2, fc));
+    var N = 1600, f = new Float64Array(N), h = new Float64Array(N), i;
+    for (i = 0; i < N; i++){
+      f[i] = FA + (FB - FA)*i/(N - 1);
+      h[i] = dapUng(f[i], dl, ntia);
+    }
+    // Do bien thien TREN CHINH DAI TIN HIEU, luoi rieng, khong lay tu luoi ve.
+    var M = 1200, lo = 1e9, hi = -1e9, tong = 0, d;
+    for (i = 0; i < M; i++){
+      d = dapUng(fc - bw/2 + bw*i/(M - 1), dl, ntia);
+      if (d < lo) lo = d;
+      if (d > hi) hi = d;
+      tong += d;
+    }
+    return {bw:bw, dl:dl, ntia:ntia, fc:fc, f:f, h:h,
+            bien:hi - lo, tb:tong/M, chuky:C0/dl};
+  }
+
+  function ve(s){
+    var W = cv.width, H = cv.height;
+    g.clearRect(0, 0, W, H);
+    var x0 = 78, x1 = W - 24;
+    var yA0 = 46,  yA1 = 272;                      // khung tren: dap ung kenh
+    var yB0 = 340, yB1 = 548;                      // khung duoi: pho nhan duoc
+    function fx(f){ return x0 + (f - FA)/(FB - FA)*(x1 - x0); }
+    function fy(d){ var c = Math.max(DB_LO, Math.min(DB_HI, d));
+                    return yA1 - (c - DB_LO)/(DB_HI - DB_LO)*(yA1 - yA0); }
+
+    g.font = '13px Calibri, sans-serif';
+    g.textBaseline = 'alphabetic';
+
+    // --- khung tren -------------------------------------------------------
+    g.fillStyle = s.bien < NGUONG ? 'rgba(42,157,143,0.14)' : 'rgba(216,30,91,0.14)';
+    g.fillRect(fx(s.fc - s.bw/2), yA0, Math.max(fx(s.fc + s.bw/2) - fx(s.fc - s.bw/2), 2),
+               yA1 - yA0);
+    g.strokeStyle = s.bien < NGUONG ? '#2A9D8F' : '#D81E5B';
+    g.lineWidth = 1.2;
+    g.strokeRect(fx(s.fc - s.bw/2), yA0, Math.max(fx(s.fc + s.bw/2) - fx(s.fc - s.bw/2), 2),
+                 yA1 - yA0);
+
+    g.strokeStyle = '#1A1F36'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x0, yA1); g.lineTo(x1, yA1);
+    g.moveTo(x0, yA0); g.lineTo(x0, yA1); g.stroke();
+    g.fillStyle = '#5A6272'; g.textAlign = 'right';
+    for (var dd = 0; dd >= -20; dd -= 10){
+      g.beginPath(); g.moveTo(x0, fy(dd)); g.lineTo(x0 - 6, fy(dd)); g.stroke();
+      g.fillText(dd + '', x0 - 10, fy(dd) + 4);
+    }
+    g.textAlign = 'left';
+    g.fillText('channel gain, dB', x0 + 4, yA0 - 10);
+
+    g.strokeStyle = '#2A9D8F'; g.lineWidth = 2;
+    g.beginPath();
+    for (var i = 0; i < s.f.length; i++){
+      var X = fx(s.f[i]), Y = fy(s.h[i]);
+      if (i === 0) g.moveTo(X, Y); else g.lineTo(X, Y);
+    }
+    g.stroke();
+
+    // --- khung duoi: pho phat va pho nhan ---------------------------------
+    // Thang dung cua khung duoi lay theo dinh cua chinh cau hinh nay, de
+    // khong bao gio phai cat ngon. Muc 1,0 la muc KHONG CO DA DUONG, va no
+    // duoc ve ra bang net dut nen nguoi doc thay duoc minh dang o tren hay
+    // duoi no. Ban dau em chia cho 1,9 roi cat o 1,05; voi nhieu tia thi
+    // dinh vuot qua 1,9 va hinh bi cat ngon ma khong noi gi.
+    var vmax = 1.05;
+    for (var q = 0; q <= 400; q++){
+      var a0 = Math.pow(10, dapUng(s.fc - s.bw/2 + s.bw*q/400, s.dl, s.ntia)/20);
+      if (a0 > vmax) vmax = a0;
+    }
+    vmax *= 1.10;
+    function gy(v){ return yB1 - (v/vmax)*(yB1 - yB0)*0.95; }
+    g.strokeStyle = '#1A1F36'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x0, yB1); g.lineTo(x1, yB1);
+    g.moveTo(x0, yB0); g.lineTo(x0, yB1); g.stroke();
+    g.fillStyle = '#5A6272'; g.textAlign = 'left';
+    g.fillText('what arrives, relative to a channel with no multipath', x0 + 4, yB0 - 10);
+
+    var xa = fx(s.fc - s.bw/2), xb = fx(s.fc + s.bw/2);
+    // pho phat: khoi phang, ve bang net dut
+    g.setLineDash([5, 4]); g.strokeStyle = '#9AA3B2'; g.lineWidth = 1.5;
+    g.beginPath();
+    g.moveTo(xa, yB1); g.lineTo(xa, gy(1)); g.lineTo(xb, gy(1)); g.lineTo(xb, yB1);
+    g.stroke(); g.setLineDash([]);
+    g.fillStyle = '#9AA3B2'; g.textAlign = 'left';
+    g.fillText('sent, and the level with no multipath',
+               Math.min(xb + 8, x1 - 230), gy(1) + 4);
+
+    // pho nhan: khoi phang nhan voi dap ung
+    var mau = s.bien < NGUONG ? '#2A9D8F' : '#D81E5B';
+    g.fillStyle = s.bien < NGUONG ? 'rgba(42,157,143,0.22)' : 'rgba(216,30,91,0.22)';
+    g.strokeStyle = mau; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(xa, yB1);
+    var NP = 500;
+    for (var j = 0; j <= NP; j++){
+      var ff = s.fc - s.bw/2 + s.bw*j/NP;
+      var a = Math.pow(10, dapUng(ff, s.dl, s.ntia)/20);
+      g.lineTo(fx(ff), gy(a));
+    }
+    g.lineTo(xb, yB1); g.closePath(); g.fill(); g.stroke();
+
+    // truc tan so dung chung cho ca hai khung
+    g.fillStyle = '#5A6272'; g.textAlign = 'center';
+    for (var gf = 5.0; gf <= 5.401; gf += 0.1){
+      g.strokeStyle = '#1A1F36'; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(fx(gf*1e9), yB1); g.lineTo(fx(gf*1e9), yB1 + 6); g.stroke();
+      g.fillText(gf.toFixed(1), fx(gf*1e9), yB1 + 20);
+    }
+    g.textAlign = 'right';
+    g.fillText('frequency, GHz', x1, yB1 + 38);
+  }
+
+  function chay(){
+    var s = tinh();
+    E('lb').textContent = (s.bw/1e6).toFixed(0);
+    E('lc').textContent = (s.fc/1e9).toFixed(3);
+    E('ld').textContent = s.dl.toFixed(1);
+    E('lsp').textContent = (s.chuky/1e6).toFixed(0);
+    E('lk').textContent = s.ntia;
+    var phang = s.bien < NGUONG;
+    E('cv').innerHTML = 'Gain varies <b>' + s.bien.toFixed(1) + ' dB</b> across the signal';
+    E('cv').className = 'chip ' + (phang ? 'tot' : 'xau');
+    E('ck').innerHTML = 'Verdict <b>' + (phang ? 'flat' : 'selective') + '</b>';
+    E('ck').className = 'chip ' + (phang ? 'tot' : 'xau');
+    E('cp').innerHTML = 'The signal covers <b>' +
+      (s.bw/s.chuky*100).toFixed(0) + '%</b> of one period';
+    E('cm').innerHTML = 'Mean gain over the signal <b>' + s.tb.toFixed(1) + ' dB</b>';
+    E('cm').className = 'chip ' + (s.tb < -6 ? 'xau' : '');
+    ve(s);
+  }
+
+  ['b','c','d','k'].forEach(function(x){ sl[x].addEventListener('input', chay); });
+  Array.prototype.forEach.call(document.querySelectorAll('.nut'), function(n){
+    n.addEventListener('click', function(){
+      sl.b.value = n.dataset.b; sl.c.value = n.dataset.c;
+      sl.d.value = n.dataset.d; sl.k.value = n.dataset.k;
+      chay();
+    });
+  });
+  chay();
+})();
+</script>
+</body>
+</html>
