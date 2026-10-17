@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Where the channel response comes from</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;
+      --mut:#5A6272;--line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE;max-width:900px;line-height:1.5}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.55}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+.dk{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:0 0 16px;background:var(--tint)}
+.hang{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px 24px}
+label.t{display:block;font-size:13.5px;color:var(--mut);margin:0 0 3px}
+label.t b{color:var(--ink);font-size:14.5px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 11px;
+  font-size:13px;color:var(--mut);background:#fff;margin:0 6px 6px 0}
+.chip b{color:var(--ink)}
+.chip.xau b{color:var(--mag)}
+.chip.tot b{color:var(--teal)}
+h2{font-family:Cambria,Georgia,serif;font-size:19px;margin:24px 0 8px;padding-bottom:6px;
+   border-bottom:1px solid var(--line)}
+ul{margin:8px 0 0;padding-left:20px;font-size:14.5px;color:var(--mut);line-height:1.65}
+ul b{color:var(--ink)}
+.nut{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:8px;
+  padding:6px 12px;font-size:13.5px;color:var(--ink);cursor:pointer;margin:0 6px 6px 0}
+.nut:hover{border-color:var(--acc)}
+.nut.chinh{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+label.ck{font-size:13.5px;color:var(--mut);margin:0 0 0 6px;cursor:pointer}
+code{background:var(--tint);padding:1px 5px;border-radius:4px;font-size:13.5px}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13.5px;line-height:1.6}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · SESSION 3 · PART 3</div>
+  <h1>Where the channel response comes from</h1>
+  <p>A channel response is not something anyone draws. It is something you measure. Send one test
+  tone, see how big the received sum is, write down one dot. Change the tone, write down another
+  dot. Do it across the whole band and the dots are the curve. This page lets you do exactly that,
+  one tone at a time or as a sweep.</p>
+</header>
+<a class="veml" href="../index.html">Back to the INT3303 simulation index</a>
+
+<main>
+
+<div class="dk">
+  <div class="hang">
+    <div>
+      <label class="t">Test tone <b><span id="lf">200</span> MHz</b>,
+        one cycle lasts <b><span id="lT">5.00</span> ns</b></label>
+      <input type="range" id="f" min="50" max="550" step="1" value="200">
+    </div>
+    <div>
+      <label class="t">Number of paths <b><span id="lk">2</span></b></label>
+      <input type="range" id="k" min="1" max="4" step="1" value="2">
+    </div>
+    <div>
+      <label class="t">The second path is longer by <b><span id="ld">1.5</span> m</b>,
+        so it is late by <b><span id="lt">5.00</span> ns</b></label>
+      <input type="range" id="d" min="3" max="40" step="1" value="15">
+    </div>
+    <div>
+      <label class="t">Echo strength <b><span id="la">0.90</span></b>
+        of the direct copy</label>
+      <input type="range" id="a" min="10" max="95" step="5" value="90">
+    </div>
+  </div>
+  <div style="margin-top:10px">
+    <span class="nut chinh" id="quet">Sweep the test tone across the band</span>
+    <span class="nut" id="xoa">Clear the dots</span>
+    <input type="checkbox" id="hien"><label class="ck" for="hien">Show the finished curve underneath</label>
+  </div>
+  <div style="margin-top:8px">
+    <span class="nut" data-f="200" data-k="2" data-d="15" data-a="90">A tone where the two copies add</span>
+    <span class="nut" data-f="500" data-k="2" data-d="15" data-a="90">A tone where the two copies cancel</span>
+    <span class="nut" data-f="200" data-k="1" data-d="15" data-a="90">One path only: nothing to add to</span>
+    <span class="nut" data-f="300" data-k="4" data-d="15" data-a="90">Four paths: a ragged channel</span>
+  </div>
+</div>
+
+<div style="margin:0 0 14px">
+  <span class="chip" id="c1">The echo is late by <b>5.00 ns</b></span>
+  <span class="chip" id="c2">That lateness is <b>1.00</b> cycles of this tone</span>
+  <span class="chip" id="c3">The sum comes out at <b>+5.6 dB</b></span>
+  <span class="chip" id="c4">Dots measured so far <b>0</b></span>
+</div>
+
+<canvas id="cv" width="1280" height="690"></canvas>
+
+<h2>What to do first</h2>
+<p class="sub">Press <b>A tone where the two copies add</b>, then <b>A tone where the two copies
+cancel</b>. Look only at the top two rows. The echo is late by the same 5 ns in both cases, and the
+orange bracket showing that lateness is literally the same width on the screen. What changes is the
+tone: at 200 MHz one cycle also lasts 5 ns, so the echo comes back exactly one cycle behind and
+lands on top of the original. At 500 MHz one cycle lasts 2 ns, so 5 ns is two and a half cycles,
+and the echo comes back upside down.</p>
+<p class="sub">That is the entire mechanism. A fixed delay is a different fraction of a cycle at
+every frequency, so the same two paths add at some frequencies and cancel at others.</p>
+
+<h2>Then build the curve</h2>
+<p class="sub">Drag the test tone slider slowly, or press <b>Sweep</b>. Each tone you visit leaves
+one dot on the bottom plot, at the height of the sum you just measured. Nothing is being drawn for
+you: the shape appears because it is the record of the measurements. That shape is the
+<b>channel frequency response</b>.</p>
+
+<h2>Why it needs multipath</h2>
+<p class="sub">Set the number of paths to <b>1</b> and sweep again. The curve is a flat line. With
+one path there is no second copy, so there is nothing whose phase could depend on frequency, and
+every tone comes out the same size. The ripple is not a property of the room, of the distance, or
+of the equipment. It is a property of <b>having more than one copy arrive</b>. Put the paths back
+to 2 and it returns.</p>
+
+<h2>Things worth trying</h2>
+<ul>
+  <li><b>Change how long the extra path is.</b> The delay changes, and so does the spacing of the
+      peaks on the curve. Two copies add whenever the delay is a whole number of cycles, which
+      happens every time the frequency rises by one divided by the delay. A longer extra path means
+      a longer delay, which means the peaks crowd together.</li>
+  <li><b>Weaken the echo.</b> At strength 0.9 the two copies nearly annihilate each other and the
+      notches go very deep. At strength 0.3 the notches are shallow, because a weak echo can only
+      remove a little of the direct copy. The peaks and notches sit in exactly the same places
+      either way: the strength of the echo sets how deep the notches are, the length of the path
+      sets where they are.</li>
+  <li><b>Four paths.</b> The curve stops being a clean repeating shape and becomes ragged, with
+      notches of different depths at uneven spacings. A real indoor channel looks like this. The
+      two-path case is worth keeping as the mental model only because its spacing can be written
+      down in one line.</li>
+  <li><b>Watch the top two rows during a sweep.</b> The sum grows and shrinks as the tone moves,
+      and the bottom plot is just a record of how big it got. Students often think the response
+      curve is a different kind of object from the waveform. It is not: it is a summary of one
+      number taken from the waveform, at every frequency.</li>
+</ul>
+
+<footer>
+  A note on the frequencies. This page works at a few hundred megahertz so that you can see the
+  cycles and the delay in the same picture, and it starts from an extra path of 1.5 m because that
+  gives a delay of exactly 5 ns and therefore peaks at round multiples of 200 MHz. At 5 GHz, where
+  the later lecture figures are drawn, a 1.8 m extra path is 6 ns of delay, but 6 ns there is 30
+  cycles rather than 1, which cannot be drawn on a screen. Nothing else differs, and the one thing
+  worth carrying across is the rule rather than the particular numbers: the spacing of the peaks is
+  one divided by the delay, wherever in the spectrum you look, because it depends on the path
+  length difference and on nothing else. The sources are Steenkiste, <i>Introduction to Wireless
+  Networking and Its Impact on Applications</i>, 2nd edition, section 2.6.2, and Stallings,
+  <i>Wireless Communications and Networks</i>, 2nd edition, section 5.4. The model on this page is
+  the one used by the lecture figures, and the build chain compares the two point by point.
+</footer>
+</main>
+
+<script>
+(function(){
+  var C0 = 3.0e8;
+  // Cung bang tia voi figs_b03t3.py va voi selective.html.
+  var TIA_R = [1.00, 0.41, 1.73, 2.28, 0.67, 1.19, 2.95];
+  var TIA_A = [0.90, 0.55, 0.45, 0.38, 0.32, 0.28, 0.25];
+  var FA = 50e6, FB = 550e6;
+  var DB_LO = -26, DB_HI = 8;
+
+  // ts la BIEN DO CUA TIENG VONG THU NHAT, khong phai he so nhan vao bang.
+  // Cac tia sau giu dung ty le cu. Ban dau em viet ts la he so nhan, nen nut
+  // ghi "echo strength 0,90" ma bien do that la 0,90 nhan 0,90 bang 0,81, tuc
+  // nhan tren nut noi sai. Cong kiem kiemnut3.py bat duoc.
+  function dapUngTS(f, dl, ntia, ts){
+    var re = 1, im = 0;
+    for (var i = 0; i < ntia - 1; i++){
+      var p = -2*Math.PI*f*dl*TIA_R[i]/C0;
+      var bien = ts*TIA_A[i]/TIA_A[0];
+      re += bien*Math.cos(p);
+      im += bien*Math.sin(p);
+    }
+    return 20*Math.log10(Math.max(Math.sqrt(re*re + im*im), 1e-9));
+  }
+  function dapUng(f, dl, ntia){ return dapUngTS(f, dl, ntia, TIA_A[0]); }
+  window.dapUng = dapUng;
+  window.dapUngTS = dapUngTS;
+
+  var E = function(id){ return document.getElementById(id); };
+  var sl = {f:E('f'), k:E('k'), d:E('d'), a:E('a')};
+  var cv = E('cv'), g = cv.getContext('2d');
+  var cham = [];                 // cac diem da do duoc
+  var dangQuet = false;
+
+  function tinh(){
+    var f = (+sl.f.value)*1e6;
+    var ntia = +sl.k.value;
+    var dl = (+sl.d.value)/10;
+    var ts = (+sl.a.value)/100;
+    var tre = [], bien = [];
+    for (var i = 0; i < ntia - 1; i++){
+      tre.push(dl*TIA_R[i]/C0);
+      bien.push(ts*TIA_A[i]/TIA_A[0]);
+    }
+    var treMax = tre.length ? Math.max.apply(null, tre) : 0;
+    var cua = Math.max(10e-9, 2.35*treMax);
+    return {f:f, ntia:ntia, dl:dl, ts:ts, tre:tre, bien:bien, cua:cua,
+            chuky:1/f, dB:dapUngTS(f, dl, ntia, ts),
+            tong:1 + bien.reduce(function(x, y){ return x + y; }, 0)};
+  }
+
+  function ve(s){
+    var W = cv.width, H = cv.height;
+    g.clearRect(0, 0, W, H);
+    var x0 = 118, x1 = W - 26;
+    var y1 = 118, y2 = 254;                      // tam hai hang thoi gian
+    var yc0 = 386, yc1 = 642;                    // khung dap ung
+    g.font = '13px Calibri, sans-serif';
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+
+    function tx(t){ return x0 + t/s.cua*(x1 - x0); }
+    var bd = 52/Math.max(1.9, s.tong);           // bien do ve cho mot don vi
+
+    // --- hang 1: tung ban sao -------------------------------------------
+    g.strokeStyle = '#EDF0F5'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x0, y1); g.lineTo(x1, y1); g.stroke();
+    g.fillStyle = '#5A6272'; g.textAlign = 'right';
+    g.fillText(s.ntia > 1 ? 'the copies' : 'the one copy', x0 - 10, y1 + 4);
+    g.fillText('their sum', x0 - 10, y2 + 4);
+    g.textAlign = 'left';
+
+    var N = 1400, i, t, v;
+    g.strokeStyle = '#2A9D8F'; g.lineWidth = 1.8;
+    g.beginPath();
+    for (i = 0; i < N; i++){
+      t = s.cua*i/(N - 1);
+      v = Math.sin(2*Math.PI*s.f*t);
+      if (i === 0) g.moveTo(tx(t), y1 - v*bd); else g.lineTo(tx(t), y1 - v*bd);
+    }
+    g.stroke();
+    var mauVong = ['#6C5CE7', '#FF6B35', '#D81E5B'];
+    for (var j = 0; j < s.tre.length; j++){
+      g.strokeStyle = mauVong[j % 3]; g.lineWidth = 1.6;
+      g.beginPath();
+      for (i = 0; i < N; i++){
+        t = s.cua*i/(N - 1);
+        v = (t < s.tre[j]) ? 0 : s.bien[j]*Math.sin(2*Math.PI*s.f*(t - s.tre[j]));
+        if (i === 0) g.moveTo(tx(t), y1 - v*bd); else g.lineTo(tx(t), y1 - v*bd);
+      }
+      g.stroke();
+    }
+    // ngoac do do tre cua tieng vong dau tien
+    if (s.tre.length){
+      var yb = y1 - 72;
+      g.strokeStyle = '#FF6B35'; g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(tx(0), yb + 7); g.lineTo(tx(0), yb);
+      g.lineTo(tx(s.tre[0]), yb); g.lineTo(tx(s.tre[0]), yb + 7);
+      g.stroke();
+      g.fillStyle = '#FF6B35'; g.textAlign = 'center';
+      g.fillText('late by ' + (s.tre[0]*1e9).toFixed(2) + ' ns, always',
+                 (tx(0) + tx(s.tre[0]))/2, yb - 6);
+      g.setLineDash([4, 4]); g.strokeStyle = '#9AA3B2'; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(tx(s.tre[0]), y1 - 62); g.lineTo(tx(s.tre[0]), y2 + 62);
+      g.stroke(); g.setLineDash([]);
+    }
+
+    // --- hang 2: tong ----------------------------------------------------
+    g.strokeStyle = '#EDF0F5'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x0, y2); g.lineTo(x1, y2); g.stroke();
+    var mau = s.dB >= 0 ? '#2A9D8F' : '#D81E5B';
+    g.strokeStyle = mau; g.lineWidth = 2.4;
+    g.beginPath();
+    for (i = 0; i < N; i++){
+      t = s.cua*i/(N - 1);
+      v = Math.sin(2*Math.PI*s.f*t);
+      for (j = 0; j < s.tre.length; j++){
+        if (t >= s.tre[j]) v += s.bien[j]*Math.sin(2*Math.PI*s.f*(t - s.tre[j]));
+      }
+      if (i === 0) g.moveTo(tx(t), y2 - v*bd); else g.lineTo(tx(t), y2 - v*bd);
+    }
+    g.stroke();
+    g.fillStyle = '#5A6272'; g.textAlign = 'right';
+    g.fillText((s.cua*1e9).toFixed(0) + ' ns', x1, y2 + 78);
+    g.textAlign = 'left';
+    g.fillText('time', x0, y2 + 78);
+
+    // --- khung dap ung ---------------------------------------------------
+    function fx(f){ return x0 + (f - FA)/(FB - FA)*(x1 - x0); }
+    function fy(d){ var c = Math.max(DB_LO, Math.min(DB_HI, d));
+                    return yc1 - (c - DB_LO)/(DB_HI - DB_LO)*(yc1 - yc0); }
+    g.strokeStyle = '#1A1F36'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x0, yc1); g.lineTo(x1, yc1);
+    g.moveTo(x0, yc0); g.lineTo(x0, yc1); g.stroke();
+    g.fillStyle = '#5A6272'; g.textAlign = 'right';
+    for (var dd = 0; dd >= -20; dd -= 10){
+      g.beginPath(); g.moveTo(x0, fy(dd)); g.lineTo(x0 - 6, fy(dd)); g.stroke();
+      g.fillText(dd + '', x0 - 10, fy(dd) + 4);
+    }
+    g.textAlign = 'center';
+    for (var gf = 50; gf <= 550; gf += 100){
+      g.strokeStyle = '#1A1F36'; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(fx(gf*1e6), yc1); g.lineTo(fx(gf*1e6), yc1 + 6); g.stroke();
+      g.fillStyle = '#5A6272'; g.fillText(gf + '', fx(gf*1e6), yc1 + 20);
+    }
+    g.textAlign = 'right'; g.fillText('test tone, MHz', x1, yc1 + 38);
+    g.textAlign = 'left';
+    g.fillText('size of the sum, dB', x0 + 4, yc0 - 10);
+
+    // duong cong day du, chi khi nguoi dung bat
+    if (E('hien').checked){
+      g.strokeStyle = '#D5DAE3'; g.lineWidth = 2;
+      g.beginPath();
+      for (i = 0; i <= 600; i++){
+        var ff = FA + (FB - FA)*i/600;
+        var dv = dapUngTS(ff, s.dl, s.ntia, s.ts);
+        if (i === 0) g.moveTo(fx(ff), fy(dv)); else g.lineTo(fx(ff), fy(dv));
+      }
+      g.stroke();
+    }
+
+    // cac diem da do
+    g.fillStyle = '#1A1F36';
+    for (i = 0; i < cham.length; i++){
+      g.beginPath(); g.arc(fx(cham[i].f), fy(cham[i].d), 2.1, 0, 6.2832); g.fill();
+    }
+    // diem hien tai
+    g.strokeStyle = mau; g.lineWidth = 1.4; g.setLineDash([4, 3]);
+    g.beginPath(); g.moveTo(fx(s.f), yc1); g.lineTo(fx(s.f), fy(s.dB)); g.stroke();
+    g.setLineDash([]);
+    g.fillStyle = mau;
+    g.beginPath(); g.arc(fx(s.f), fy(s.dB), 6, 0, 6.2832); g.fill();
+  }
+
+  function chay(){
+    var s = tinh();
+    E('lf').textContent = (s.f/1e6).toFixed(0);
+    E('lT').textContent = (s.chuky*1e9).toFixed(2);
+    E('lk').textContent = s.ntia;
+    E('ld').textContent = s.dl.toFixed(1);
+    E('lt').textContent = s.tre.length ? (s.tre[0]*1e9).toFixed(2) : '0.00';
+    E('la').textContent = s.ts.toFixed(2);
+    if (s.tre.length){
+      E('c1').innerHTML = 'The echo is late by <b>' + (s.tre[0]*1e9).toFixed(2) + ' ns</b>';
+      E('c2').innerHTML = 'That lateness is <b>' + (s.tre[0]/s.chuky).toFixed(2) +
+                          '</b> cycles of this tone';
+      E('c2').className = 'chip';
+    } else {
+      E('c1').innerHTML = 'There is <b>no echo</b>, only one path';
+      E('c2').innerHTML = 'Nothing to be late, so <b>no dependence on frequency</b>';
+      E('c2').className = 'chip tot';
+    }
+    E('c3').innerHTML = 'The sum comes out at <b>' + (s.dB >= 0 ? '+' : '') +
+                        s.dB.toFixed(1) + ' dB</b>';
+    E('c3').className = 'chip ' + (s.dB >= 0 ? 'tot' : 'xau');
+    E('c4').innerHTML = 'Dots measured so far <b>' + cham.length + '</b>';
+    ve(s);
+  }
+
+  function ghiCham(){
+    var s = tinh();
+    // khong ghi trung mot tan so hai lan
+    for (var i = 0; i < cham.length; i++){
+      if (Math.abs(cham[i].f - s.f) < 1) { cham[i].d = s.dB; return; }
+    }
+    cham.push({f:s.f, d:s.dB});
+  }
+
+  ['f','k','d','a'].forEach(function(x){
+    sl[x].addEventListener('input', function(){
+      if (x !== 'f') cham = [];       // doi kenh thi phep do cu khong con dung
+      else ghiCham();
+      chay();
+    });
+  });
+  E('hien').addEventListener('change', chay);
+  E('xoa').addEventListener('click', function(){ cham = []; chay(); });
+
+  E('quet').addEventListener('click', function(){
+    if (dangQuet) return;
+    dangQuet = true; cham = [];
+    var f0 = 50, f1 = 550, b = null;
+    function buoc(ts){
+      if (b === null) b = ts;
+      var u = Math.min(1, (ts - b)/5000);
+      sl.f.value = Math.round(f0 + (f1 - f0)*u);
+      ghiCham(); chay();
+      if (u < 1) requestAnimationFrame(buoc); else dangQuet = false;
+    }
+    requestAnimationFrame(buoc);
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.nut[data-f]'), function(n){
+    n.addEventListener('click', function(){
+      sl.f.value = n.dataset.f; sl.k.value = n.dataset.k;
+      sl.d.value = n.dataset.d; sl.a.value = n.dataset.a;
+      cham = []; chay();
+    });
+  });
+  chay();
+})();
+</script>
+</body>
+</html>
