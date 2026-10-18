@@ -211,23 +211,34 @@ and takes the inverse transform.</p>
   <li><b>Fourth, the waveform and the constellation.</b> The bars are added back up to give the
       received waveform, drawn against the transmitted one, and sampled at the symbol instants to
       give the received constellation. This is the payoff, and it is worth pausing on: in the flat
-      case the constellation is still sixteen clean points, merely rotated and resized, so every
-      symbol is still readable. In the selective case the points scatter into clouds and symbols
-      start being read as their neighbours.</li>
+      case the points land on the circles they were sent from, merely rotated and resized, so every
+      symbol is still readable. In the selective case they drift off, and at least one of them
+      crosses into the territory of a neighbouring point, which is a symbol read wrongly.</li>
 </ul>
 
-<h2>The two numbers in the chips</h2>
+<h2>The numbers in the chips</h2>
 <p class="sub">The receiver is allowed to do what a real receiver does: pick its sampling instant
 and correct for <b>one</b> overall complex gain, which is one number for amplitude and one for
 phase. Whatever error is left after that cannot be fixed by scaling or rotating, because it is
-different for different parts of the signal. That leftover, printed as a percentage of the symbol
-size, is the honest measure of distortion. In the flat case it is a fraction of a percent, and the
-small amount remaining is the resolution of the page's own search for the best sampling instant,
-not physics. In the selective case it is tens of percent.</p>
+different for different parts of the signal. That leftover is the honest measure of distortion.</p>
+<p class="sub">It is reported twice, and the second number is the one that decides whether symbols
+survive. A percentage of the symbol size is easy to quote but it does not answer the question,
+because the points of 64-QAM sit far closer together than those of QPSK, so the same percentage is
+harmless in one and fatal in the other. So the page also divides the error by <b>half the distance
+to the nearest constellation point</b>, which is exactly how far a point may stray before it is
+read as its neighbour, and it reports the <b>worst</b> symbol rather than the average, because one
+symbol crossing the line is already a wrong symbol. Above 1.00 means at least one symbol has been
+misread.</p>
+<p class="sub">Press the four presets and watch the last chip: 0.09 for the narrow signal, 1.12 for
+the wide one, and 2.70 once the modulation is pushed to 64-QAM. Then try QPSK at the same width,
+which gives 0.76 and survives. Same room, same channel, same width of signal: the denser the
+constellation, the sooner it breaks. That is the frequency-domain twin of what the inter-symbol
+interference page showed in the time domain.</p>
 <p class="sub">Notice what the <b>Flat but deep in a notch</b> preset does, because it separates two
 ideas students merge. The common gain drops to about a tenth, so the received spectrum panel goes
-almost empty and the signal would be swallowed by any noise, and yet the leftover error stays below
-one percent and the points stay cleanly separated in shape once that one gain is undone. The signal is <b>weak but not distorted</b>. That is flat fading, and
+almost empty and the signal would be swallowed by any noise, and yet the worst symbol only strays
+0.33 of the way to its neighbour, so every symbol is still read correctly once that one gain is
+undone. The signal is <b>weak but not distorted</b>. That is flat fading, and
 the cure for it is more power or more gain. Distortion needs a different cure, and that is session
 4.</p>
 
@@ -522,6 +533,9 @@ the cure for it is more power or more gain. Distortion needs a different cure, a
 
     // 4. khoi phuc dinh thi: chi can gia tri tai TAM KY TU nen khong phai
     //    bien doi nguoc toan bo cho moi lan thu.
+    var dnSym = 0;
+    for (n = 0; n < NSYM; n++)
+      dnSym += sym.re[n]*sym.re[n] + sym.im[n]*sym.im[n];
     var NTIM = 256, best = null;
     for (var j = 0; j < NTIM; j++){
       var dd = j/NTIM*Ts, tre = [], tim = [];
@@ -541,12 +555,23 @@ the cure for it is more power or more gain. Distortion needs a different cure, a
         ni += sym.re[n]*tim[n] - sym.im[n]*tre[n];
         dn += sym.re[n]*sym.re[n] + sym.im[n]*sym.im[n];
       }
-      var gr = nr/dn, gi = ni/dn, e = 0;
+      var gr = nr/dn, gi = ni/dn, e = 0, gm2 = gr*gr + gi*gi;
+      // Sai so phai do TREN chom sao DA BU he so chung, vi may thu quyet dinh
+      // o do. Ban dau em do truoc khi bu, nen con so nho hon su that dung mot
+      // he so |g|, va voi truong hop nam trong cho trung thi |g| bang 0,10 nen
+      // sai gan muoi lan. Bat duoc vi hinh ve diem thu that con chip in con so
+      // kia, hai thu khong khop nhau.
       for (n = 0; n < NSYM; n++){
-        var qr = gr*sym.re[n] - gi*sym.im[n], qi = gr*sym.im[n] + gi*sym.re[n];
-        e += (tre[n]-qr)*(tre[n]-qr) + (tim[n]-qi)*(tim[n]-qi);
+        var br2 = (tre[n]*gr + tim[n]*gi)/gm2;
+        var bi2 = (tim[n]*gr - tre[n]*gi)/gm2;
+        e += (br2-sym.re[n])*(br2-sym.re[n]) + (bi2-sym.im[n])*(bi2-sym.im[n]);
       }
-      e = Math.sqrt(e/dn);
+      // e la sai so RMS tinh theo DON VI CUA CHOM SAO, khong chia cho bien
+      // do ky tu. Ban dau em chia cho dn, tuc chia them mot lan nua cho binh
+      // phuong bien do ky tu, nen ty so voi bien du phong bi nho di dung mot
+      // he so. Voi 16-QAM he so ay tinh co gan bang 1 nen loi an ky; voi
+      // 64-QAM no bang 1,205 va doichieu bat duoc ngay.
+      e = Math.sqrt(e/NSYM);
       if (best === null || e < best.e)
         best = {e:e, d:dd, tre:tre, tim:tim, gr:gr, gi:gi};
     }
@@ -582,12 +607,23 @@ the cure for it is more power or more gain. Distortion needs a different cure, a
         if (dd3 < dmin) dmin = dd3;
       }
     var bienDuPhong = dmin/2;
+    // Do te nhat: diem lech xa nhat. Day moi la thuoc do "co ky tu nao bi doc
+    // nham khong", vi chi can MOT diem vuot bien du phong la da sai ky tu.
+    var chuan = Math.sqrt(dnSym/NSYM);     // bien do ky tu trung binh
+    var teNhat = 0, gm3 = best.gr*best.gr + best.gi*best.gi;
+    for (n = 0; n < NSYM; n++){
+      var ar4 = (best.tre[n]*best.gr + best.tim[n]*best.gi)/gm3 - sym.re[n];
+      var ai4 = (best.tim[n]*best.gr - best.tre[n]*best.gi)/gm3 - sym.im[n];
+      teNhat = Math.max(teNhat, Math.sqrt(ar4*ar4 + ai4*ai4));
+    }
     return {M:M, Rs:Rs, fc:fc, dl:dl, Ts:Ts, L:L, dt:dt, W:W, sym:sym,
-            dmin:dmin, bienDuPhong:bienDuPhong,
-            tySoLe:(best.e)/bienDuPhong,
+            dmin:dmin, bienDuPhong:bienDuPhong, chuan:chuan,
+            teNhat:teNhat/bienDuPhong,
+            tySoLe:best.e/bienDuPhong,
+            evm:best.e/chuan*100,
             sre:sre, sim:sim, Xr:Xr, Xi:Xi, fk:fk, Hr:Hr, Hi:Hi,
             Yr:Yr, Yi:Yi, yre:yre, yim:yim,
-            bien:hi-lo, evm:best.e*100,
+            bien:hi-lo,
             gain:Math.sqrt(best.gr*best.gr + best.gi*best.gi),
             gr:best.gr, gi:best.gi, tre:best.tre, tim:best.tim};
   }
@@ -765,9 +801,10 @@ the cure for it is more power or more gain. Distortion needs a different cure, a
     E('mq4').innerHTML = 'Error left after that <b>' + s.evm.toFixed(1) +
                          '%</b> of a symbol';
     E('mq4').className = 'chip ' + (s.evm < 5 ? 'tot' : 'xau');
-    E('mq5').innerHTML = 'That error is <b>' + s.tySoLe.toFixed(2) +
-                         '×</b> the margin to the nearest point';
-    E('mq5').className = 'chip ' + (s.tySoLe < 0.5 ? 'tot' : 'xau');
+    E('mq5').innerHTML = 'Typically <b>' + s.tySoLe.toFixed(2) +
+                         '×</b> the margin, worst symbol <b>' +
+                         s.teNhat.toFixed(2) + '×</b>';
+    E('mq5').className = 'chip ' + (s.teNhat < 1 ? 'tot' : 'xau');
     ve(s);
   }
 
