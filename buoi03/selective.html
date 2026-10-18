@@ -146,13 +146,11 @@ signal rather than as a property of the channel.</p>
       selective at every step, and session 4 is about what to do with that.</li>
 </ul>
 
-<h2>Part two: put a real modulated signal through it</h2>
-<p class="sub">Everything above treated the signal as a block of spectrum. Here it is an actual
-modulated signal: a repeating run of eight symbols from the alphabet you choose, shaped by a raised
-cosine pulse. Because the run repeats, its spectrum is a set of <b>discrete lines</b>, so every
-frequency component is a bar you can point at. The channel multiplies each bar by its own gain, and
-the receiver adds the bars back up. Nothing is sketched: the page takes the transform, multiplies,
-and takes the inverse transform.</p>
+<h2>Part two: from a stream of bits to a received constellation</h2>
+<p class="sub">Everything above treated the signal as a block of spectrum. Here it is built from
+the beginning: bits, then symbols, then a waveform, then its spectrum, then the channel acting on
+each frequency component separately, then the components added back up at the receiver. Six steps,
+every one of them computed rather than drawn.</p>
 
 <div class="dk">
   <div class="hang">
@@ -162,85 +160,97 @@ and takes the inverse transform.</p>
       <input type="range" id="mm" min="0" max="2" step="1" value="1">
     </div>
     <div>
+      <label class="t">Block length <b><span id="mln">8</span> symbols</b>,
+        lasting <b><span id="mlT">1.60</span> µs</b></label>
+      <input type="range" id="mn" min="0" max="3" step="1" value="1">
+    </div>
+    <div>
       <label class="t">Symbol rate <b><span id="mlr">5</span> Msym/s</b>,
-        so the signal is about <b><span id="mlw">6.8</span> MHz</b> wide</label>
+        signal about <b><span id="mlw">6.8</span> MHz</b> wide</label>
       <input type="range" id="mr" min="0" max="5" step="1" value="1">
     </div>
     <div>
-      <label class="t">Carrier <b><span id="mlc">5.040</span> GHz</b></label>
+      <label class="t">Carrier <b><span id="mlc">5.040</span> GHz</b>, path difference
+        <b><span id="mld">1.8</span> m</b>, two paths</label>
       <input type="range" id="mc" min="5000" max="5400" step="1" value="5040">
-    </div>
-    <div>
-      <label class="t">Path length difference <b><span id="mld">1.8</span> m</b>,
-        two paths only</label>
       <input type="range" id="md" min="3" max="60" step="1" value="18">
     </div>
   </div>
   <div style="margin-top:10px">
-    <span class="nut" data-m="1" data-r="1" data-c="5040" data-d="18">Flat: a narrow signal</span>
-    <span class="nut" data-m="1" data-r="5" data-c="5040" data-d="18">Selective: a wide signal</span>
-    <span class="nut" data-m="1" data-r="0" data-c="5083" data-d="18">Flat but deep in a notch</span>
-    <span class="nut" data-m="2" data-r="5" data-c="5040" data-d="18">Selective, and 64-QAM to boot</span>
+    <label class="t" style="margin-bottom:6px">Rebuild the received waveform from
+      <b><span id="mlk">all</span></b> of its frequency components</label>
+    <input type="range" id="mk" min="1" max="60" step="1" value="60">
+  </div>
+  <div style="margin-top:10px">
+    <span class="nut" data-m="1" data-n="1" data-r="1" data-c="5040" data-d="18">Flat: a narrow signal</span>
+    <span class="nut" data-m="1" data-n="1" data-r="5" data-c="5040" data-d="18">Selective: a wide signal</span>
+    <span class="nut" data-m="1" data-n="1" data-r="0" data-c="5083" data-d="18">Flat but deep in a notch</span>
+    <span class="nut" data-m="2" data-n="1" data-r="5" data-c="5040" data-d="18">Selective, and 64-QAM to boot</span>
   </div>
 </div>
 
 <div style="margin:0 0 14px">
+  <span class="chip" id="mq0">Lines are <b>0.63 MHz</b> apart</span>
   <span class="chip" id="mq1">Gain across the signal varies <b>0 dB</b></span>
   <span class="chip" id="mq2">Verdict <b>flat</b></span>
-  <span class="chip" id="mq3">One common gain explains <b>100%</b> of it</span>
-  <span class="chip" id="mq4">Error left after that <b>0%</b></span>
-  <span class="chip" id="mq5">That error is <b>0×</b> the margin to the nearest point</span>
+  <span class="chip" id="mq3">One common gain <b>1.00×</b></span>
+  <span class="chip" id="mq5">Worst symbol <b>0×</b> the margin</span>
 </div>
 
-<canvas id="mcv" width="1280" height="1080"></canvas>
+<canvas id="mcv" width="1280" height="1130"></canvas>
 
-<h2>How to read the four panels</h2>
+<h2>Why the spectrum is a set of lines, and not a curve</h2>
+<p class="sub">This is the step that surprises people, so it has its own control. A signal that
+<b>repeats</b> with period T contains only the frequencies 0, 1/T, 2/T, 3/T and so on, and nothing
+in between. That is the Fourier series, and it is the whole reason the spectrum here is a row of
+bars rather than a continuous shape. The page takes a block of N symbols and treats that block as
+one period, so T = N × T<sub>s</sub> and the lines come out 1/T apart.</p>
+<p class="sub">Drag the <b>block length</b> slider and watch the top of the chip row. Four symbols
+give lines 1.25 MHz apart; eight symbols halve that to 0.63; thirty-two symbols bring it down to
+0.16 and the bars start to merge into what looks like a solid shape. Carry that to its limit: a
+real data stream never repeats, so T is effectively infinite, the spacing goes to zero, and the
+spectrum is <b>continuous</b>. The lines on this page are therefore a property of the window we
+chose to look through, not a property of the modulation. They are drawn because a component you
+can point at is worth more here than a component hidden inside a curve, and nothing about the
+argument changes when the lines merge.</p>
+
+<h2>The six panels</h2>
 <ul>
-  <li><b>Top, the whole band.</b> The channel you already met, with the stretch your signal occupies
-      shaded. At 5 Msym/s that stretch is a sliver; at 80 Msym/s it is wide enough to span a peak
-      and a notch.</li>
-  <li><b>Second, the transmitted spectrum, zoomed into the signal.</b> Each bar is one frequency
-      component of the modulated signal. The curve drawn across them is the channel gain over that
-      same narrow stretch, which is the thing to watch: <b>flat</b> means that curve is level across
-      all the bars, <b>selective</b> means it is not.</li>
-  <li><b>Third, the received spectrum.</b> Each bar has been multiplied by the channel at its own
-      frequency. In the flat case every bar changes by the same factor, so the shape of the spectrum
-      survives and only its size changes. In the selective case the bars change by different
-      factors, so the <b>shape itself</b> is different, and a different shape is a different
-      signal.</li>
-  <li><b>Fourth, the waveform and the constellation.</b> The bars are added back up to give the
-      received waveform, drawn against the transmitted one, and sampled at the symbol instants to
-      give the received constellation. This is the payoff, and it is worth pausing on: in the flat
-      case the points land on the circles they were sent from, merely rotated and resized, so every
-      symbol is still readable. In the selective case they drift off, and at least one of them
-      crosses into the territory of a neighbouring point, which is a symbol read wrongly.</li>
+  <li><b>1, the bits.</b> The raw stream, grouped into symbols. With 16-QAM each group of four bits
+      becomes one symbol: the first two bits choose the horizontal level, the last two the vertical
+      one, using the Gray mapping from session 2 part 2.</li>
+  <li><b>2, the symbols as a waveform.</b> Each symbol becomes a pulse of its own height, and the
+      pulses are added. The trace drawn is the in-phase part. Notice the pulses overlap in time,
+      which is deliberate and not a fault: a raised cosine pulse is shaped so that at each symbol
+      instant, marked by the ticks, every other pulse is passing through zero.</li>
+  <li><b>3, the spectrum of that waveform.</b> One bar per frequency component, spacing 1/T as
+      explained above. This is the same waveform, written differently.</li>
+  <li><b>4, the channel, component by component.</b> The channel gain is drawn across the signal's
+      own stretch of spectrum, and each bar is multiplied by the value of that curve at its own
+      frequency. Grey is what was sent, colour is what arrived.</li>
+  <li><b>5, adding the components back up.</b> The received waveform is nothing more than the sum
+      of the received bars. Drag the rebuild slider from 1 upwards and watch it assemble: a few
+      components give a crude shape, all of them give the exact received signal. This is where the
+      flat and selective cases part company. In the flat case every component was scaled by the
+      same factor, so the sum is the transmitted waveform at a different size. In the selective
+      case the components were scaled differently, so the sum is a <b>different waveform</b>, and
+      no amount of volume will turn it back into the original.</li>
+  <li><b>6, the symbols the receiver reads.</b> Sampled at the symbol instants, after the receiver
+      has chosen its sampling moment and corrected one overall complex gain. Open circles are where
+      the symbols were sent.</li>
 </ul>
 
-<h2>The numbers in the chips</h2>
-<p class="sub">The receiver is allowed to do what a real receiver does: pick its sampling instant
-and correct for <b>one</b> overall complex gain, which is one number for amplitude and one for
-phase. Whatever error is left after that cannot be fixed by scaling or rotating, because it is
-different for different parts of the signal. That leftover is the honest measure of distortion.</p>
-<p class="sub">It is reported twice, and the second number is the one that decides whether symbols
-survive. A percentage of the symbol size is easy to quote but it does not answer the question,
-because the points of 64-QAM sit far closer together than those of QPSK, so the same percentage is
-harmless in one and fatal in the other. So the page also divides the error by <b>half the distance
-to the nearest constellation point</b>, which is exactly how far a point may stray before it is
-read as its neighbour, and it reports the <b>worst</b> symbol rather than the average, because one
-symbol crossing the line is already a wrong symbol. Above 1.00 means at least one symbol has been
-misread.</p>
-<p class="sub">Press the four presets and watch the last chip: 0.09 for the narrow signal, 1.12 for
-the wide one, and 2.70 once the modulation is pushed to 64-QAM. Then try QPSK at the same width,
-which gives 0.76 and survives. Same room, same channel, same width of signal: the denser the
-constellation, the sooner it breaks. That is the frequency-domain twin of what the inter-symbol
-interference page showed in the time domain.</p>
-<p class="sub">Notice what the <b>Flat but deep in a notch</b> preset does, because it separates two
-ideas students merge. The common gain drops to about a tenth, so the received spectrum panel goes
-almost empty and the signal would be swallowed by any noise, and yet the worst symbol only strays
-0.33 of the way to its neighbour, so every symbol is still read correctly once that one gain is
-undone. The signal is <b>weak but not distorted</b>. That is flat fading, and
-the cure for it is more power or more gain. Distortion needs a different cure, and that is session
-4.</p>
+<h2>The number that decides whether it matters</h2>
+<p class="sub">The last chip divides the largest symbol error by <b>half the distance to the
+nearest constellation point</b>, which is exactly how far a symbol may stray before it is read as
+its neighbour, and it reports the <b>worst</b> symbol rather than the average, because one symbol
+over the line is already a wrong symbol. Above 1.00 means at least one symbol was misread.</p>
+<p class="sub">Press the four presets in order. The narrow signal gives 0.06 and is perfect. The
+wide one gives 1.23 and loses a symbol. The narrow signal parked in a notch gives 0.23, so every
+symbol is still read correctly even though the common gain has fallen to 0.10, which is twenty
+decibels down: that signal is <b>weak but not distorted</b>, and the cure for it is power. The last
+preset keeps the channel and the width and only moves to 64-QAM, where the points sit closer
+together, and the figure rises to 2.20.</p>
 
 <footer>
   Sources. The mechanism and the worked example are Steenkiste, <i>Introduction to Wireless
@@ -433,94 +443,117 @@ the cure for it is more power or more gain. Distortion needs a different cure, a
 </script>
 
 <script>
-/* Phan hai cua trang: cho mot tin hieu dieu che that di qua dung cai kenh ay.
-   Chuoi phep toan khong ve uoc chung chut nao:
-     1. mot doan TAM ky tu LAP LAI, dang xung cosin nang, nen pho la pho VACH
-     2. bien doi Fourier roi rac -> bien do tung vach
-     3. nhan tung vach voi dap ung kenh TAI TAN SO THAT fc + f
-     4. bien doi nguoc -> dang song thu duoc
-     5. lay mau tai tam ky tu -> chom sao thu duoc
-   May thu duoc phep lam dung hai viec ma may thu that nao cung lam: chon lai
-   thoi diem lay mau, va bu MOT he so phuc chung. Phan sai so con lai sau hai
-   viec do moi la MEO, va do moi la thu fading chon loc gay ra con fading phang
-   thi khong. Ban dau em khong khoi phuc dinh thi, va mot do tre nhom thuan tuy
-   hien ra thanh 3,3% "meo" ngay ca khi kenh phang tuyet doi; do la do tre chu
-   khong phai meo. */
+/* Phan hai: tu mot day bit toi chom sao thu duoc, sau buoc, khong ve uoc chung
+   buoc nao.
+     1. day bit, nhom lai, anh xa Gray sang diem chom sao
+     2. moi ky tu thanh mot xung cosin nang, cong lai thanh dang song
+     3. bien doi Fourier roi rac -> PHO VACH, vach cach nhau 1/T voi T = N*Ts
+     4. nhan tung vach voi dap ung kenh tai tan so THAT fc + f
+     5. cong cac vach da nhan tro lai -> dang song thu duoc
+     6. lay mau tai tam ky tu -> chom sao thu duoc
+
+   VI SAO PHO LA PHO VACH, cau Mai hoi 2026-10-18. Mot tin hieu TUAN HOAN chu
+   ky T chi chua cac tan so boi cua 1/T. Trang lay mot khoi N ky tu va coi khoi
+   ay lap lai, nen T = N*Ts. Tang N thi vach sit lai, va o N = 32 chung gan nhu
+   lien thanh duong. Luong du lieu that khong lap, T vo han, pho LIEN TUC. Pho
+   vach la he qua cua CUA SO ta chon nhin, khong phai tinh chat cua dieu che.
+   Nut "block length" co tren trang dung de nguoi hoc tu kiem dieu nay.
+
+   Ban Python doc lap nam o mohinh_dieuche.py, doichieu.py so tung so. */
 (function(){
   var C0 = 3.0e8;
-  var A_VONG = 0.9;                 // bien do tieng vong, hai tia
-  var NSYM = 8, MMAU = 32;          // 8 ky tu, 32 mau moi ky tu -> 256 diem
-  var BETA = 0.35;                  // he so uon cua xung cosin nang
+  var A_VONG = 0.9;
+  var MMAU = 32, BETA = 0.35;
   var MODS = [4, 16, 64], TENMOD = ['QPSK', '16-QAM', '64-QAM'];
   var RS = [1e6, 5e6, 10e6, 20e6, 40e6, 80e6];
+  var NSYMS = [4, 8, 16, 32];
   var FA = 5.00e9, FB = 5.40e9;
-  var NGUONG = 3.0;                 // cung quy uoc 3 dB nhu nua tren cua trang
+  var NGUONG = 3.0;
 
-  var E = function(id){ return document.getElementById(id); };
-  var sl = {m:E('mm'), r:E('mr'), c:E('mc'), d:E('md')};
-  var cv = E('mcv'), g = cv.getContext('2d');
+  // Day bit co dinh, viet thang ra. Ban dau hai ben cung chay mot bo sinh
+  // so tuyen tinh, nhung JavaScript tinh bang so thuc 64 bit nen phep nhan
+  // vuot 2^53 mat do chinh xac va hai day bit troi khoi nhau. doichieu bat
+  // duoc. Day bit la DU LIEU chu khong phai thuat toan.
+  var BITS = ("110101000000111101101011110010111011100000000001001111100001011111110101100011110111101101110000" +
+              "010110110110100111001111011100001100111010100110010001111111011101101001111110000110011101110011").split("").map(Number);
+
+  function gray(bits){
+    var v = 0, truoc = 0;
+    for (var i = 0; i < bits.length; i++){
+      truoc = truoc ^ bits[i];
+      v = (v << 1) | truoc;
+    }
+    return v;
+  }
+
+  function mucChuan(M){
+    var L = Math.round(Math.sqrt(M)), muc = [], i, tb = 0;
+    for (i = 0; i < L; i++) muc.push(2*i - (L-1));
+    for (i = 0; i < L; i++) tb += muc[i]*muc[i];
+    return {muc:muc, chuan:Math.sqrt(tb/L*2)};
+  }
+
+  function kyTu(M, nsym){
+    var k = Math.round(Math.log(M)/Math.log(2)), ka = k/2;
+    var mc = mucChuan(M), sr = [], si = [], dung = [], n, i;
+    for (n = 0; n < nsym*k; n++) dung.push(BITS[n]);
+    for (n = 0; n < nsym; n++){
+      var b = dung.slice(n*k, (n+1)*k);
+      sr.push(mc.muc[gray(b.slice(0, ka))]/mc.chuan);
+      si.push(mc.muc[gray(b.slice(ka))]/mc.chuan);
+    }
+    return {re:sr, im:si, bits:dung, kbit:k};
+  }
 
   function bangChomSao(M){
-    var L = Math.round(Math.sqrt(M)), re = [], im = [], i, j, p = 0;
-    for (i = 0; i < L; i++) for (j = 0; j < L; j++){
-      re.push(2*i - (L-1)); im.push(2*j - (L-1));
-    }
-    for (i = 0; i < re.length; i++) p += re[i]*re[i] + im[i]*im[i];
-    var s = Math.sqrt(p/re.length);
-    for (i = 0; i < re.length; i++){ re[i] /= s; im[i] /= s; }
+    var mc = mucChuan(M), re = [], im = [], i, j;
+    for (i = 0; i < mc.muc.length; i++)
+      for (j = 0; j < mc.muc.length; j++){
+        re.push(mc.muc[i]/mc.chuan); im.push(mc.muc[j]/mc.chuan);
+      }
     return {re:re, im:im};
   }
 
   function sinc(x){ return Math.abs(x) < 1e-12 ? 1 : Math.sin(Math.PI*x)/(Math.PI*x); }
-
   function xungRC(t, Ts){
     var x = t/Ts, mau = 1 - 4*BETA*BETA*x*x;
     if (Math.abs(mau) < 1e-12) return (Math.PI/4)*sinc(1/(2*BETA));
     return sinc(x)*Math.cos(Math.PI*BETA*x)/mau;
   }
 
-  // Chuoi ky tu co dinh, de hinh khong nhay moi lan ve lai.
-  function chuoiKyTu(M){
-    var b = bangChomSao(M), idx = [5, 2, 11, 0, 7, 14, 9, 3], re = [], im = [], i;
-    for (i = 0; i < NSYM; i++){
-      var k = idx[i] % b.re.length;
-      re.push(b.re[k]); im.push(b.im[k]);
-    }
-    return {re:re, im:im, bang:b};
-  }
+  var E = function(id){ return document.getElementById(id); };
+  var sl = {m:E('mm'), n:E('mn'), r:E('mr'), c:E('mc'), d:E('md'), k:E('mk')};
+  var cv = E('mcv'), g = cv.getContext('2d');
 
   function tinh(){
-    var M = MODS[+sl.m.value], Rs = RS[+sl.r.value];
+    var M = MODS[+sl.m.value], Rs = RS[+sl.r.value], nsym = NSYMS[+sl.n.value];
     var fc = (+sl.c.value)*1e6, dl = (+sl.d.value)/10, tau = dl/C0;
-    var Ts = 1/Rs, L = NSYM*MMAU, dt = Ts/MMAU, i, k, n, r;
-    var sym = chuoiKyTu(M);
+    var sym = kyTu(M, nsym);
+    var Ts = 1/Rs, L = nsym*MMAU, dt = Ts/MMAU, i, k, n, r;
 
-    // 1. dung mot chu ky cua tin hieu, cong vong +-3 chu ky cho duoi xung
     var sre = new Float64Array(L), sim = new Float64Array(L);
     for (i = 0; i < L; i++){
       var t = i*dt, ar = 0, ai = 0;
-      for (r = -3; r <= 3; r++) for (n = 0; n < NSYM; n++){
-        var p = xungRC(t - (n + r*NSYM)*Ts, Ts);
+      for (r = -3; r <= 3; r++) for (n = 0; n < nsym; n++){
+        var p = xungRC(t - (n + r*nsym)*Ts, Ts);
         ar += sym.re[n]*p; ai += sym.im[n]*p;
       }
       sre[i] = ar; sim[i] = ai;
     }
 
-    // 2. bien doi Fourier roi rac, va tan so that cua tung vach
     var Xr = new Float64Array(L), Xi = new Float64Array(L), fk = new Float64Array(L);
     for (k = 0; k < L; k++){
       var kk = (k <= L/2) ? k : k - L;
       fk[k] = kk/(L*dt);
       var ar2 = 0, ai2 = 0;
       for (i = 0; i < L; i++){
-        var ph = -2*Math.PI*k*i/L, co = Math.cos(ph), si = Math.sin(ph);
-        ar2 += sre[i]*co - sim[i]*si;
-        ai2 += sre[i]*si + sim[i]*co;
+        var ph = -2*Math.PI*k*i/L, co = Math.cos(ph), si2 = Math.sin(ph);
+        ar2 += sre[i]*co - sim[i]*si2;
+        ai2 += sre[i]*si2 + sim[i]*co;
       }
       Xr[k] = ar2/L; Xi[k] = ai2/L;
     }
 
-    // 3. nhan tung vach voi dap ung kenh tai tan so THAT fc + fk
     var Hr = new Float64Array(L), Hi = new Float64Array(L);
     var Yr = new Float64Array(L), Yi = new Float64Array(L);
     for (k = 0; k < L; k++){
@@ -531,15 +564,13 @@ the cure for it is more power or more gain. Distortion needs a different cure, a
       Yi[k] = Xr[k]*Hi[k] + Xi[k]*Hr[k];
     }
 
-    // 4. khoi phuc dinh thi: chi can gia tri tai TAM KY TU nen khong phai
-    //    bien doi nguoc toan bo cho moi lan thu.
     var dnSym = 0;
-    for (n = 0; n < NSYM; n++)
+    for (n = 0; n < nsym; n++)
       dnSym += sym.re[n]*sym.re[n] + sym.im[n]*sym.im[n];
     var NTIM = 256, best = null;
     for (var j = 0; j < NTIM; j++){
       var dd = j/NTIM*Ts, tre = [], tim = [];
-      for (n = 0; n < NSYM; n++){
+      for (n = 0; n < nsym; n++){
         var tt = n*Ts + dd, yr = 0, yi = 0;
         for (k = 0; k < L; k++){
           var p2 = 2*Math.PI*fk[k]*tt, c2 = Math.cos(p2), s2 = Math.sin(p2);
@@ -548,277 +579,287 @@ the cure for it is more power or more gain. Distortion needs a different cure, a
         }
         tre.push(yr); tim.push(yi);
       }
-      // he so phuc chung tot nhat theo binh phuong toi thieu
-      var nr = 0, ni = 0, dn = 0;
-      for (n = 0; n < NSYM; n++){
+      var nr = 0, ni = 0;
+      for (n = 0; n < nsym; n++){
         nr += sym.re[n]*tre[n] + sym.im[n]*tim[n];
         ni += sym.re[n]*tim[n] - sym.im[n]*tre[n];
-        dn += sym.re[n]*sym.re[n] + sym.im[n]*sym.im[n];
       }
-      var gr = nr/dn, gi = ni/dn, e = 0, gm2 = gr*gr + gi*gi;
-      // Sai so phai do TREN chom sao DA BU he so chung, vi may thu quyet dinh
-      // o do. Ban dau em do truoc khi bu, nen con so nho hon su that dung mot
-      // he so |g|, va voi truong hop nam trong cho trung thi |g| bang 0,10 nen
-      // sai gan muoi lan. Bat duoc vi hinh ve diem thu that con chip in con so
-      // kia, hai thu khong khop nhau.
-      for (n = 0; n < NSYM; n++){
+      var gr = nr/dnSym, gi = ni/dnSym, e = 0, gm2 = gr*gr + gi*gi;
+      for (n = 0; n < nsym; n++){
         var br2 = (tre[n]*gr + tim[n]*gi)/gm2;
         var bi2 = (tim[n]*gr - tre[n]*gi)/gm2;
         e += (br2-sym.re[n])*(br2-sym.re[n]) + (bi2-sym.im[n])*(bi2-sym.im[n]);
       }
-      // e la sai so RMS tinh theo DON VI CUA CHOM SAO, khong chia cho bien
-      // do ky tu. Ban dau em chia cho dn, tuc chia them mot lan nua cho binh
-      // phuong bien do ky tu, nen ty so voi bien du phong bi nho di dung mot
-      // he so. Voi 16-QAM he so ay tinh co gan bang 1 nen loi an ky; voi
-      // 64-QAM no bang 1,205 va doichieu bat duoc ngay.
-      e = Math.sqrt(e/NSYM);
+      e = Math.sqrt(e/nsym);
       if (best === null || e < best.e)
         best = {e:e, d:dd, tre:tre, tim:tim, gr:gr, gi:gi};
     }
 
-    // 5. dang song thu duoc, lay tai dung thoi diem vua chon
-    var yre = new Float64Array(L), yim = new Float64Array(L);
-    for (i = 0; i < L; i++){
-      var t3 = i*dt + best.d, ar3 = 0, ai3 = 0;
-      for (k = 0; k < L; k++){
-        var p3 = 2*Math.PI*fk[k]*t3, c3 = Math.cos(p3), s3 = Math.sin(p3);
-        ar3 += Yr[k]*c3 - Yi[k]*s3;
-        ai3 += Yr[k]*s3 + Yi[k]*c3;
-      }
-      yre[i] = ar3; yim[i] = ai3;
-    }
+    // Xep cac vach theo DO LON, de nut "rebuild" them dan tu thanh phan manh
+    // nhat tro xuong, dung thu tu ma mat nguoi doc thay co nghia.
+    var thutu = [];
+    for (k = 0; k < L; k++)
+      thutu.push({k:k, m:Math.sqrt(Yr[k]*Yr[k] + Yi[k]*Yi[k])});
+    thutu.sort(function(a, b){ return b.m - a.m; });
 
-    // do loi trong bang chinh cua tin hieu
-    var W = (1 + BETA)*Rs/2, lo = 1e9, hi = -1e9;
-    for (k = 0; k < L; k++) if (Math.abs(fk[k]) <= W){
-      var dB = 20*Math.log10(Math.sqrt(Hr[k]*Hr[k] + Hi[k]*Hi[k]));
+    return {M:M, Rs:Rs, nsym:nsym, fc:fc, dl:dl, Ts:Ts, L:L, dt:dt,
+            W:(1+BETA)*Rs/2, sym:sym, bang:bangChomSao(M),
+            sre:sre, sim:sim, Xr:Xr, Xi:Xi, fk:fk, Hr:Hr, Hi:Hi, Yr:Yr, Yi:Yi,
+            thutu:thutu, khoangVach:1/(nsym*Ts),
+            gr:best.gr, gi:best.gi, tre:best.tre, tim:best.tim, d:best.d,
+            e:best.e};
+  }
+
+  function themSo(s){
+    // bien du phong va cac con so ket luan
+    var dmin = 1e9, u, v;
+    for (u = 0; u < s.bang.re.length; u++)
+      for (v = u+1; v < s.bang.re.length; v++){
+        var dr = s.bang.re[u]-s.bang.re[v], di = s.bang.im[u]-s.bang.im[v];
+        var dd = Math.sqrt(dr*dr+di*di);
+        if (dd < dmin) dmin = dd;
+      }
+    var bdp = dmin/2, teNhat = 0, gm = s.gr*s.gr + s.gi*s.gi, n;
+    for (n = 0; n < s.nsym; n++){
+      var ar = (s.tre[n]*s.gr + s.tim[n]*s.gi)/gm - s.sym.re[n];
+      var ai = (s.tim[n]*s.gr - s.tre[n]*s.gi)/gm - s.sym.im[n];
+      teNhat = Math.max(teNhat, Math.sqrt(ar*ar + ai*ai));
+    }
+    var chuan = Math.sqrt(s.sym.re.reduce(function(a,x,i){
+      return a + x*x + s.sym.im[i]*s.sym.im[i]; }, 0)/s.nsym);
+    var lo = 1e9, hi = -1e9, k;
+    for (k = 0; k < s.L; k++) if (Math.abs(s.fk[k]) <= s.W){
+      var dB = 20*Math.log10(Math.sqrt(s.Hr[k]*s.Hr[k] + s.Hi[k]*s.Hi[k]));
       if (dB < lo) lo = dB; if (dB > hi) hi = dB;
     }
-    // Khoang cach nho nhat giua hai diem chom sao. Sai so bang NUA khoang
-    // cach ay la vua du de doc nham sang diem ben canh, nen day moi la thuoc
-    // do "co hong khong", con phan tram sai so don thuan thi khong, vi 64-QAM
-    // co cac diem sit nhau hon han 16-QAM.
-    var dmin = 1e9, u, v2;
-    for (u = 0; u < sym.bang.re.length; u++)
-      for (v2 = u + 1; v2 < sym.bang.re.length; v2++){
-        var ddr = sym.bang.re[u] - sym.bang.re[v2];
-        var ddi = sym.bang.im[u] - sym.bang.im[v2];
-        var dd3 = Math.sqrt(ddr*ddr + ddi*ddi);
-        if (dd3 < dmin) dmin = dd3;
-      }
-    var bienDuPhong = dmin/2;
-    // Do te nhat: diem lech xa nhat. Day moi la thuoc do "co ky tu nao bi doc
-    // nham khong", vi chi can MOT diem vuot bien du phong la da sai ky tu.
-    var chuan = Math.sqrt(dnSym/NSYM);     // bien do ky tu trung binh
-    var teNhat = 0, gm3 = best.gr*best.gr + best.gi*best.gi;
-    for (n = 0; n < NSYM; n++){
-      var ar4 = (best.tre[n]*best.gr + best.tim[n]*best.gi)/gm3 - sym.re[n];
-      var ai4 = (best.tim[n]*best.gr - best.tre[n]*best.gi)/gm3 - sym.im[n];
-      teNhat = Math.max(teNhat, Math.sqrt(ar4*ar4 + ai4*ai4));
-    }
-    return {M:M, Rs:Rs, fc:fc, dl:dl, Ts:Ts, L:L, dt:dt, W:W, sym:sym,
-            dmin:dmin, bienDuPhong:bienDuPhong, chuan:chuan,
-            teNhat:teNhat/bienDuPhong,
-            tySoLe:best.e/bienDuPhong,
-            evm:best.e/chuan*100,
-            sre:sre, sim:sim, Xr:Xr, Xi:Xi, fk:fk, Hr:Hr, Hi:Hi,
-            Yr:Yr, Yi:Yi, yre:yre, yim:yim,
-            bien:hi-lo,
-            gain:Math.sqrt(best.gr*best.gr + best.gi*best.gi),
-            gr:best.gr, gi:best.gi, tre:best.tre, tim:best.tim};
+    s.dmin = dmin; s.bienDuPhong = bdp;
+    s.teNhat = teNhat/bdp; s.tySoLe = s.e/bdp; s.evm = s.e/chuan*100;
+    s.bien = hi - lo;
+    s.gain = Math.sqrt(gm);
+    return s;
   }
-  window.moPhongDieuChe = tinh;
+
+  function tinhDu(){ return themSo(tinh()); }
+  window.moPhongDieuChe = tinhDu;
 
   function ve(s){
-    var W0 = cv.width, H0 = cv.height, i, k, n;
-    g.clearRect(0, 0, W0, H0);
-    g.font = '13px Calibri, sans-serif'; g.textBaseline = 'alphabetic';
+    var W0 = cv.width, i, k, n;
+    g.clearRect(0, 0, W0, cv.height);
+    g.textBaseline = 'alphabetic';
     var phang = s.bien < NGUONG;
     var mauK = phang ? '#2A9D8F' : '#D81E5B';
-    var x0 = 92, x1 = W0 - 30;
-
+    var x0 = 96, x1 = W0 - 30;
     function nhan(t, x, y, mau, cs){
-      g.fillStyle = mau || '#5A6272'; g.font = (cs || 13) + 'px Calibri, sans-serif';
+      g.fillStyle = mau || '#1A1F36';
+      g.font = (cs || 13) + 'px Calibri, sans-serif';
       g.textAlign = 'left'; g.fillText(t, x, y);
     }
 
-    // ---- bang 1: ca dai, co to vung tin hieu chiem ----------------------
-    var a0 = 56, a1 = 150;
-    function ax(f){ return x0 + (f - FA)/(FB - FA)*(x1 - x0); }
-    function ay(d){ var c = Math.max(-26, Math.min(8, d));
-                    return a1 - (c + 26)/34*(a1 - a0); }
-    g.strokeStyle = '#1A1F36'; g.lineWidth = 1;
-    g.beginPath(); g.moveTo(x0, a1); g.lineTo(x1, a1);
-    g.moveTo(x0, a0); g.lineTo(x0, a1); g.stroke();
-    var lo2 = s.fc - s.W, hi2 = s.fc + s.W;
-    g.fillStyle = phang ? 'rgba(42,157,143,0.20)' : 'rgba(216,30,91,0.20)';
-    g.fillRect(ax(lo2), a0, Math.max(ax(hi2) - ax(lo2), 2), a1 - a0);
-    g.strokeStyle = '#2A9D8F'; g.lineWidth = 1.8;
+    // 1. bit va ky tu -----------------------------------------------------
+    nhan('1 · the bits, grouped into symbols', x0, 28, '#1A1F36', 14);
+    var kb = s.sym.kbit, nb = s.nsym*kb, bw = Math.min(20, (x1-x0)/nb);
+    // Khi khoi dai va bac dieu che cao thi moi o chi con vai pixel, in chu
+    // so vao do thi cac chu de len nhau. Qua nguong thi ve o tron, khong in.
+    var inSo = bw >= 9;
+    for (i = 0; i < nb; i++){
+      var bx = x0 + i*bw, nhom = Math.floor(i/kb);
+      g.fillStyle = (nhom % 2) ? '#EEF1F6' : '#DCE3EC';
+      g.fillRect(bx, 40, Math.max(bw-1.5, 1), 22);
+      if (inSo){
+        g.fillStyle = '#1A1F36'; g.font = '11px Calibri, sans-serif';
+        g.textAlign = 'center';
+        g.fillText(s.sym.bits[i], bx + bw/2 - 0.75, 56);
+      }
+    }
+    g.textAlign = 'left';
+    nhan(nb + ' bits, ' + kb + ' of them per symbol'
+         + (inSo ? '' : ', too many to print at this block length'),
+         x0, 78, '#5A6272', 12);
+
+    // 2. dang song ---------------------------------------------------------
+    var a0 = 104, a1 = 206;
+    nhan('2 · the symbols as a waveform, in phase part', x0, a0 - 8, '#1A1F36', 14);
+    var bmax = 0;
+    for (i = 0; i < s.L; i++) bmax = Math.max(bmax, Math.abs(s.sre[i]));
+    function wx(i2){ return x0 + i2/(s.L-1)*(x1-x0); }
+    function wy(v){ return (a0+a1)/2 - v/bmax*(a1-a0)/2*0.90; }
+    g.strokeStyle = '#EDF0F5'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x0, (a0+a1)/2); g.lineTo(x1, (a0+a1)/2); g.stroke();
+    g.strokeStyle = '#6C5CE7'; g.lineWidth = 2;
     g.beginPath();
-    for (i = 0; i <= 700; i++){
-      var ff = FA + (FB - FA)*i/700;
-      var pp = -2*Math.PI*ff*(s.dl/C0);
-      var hr = 1 + A_VONG*Math.cos(pp), hi3 = A_VONG*Math.sin(pp);
-      var dd2 = 20*Math.log10(Math.sqrt(hr*hr + hi3*hi3));
-      if (i === 0) g.moveTo(ax(ff), ay(dd2)); else g.lineTo(ax(ff), ay(dd2));
+    for (i = 0; i < s.L; i++){
+      if (i === 0) g.moveTo(wx(i), wy(s.sre[i])); else g.lineTo(wx(i), wy(s.sre[i]));
     }
     g.stroke();
-    nhan('the whole band, and where your signal sits', x0 + 4, a0 - 10);
-    g.textAlign = 'center'; g.fillStyle = '#5A6272';
-    for (var gf = 5.0; gf <= 5.401; gf += 0.1)
-      g.fillText(gf.toFixed(1) + ' GHz', ax(gf*1e9), a1 + 18);
+    g.fillStyle = '#9AA3B2';
+    for (n = 0; n < s.nsym; n++){
+      var xi = wx(n*MMAU);
+      g.fillRect(xi-0.6, a1-6, 1.2, 6);
+    }
+    nhan('ticks are the symbol instants', x0, a1 + 16, '#5A6272', 12);
 
-    // ---- bang 2 va 3: pho vach, phong vao dung dai tin hieu -------------
+    // 3. pho vach ----------------------------------------------------------
+    var b0 = 254, b1 = 372;
+    nhan('3 · its spectrum: one bar per frequency component, '
+         + (s.khoangVach/1e6).toFixed(2) + ' MHz apart',
+         x0, b0 - 8, '#1A1F36', 14);
     var ZW = s.W*1.25;
-    function zx(f){ return x0 + (f + ZW)/(2*ZW)*(x1 - x0); }
+    function zx(f){ return x0 + (f + ZW)/(2*ZW)*(x1-x0); }
     var dinh = 0;
     for (k = 0; k < s.L; k++){
       var m1 = Math.sqrt(s.Xr[k]*s.Xr[k] + s.Xi[k]*s.Xi[k]);
       if (Math.abs(s.fk[k]) <= ZW && m1 > dinh) dinh = m1;
     }
-    function veVach(y0, y1, lay, ten){
+    function veTruc(y1v){
       g.strokeStyle = '#1A1F36'; g.lineWidth = 1;
-      g.beginPath(); g.moveTo(x0, y1); g.lineTo(x1, y1);
-      g.moveTo(x0, y0); g.lineTo(x0, y1); g.stroke();
-      for (k = 0; k < s.L; k++){
-        if (Math.abs(s.fk[k]) > ZW) continue;
-        var v = lay(k), h = v/dinh*(y1 - y0)*0.92;
-        var hm = Math.sqrt(s.Hr[k]*s.Hr[k] + s.Hi[k]*s.Hi[k]);
-        g.strokeStyle = ten ? (hm >= 1 ? '#2A9D8F' : '#D81E5B') : '#6C5CE7';
-        g.lineWidth = 3;
-        g.beginPath(); g.moveTo(zx(s.fk[k]), y1); g.lineTo(zx(s.fk[k]), y1 - h);
-        g.stroke();
-      }
-      g.textAlign = 'center'; g.fillStyle = '#5A6272';
-      g.font = '12px Calibri, sans-serif';
-      for (var q = -1; q <= 1; q++)
-        g.fillText((q*s.W/1e6).toFixed(1) + ' MHz', zx(q*s.W), y1 + 17);
+      g.beginPath(); g.moveTo(x0, y1v); g.lineTo(x1, y1v); g.stroke();
     }
-    var b0 = 212, b1 = 338;
-    veVach(b0, b1, function(k){ return Math.sqrt(s.Xr[k]*s.Xr[k] + s.Xi[k]*s.Xi[k]); }, false);
-    // dap ung kenh ve de len bang 2
-    g.strokeStyle = mauK; g.lineWidth = 2; g.setLineDash([6, 3]);
+    veTruc(b1);
+    var rong = Math.max(1.5, Math.min(5, (x1-x0)/(2*ZW/s.khoangVach)*0.5));
+    for (k = 0; k < s.L; k++){
+      if (Math.abs(s.fk[k]) > ZW) continue;
+      var h = Math.sqrt(s.Xr[k]*s.Xr[k] + s.Xi[k]*s.Xi[k])/dinh*(b1-b0)*0.92;
+      g.strokeStyle = '#6C5CE7'; g.lineWidth = rong;
+      g.beginPath(); g.moveTo(zx(s.fk[k]), b1); g.lineTo(zx(s.fk[k]), b1-h); g.stroke();
+    }
+
+    // 4. kenh tac dong tung thanh phan -------------------------------------
+    var c0 = 420, c1 = 538;
+    nhan('4 · the channel, acting on each component separately',
+         x0, c0 - 8, '#1A1F36', 14);
+    veTruc(c1);
+    for (k = 0; k < s.L; k++){
+      if (Math.abs(s.fk[k]) > ZW) continue;
+      var mt = Math.sqrt(s.Xr[k]*s.Xr[k] + s.Xi[k]*s.Xi[k])/dinh*(c1-c0)*0.92;
+      var ms = Math.sqrt(s.Yr[k]*s.Yr[k] + s.Yi[k]*s.Yi[k])/dinh*(c1-c0)*0.92;
+      g.strokeStyle = '#C9D0DB'; g.lineWidth = rong;
+      g.beginPath(); g.moveTo(zx(s.fk[k])-rong*0.75, c1);
+      g.lineTo(zx(s.fk[k])-rong*0.75, c1-mt); g.stroke();
+      g.strokeStyle = mauK; g.lineWidth = rong;
+      g.beginPath(); g.moveTo(zx(s.fk[k])+rong*0.75, c1);
+      g.lineTo(zx(s.fk[k])+rong*0.75, c1-ms); g.stroke();
+    }
+    g.strokeStyle = mauK; g.lineWidth = 2; g.setLineDash([6,3]);
     g.beginPath();
     for (i = 0; i <= 400; i++){
       var f4 = -ZW + 2*ZW*i/400;
       var p4 = -2*Math.PI*(s.fc + f4)*(s.dl/C0);
       var hr4 = 1 + A_VONG*Math.cos(p4), hi4 = A_VONG*Math.sin(p4);
       var m4 = Math.sqrt(hr4*hr4 + hi4*hi4)/1.9;
-      var yy = b1 - m4*(b1 - b0)*0.92;
+      var yy = c1 - m4*(c1-c0)*0.92;
       if (i === 0) g.moveTo(zx(f4), yy); else g.lineTo(zx(f4), yy);
     }
     g.stroke(); g.setLineDash([]);
-    nhan('transmitted spectrum, one bar per frequency component', x0 + 4, b0 - 26, '#6C5CE7');
-    nhan('dashed: the channel gain across just this stretch', x0 + 4, b0 - 9, mauK);
+    nhan('grey sent, colour received, dashed is the channel gain',
+         x0, c1 + 16, '#5A6272', 12);
 
-    var c0 = 400, c1 = 526;
-    veVach(c0, c1, function(k){
-      var m = Math.sqrt(s.Xr[k]*s.Xr[k] + s.Xi[k]*s.Xi[k]);
-      var hm = Math.sqrt(s.Hr[k]*s.Hr[k] + s.Hi[k]*s.Hi[k]);
-      return m*hm;
-    }, true);
-    nhan('received spectrum: each bar times the channel at its own frequency',
-         x0 + 4, c0 - 9, mauK);
-
-    // ---- bang 4: dang song ----------------------------------------------
-    var d0 = 592, d1 = 726, nve = 5*MMAU;
-    var bmax = 0;
-    for (i = 0; i < nve; i++){
-      bmax = Math.max(bmax, Math.abs(s.sre[i]), Math.abs(s.yre[i]/Math.max(s.gain, 1e-9)));
+    // 5. cong cac thanh phan tro lai ---------------------------------------
+    var d0 = 596, d1 = 726;
+    var K = Math.min(+sl.k.value, s.L);
+    nhan('5 · adding the received components back up, ' + K + ' of ' + s.L,
+         x0, d0 - 8, '#1A1F36', 14);
+    var yre = new Float64Array(s.L);
+    for (var q = 0; q < K; q++){
+      k = s.thutu[q].k;
+      for (i = 0; i < s.L; i++){
+        var t5 = i*s.dt + s.d, p5 = 2*Math.PI*s.fk[k]*t5;
+        yre[i] += s.Yr[k]*Math.cos(p5) - s.Yi[k]*Math.sin(p5);
+      }
     }
-    function wx(i2){ return x0 + i2/(nve - 1)*(x1 - x0 - 360); }
-    function wy(v){ return (d0 + d1)/2 - v/bmax*(d1 - d0)/2*0.92; }
+    var gm5 = s.gr*s.gr + s.gi*s.gi, rmax = bmax;
     g.strokeStyle = '#EDF0F5'; g.lineWidth = 1;
-    g.beginPath(); g.moveTo(x0, (d0+d1)/2); g.lineTo(x1 - 360, (d0+d1)/2); g.stroke();
-    g.strokeStyle = '#9AA3B2'; g.lineWidth = 1.6; g.setLineDash([5, 4]);
+    g.beginPath(); g.moveTo(x0, (d0+d1)/2); g.lineTo(x1, (d0+d1)/2); g.stroke();
+    function ry(v){ return (d0+d1)/2 - v/rmax*(d1-d0)/2*0.90; }
+    g.strokeStyle = '#9AA3B2'; g.lineWidth = 1.5; g.setLineDash([5,4]);
     g.beginPath();
-    for (i = 0; i < nve; i++){
-      if (i === 0) g.moveTo(wx(i), wy(s.sre[i])); else g.lineTo(wx(i), wy(s.sre[i]));
+    for (i = 0; i < s.L; i++){
+      if (i === 0) g.moveTo(wx(i), ry(s.sre[i])); else g.lineTo(wx(i), ry(s.sre[i]));
     }
     g.stroke(); g.setLineDash([]);
     g.strokeStyle = mauK; g.lineWidth = 2.2;
     g.beginPath();
-    for (i = 0; i < nve; i++){
-      // chia cho he so chung, tuc may thu da bu khuech dai va pha
-      var vr = (s.yre[i]*s.gr + s.yim[i]*s.gi)/(s.gr*s.gr + s.gi*s.gi);
-      if (i === 0) g.moveTo(wx(i), wy(vr)); else g.lineTo(wx(i), wy(vr));
+    for (i = 0; i < s.L; i++){
+      var vr = (yre[i]*s.gr)/gm5;
+      if (i === 0) g.moveTo(wx(i), ry(vr)); else g.lineTo(wx(i), ry(vr));
     }
     g.stroke();
-    nhan('in phase part of the waveform, sent dashed and received solid, '
-         + 'after the receiver corrects one gain', x0 + 4, d0 - 12, '#1A1F36');
-    g.textAlign = 'center'; g.fillStyle = '#5A6272';
-    g.font = '12px Calibri, sans-serif';
-    for (n = 0; n < 5; n++) g.fillText('symbol ' + (n+1), wx(n*MMAU + MMAU/2), d1 + 20);
+    nhan('dashed grey is what was sent, solid is the partial sum so far',
+         x0, d1 + 16, '#5A6272', 12);
 
-    // ---- bang 5: chom sao -----------------------------------------------
-    var e0 = 560, eS = 330, eX = x1 - eS;
+    // 6. chom sao ----------------------------------------------------------
+    var e0 = 790, eS = 300, eX = x0;
+    nhan('6 · the symbols the receiver reads', x0, e0 - 8, '#1A1F36', 14);
     var R = 0;
-    for (n = 0; n < NSYM; n++){
-      var cr = (s.tre[n]*s.gr + s.tim[n]*s.gi)/(s.gr*s.gr + s.gi*s.gi);
-      var ci = (s.tim[n]*s.gr - s.tre[n]*s.gi)/(s.gr*s.gr + s.gi*s.gi);
-      R = Math.max(R, Math.abs(cr), Math.abs(ci));
-    }
-    for (i = 0; i < s.sym.bang.re.length; i++)
-      R = Math.max(R, Math.abs(s.sym.bang.re[i]), Math.abs(s.sym.bang.im[i]));
-    R *= 1.18;
+    for (i = 0; i < s.bang.re.length; i++)
+      R = Math.max(R, Math.abs(s.bang.re[i]), Math.abs(s.bang.im[i]));
+    R *= 1.25;
     function cx(v){ return eX + eS/2 + v/R*eS/2; }
     function cy(v){ return e0 + eS/2 - v/R*eS/2; }
     g.strokeStyle = '#E4E8EF'; g.lineWidth = 1;
     g.strokeRect(eX, e0, eS, eS);
-    g.beginPath(); g.moveTo(eX, cy(0)); g.lineTo(eX + eS, cy(0));
-    g.moveTo(cx(0), e0); g.lineTo(cx(0), e0 + eS); g.stroke();
-    g.strokeStyle = '#C9D0DB'; g.lineWidth = 1.4;
-    for (i = 0; i < s.sym.bang.re.length; i++){
-      g.beginPath();
-      g.arc(cx(s.sym.bang.re[i]), cy(s.sym.bang.im[i]), 4.5, 0, 6.2832);
+    g.beginPath(); g.moveTo(eX, cy(0)); g.lineTo(eX+eS, cy(0));
+    g.moveTo(cx(0), e0); g.lineTo(cx(0), e0+eS); g.stroke();
+    g.strokeStyle = '#C9D0DB'; g.lineWidth = 1.2;
+    for (i = 0; i < s.bang.re.length; i++){
+      g.beginPath(); g.arc(cx(s.bang.re[i]), cy(s.bang.im[i]), 4, 0, 6.2832);
       g.stroke();
     }
     g.fillStyle = mauK;
-    for (n = 0; n < NSYM; n++){
-      var rr = (s.tre[n]*s.gr + s.tim[n]*s.gi)/(s.gr*s.gr + s.gi*s.gi);
-      var ii = (s.tim[n]*s.gr - s.tre[n]*s.gi)/(s.gr*s.gr + s.gi*s.gi);
-      g.beginPath(); g.arc(cx(rr), cy(ii), 5.5, 0, 6.2832); g.fill();
+    for (n = 0; n < s.nsym; n++){
+      var rr = (s.tre[n]*s.gr + s.tim[n]*s.gi)/gm5;
+      var ii = (s.tim[n]*s.gr - s.tre[n]*s.gi)/gm5;
+      g.beginPath(); g.arc(cx(rr), cy(ii), 5, 0, 6.2832); g.fill();
     }
-    nhan('received constellation, after one gain is corrected', eX, e0 - 12, '#1A1F36');
-    nhan('open circles: where the symbols were sent', eX, e0 + eS + 20, '#5A6272', 12);
+    nhan('open circles: where the symbols were sent', eX + eS + 24, e0 + 24,
+         '#5A6272', 12);
+    nhan('worst symbol ' + s.teNhat.toFixed(2) + '× the margin',
+         eX + eS + 24, e0 + 48, s.teNhat > 1 ? '#D81E5B' : '#2A9D8F', 14);
   }
 
   function chay(){
-    var s = tinh();
+    var s = tinhDu();
+    sl.k.max = s.L;
     E('mlm').textContent = TENMOD[+sl.m.value];
-    E('mlb').textContent = Math.round(Math.log(s.M)/Math.log(2));
+    E('mlb').textContent = s.sym.kbit;
+    E('mln').textContent = s.nsym;
+    E('mlT').textContent = (s.nsym*s.Ts*1e6).toFixed(2);
     E('mlr').textContent = (s.Rs/1e6).toFixed(0);
     E('mlw').textContent = (2*s.W/1e6).toFixed(1);
     E('mlc').textContent = (s.fc/1e9).toFixed(3);
     E('mld').textContent = s.dl.toFixed(1);
+    E('mlk').textContent = (+sl.k.value >= s.L) ? 'all' : sl.k.value;
     var phang = s.bien < NGUONG;
-    E('mq1').innerHTML = 'Gain across the signal varies <b>' + s.bien.toFixed(1) + ' dB</b>';
+    E('mq0').innerHTML = 'Lines are <b>' + (s.khoangVach/1e6).toFixed(2) +
+                         ' MHz</b> apart';
+    E('mq1').innerHTML = 'Gain across the signal varies <b>' +
+                         s.bien.toFixed(1) + ' dB</b>';
     E('mq1').className = 'chip ' + (phang ? 'tot' : 'xau');
     E('mq2').innerHTML = 'Verdict <b>' + (phang ? 'flat' : 'selective') + '</b>';
     E('mq2').className = 'chip ' + (phang ? 'tot' : 'xau');
-    E('mq3').innerHTML = 'One common gain, <b>' + s.gain.toFixed(2) + '×</b>, is all a receiver may undo';
+    E('mq3').innerHTML = 'One common gain <b>' + s.gain.toFixed(2) + '×</b>';
     E('mq3').className = 'chip ' + (s.gain < 0.4 ? 'xau' : '');
-    E('mq4').innerHTML = 'Error left after that <b>' + s.evm.toFixed(1) +
-                         '%</b> of a symbol';
-    E('mq4').className = 'chip ' + (s.evm < 5 ? 'tot' : 'xau');
-    E('mq5').innerHTML = 'Typically <b>' + s.tySoLe.toFixed(2) +
-                         '×</b> the margin, worst symbol <b>' +
-                         s.teNhat.toFixed(2) + '×</b>';
+    E('mq5').innerHTML = 'Worst symbol <b>' + s.teNhat.toFixed(2) +
+                         '×</b> the margin';
     E('mq5').className = 'chip ' + (s.teNhat < 1 ? 'tot' : 'xau');
     ve(s);
   }
 
-  ['m','r','c','d'].forEach(function(x){ sl[x].addEventListener('input', chay); });
-  Array.prototype.forEach.call(document.querySelectorAll('.nut[data-m]'), function(n){
-    n.addEventListener('click', function(){
-      sl.m.value = n.dataset.m; sl.r.value = n.dataset.r;
-      sl.c.value = n.dataset.c; sl.d.value = n.dataset.d;
+  ['m','n','r','c','d'].forEach(function(x){
+    sl[x].addEventListener('input', function(){ sl.k.value = sl.k.max; chay(); });
+  });
+  sl.k.addEventListener('input', chay);
+  Array.prototype.forEach.call(document.querySelectorAll('.nut[data-m]'), function(b){
+    b.addEventListener('click', function(){
+      sl.m.value = b.dataset.m; sl.n.value = b.dataset.n;
+      sl.r.value = b.dataset.r; sl.c.value = b.dataset.c;
+      sl.d.value = b.dataset.d; sl.k.value = 9999;
       chay();
     });
   });
   chay();
 })();
 </script>
+
 
 <div data-tacgia="1" style="margin:28px 0 0;padding:16px 26px;border-top:1px solid #E4E8EF;background:#F7F9FC;font-family:Calibri,Segoe UI,system-ui,sans-serif;font-size:13.5px;line-height:1.7;color:#5A6272">
 <b style="color:#1A1F36">Dr Mai Tran</b><br>
