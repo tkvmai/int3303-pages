@@ -38,6 +38,10 @@ a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
   text-decoration:none;border-bottom:1px solid #E4E8EF}
 a.veml:hover{color:#FF6B35}
 footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13.5px;line-height:1.6}
+table.bg{border-collapse:collapse;margin:10px 0 14px;font:14px Calibri,sans-serif}
+table.bg th,table.bg td{border-bottom:1px solid #E4E8EF;padding:5px 16px 5px 0;text-align:left}
+table.bg th{color:#5A6272;font-weight:600;border-bottom:1px solid #C9D0DB}
+table.bg td:nth-child(n+2),table.bg th:nth-child(n+2){text-align:right}
 </style>
 </head>
 <body>
@@ -55,134 +59,6 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
 <div class="dk">
   <div class="hang">
     <div>
-      <label class="t">Signal bandwidth <b><span id="lb">80</span> MHz</b></label>
-      <input type="range" id="b" min="0" max="6" step="1" value="5">
-    </div>
-    <div>
-      <label class="t">Signal sits at <b><span id="lc">5.040</span> GHz</b></label>
-      <input type="range" id="c" min="5000" max="5400" step="1" value="5040">
-    </div>
-    <div>
-      <label class="t">Path length difference <b><span id="ld">1.8</span> m</b>,
-        so notches every <b><span id="lsp">167</span> MHz</b></label>
-      <input type="range" id="d" min="3" max="60" step="1" value="18">
-    </div>
-    <div>
-      <label class="t">Number of paths <b><span id="lk">2</span></b></label>
-      <input type="range" id="k" min="2" max="8" step="1" value="2">
-    </div>
-  </div>
-  <div style="margin-top:10px">
-    <span class="nut" data-b="5" data-c="5040" data-d="18" data-k="2">The textbook example: 80 MHz, ΔL 1.8 m</span>
-    <span class="nut" data-b="1" data-c="5040" data-d="18" data-k="2">Same room, a 5 MHz radio</span>
-    <span class="nut" data-b="0" data-c="5083" data-d="18" data-k="2">A 1 MHz signal parked in a notch</span>
-    <span class="nut" data-b="0" data-c="5167" data-d="18" data-k="2">A 1 MHz signal parked on a peak</span>
-    <span class="nut" data-b="5" data-c="5200" data-d="60" data-k="2">A long echo: notches close together</span>
-    <span class="nut" data-b="5" data-c="5200" data-d="18" data-k="8">A rich room: eight paths</span>
-  </div>
-</div>
-
-<div style="margin:0 0 14px">
-  <span class="chip" id="cv">Gain varies <b>0 dB</b> across the signal</span>
-  <span class="chip" id="ck">Verdict <b>flat</b></span>
-  <span class="chip" id="cp">The signal covers <b>0%</b> of one period</span>
-  <span class="chip" id="cm">Mean gain over the signal <b>0 dB</b></span>
-</div>
-
-<canvas id="cv2" width="1280" height="600"></canvas>
-
-<h2>What you are looking at</h2>
-<p class="sub">The upper plot is the <b>channel</b>, drawn as gain against frequency. It is computed,
-not sketched: every path is summed as a wave with its real phase, exactly as the add-or-cancel
-slide did, and the only difference here is that the sum is evaluated at every frequency across the
-band instead of at one carrier. The shaded block marks <b>which frequencies your signal occupies,
-and nothing else</b>: its top and bottom edges are just the edges of the frame, so its height
-carries no meaning. The strength of what is sent appears in the lower plot, as the flat dashed
-block at 1.0.</p>
-<p class="sub">The lower plot is what comes out: the transmitted spectrum, drawn flat and dashed,
-multiplied by the channel. That product is the thing the receiver has to demodulate, and when it is
-no longer the shape that was sent, the signal has been <b>distorted</b> rather than merely
-weakened.</p>
-<p class="sub"><b>Two vertical scales, and why multiplying is the same as adding.</b> The upper
-plot is in <b>decibels</b>; the lower plot is a plain <b>linear ratio</b>. A channel that halves
-the amplitude reads as &minus;6 dB in the upper plot and as 0.5 in the lower one. What the channel
-does is a <b>multiplication</b>, one frequency at a time: what arrives at a frequency is what was
-sent at that frequency, times the channel's gain at that frequency. That is the operation the lower
-plot draws, which is why the lower plot is linear. In decibels the very same statement becomes an
-<b>addition</b>, because a logarithm turns a product into a sum: the sent spectrum is flat at 1.0,
-which is 0 dB, so 0 dB plus the channel's &minus;6 dB gives &minus;6 dB arriving. Multiply in
-linear, add in decibels, one physical statement written two ways. The lower plot is kept linear on
-purpose: the <i>shape</i> of the spectrum is what the receiver has to recover, and a logarithmic
-axis changes that shape.</p>
-<p class="sub"><b>What the lower scale means.</b> It is an <b>amplitude</b> ratio, not a power
-ratio, and the reference level 1.0 is <b>the level that would arrive if there were one path and no
-echo</b>. Path loss has been divided out, so 1.0 is not the transmitted power: over any real
-distance the direct ray alone arrives tens of decibels down, and that loss is the subject of
-session 3 part 2 rather than of this page. Dividing it out is what lets the sent spectrum be drawn
-on the same axis, flat at 1.0, so the two shapes can be compared. With two paths of equal strength
-the scale would run from 0 to 2: the echo either doubles the direct ray or cancels it. Here the
-echo is 0.9 of the direct ray, so the peaks reach 1.9 and the notches fall to 0.1.</p>
-
-<h2>The one experiment to run</h2>
-<p class="sub">Press <b>The textbook example</b>, then <b>Same room, a 5 MHz radio</b>. Nothing about
-the room changed between those two: same paths, same path length difference, same notches in the
-same places. Only the width of the signal changed, and the verdict flipped. That is the whole of
-Stallings' point, and it is why the term selective is defined relative to the bandwidth of the
-signal rather than as a property of the channel.</p>
-
-<h2>Things worth noticing</h2>
-<ul>
-  <li><b>Flat does not mean harmless.</b> Press <b>A 1 MHz signal parked in a notch</b>. The
-      verdict is flat, because the whole of that narrow signal moves together: the gain varies by
-      only about 0.4 dB across it. But the mean gain is nearly twenty decibels down and the link is
-      in serious trouble. Then press <b>parked on a peak</b>: same width, same room, and the signal
-      is now about 5.6 dB stronger than it would have been with no multipath at all. Flat and
-      selective answer the question <i>is the band treated unevenly</i>, not the question <i>is the
-      signal any good</i>.</li>
-  <li><b>Narrow is relative to the notch, not an absolute.</b> Leave the signal on the notch and
-      widen it from 1 MHz to 5 MHz. The verdict flips to selective, because this notch is only
-      about 17 MHz wide at its ten decibel points, so a 5 MHz signal already straddles its walls.
-      A signal is narrowband or wideband with respect to the structure of the particular channel it
-      is sitting in, which is exactly why Stallings defines the term relative to the signal
-      bandwidth and refuses to attach a number to it.</li>
-  <li><b>Where the notch spacing comes from.</b> Two paths differing by ΔL put a whole extra
-      wavelength into the longer path every time the frequency rises by c / ΔL, so the pattern
-      repeats with that period. A long echo means a small period, which is why pushing the path
-      length difference up crowds the notches together and makes even a narrow signal look
-      selective.</li>
-  <li><b>More paths, less regularity.</b> With two paths the channel is a clean repeating shape.
-      Push the number of paths up and it becomes ragged: the notches are no longer evenly spaced
-      and no longer the same depth. A real indoor channel looks like the ragged one. The two-path
-      case is kept as the default only because its period can be written down.</li>
-  <li><b>The verdict needs a number, and neither textbook gives one.</b> This page calls the
-      channel selective when the gain varies by more than <b>3 dB</b> across the signal. That
-      three is a convention of this page and nothing more. Stallings states the test in words only:
-      if attenuation occurs over a portion of the bandwidth of the signal, the fading is selective;
-      nonselective fading implies the signal bandwidth is narrower than, and completely covered by,
-      the spectrum affected by the fading. The quantity that would make the boundary numerical is
-      the coherence bandwidth, which appears in neither book for this course and is therefore not
-      taught in it.</li>
-  <li><b>This is why wide channels are hard.</b> Every WiFi generation has widened the channel:
-      20, then 40, then 80, then 160 MHz. Hold the room fixed on this page and walk the bandwidth
-      up through those numbers. The capacity you are buying comes with a channel that is more
-      selective at every step, and session 4 is about what to do with that.</li>
-</ul>
-
-<h2>Part two: from a stream of bits to a received constellation</h2>
-<p class="sub">Everything above treated the signal as a block of spectrum. Here it is built from
-the beginning: bits, then symbols, then a waveform, then its spectrum, then the channel acting on
-each frequency component separately, then the components added back up at the receiver. Six steps,
-every one of them computed rather than drawn.</p>
-<p class="sub"><b>The two parts are independent.</b> Each has its own set of controls, and moving
-one part leaves the other exactly where it was. They do share a room: the same two-ray model, with
-one direct path and one echo arriving 1.8 m later by default. Part one lets you add up to eight
-paths, which part two does not; part two lets you choose a modulation and a symbol rate, which
-part one does not. So the carrier and the path difference mean the same thing on both, but set
-them yourself on each part if you want the two to agree.</p>
-
-<div class="dk">
-  <div class="hang">
-    <div>
       <label class="t">Modulation <b><span id="mlm">16-QAM</span></b>,
         <b><span id="mlb">4</span></b> bits per symbol</label>
       <input type="range" id="mm" min="0" max="2" step="1" value="1">
@@ -193,39 +69,139 @@ them yourself on each part if you want the two to agree.</p>
       <input type="range" id="mn" min="0" max="3" step="1" value="1">
     </div>
     <div>
-      <label class="t">Symbol rate <b><span id="mlr">5</span> Msym/s</b>,
-        signal about <b><span id="mlw">6.8</span> MHz</b> wide</label>
-      <input type="range" id="mr" min="0" max="5" step="1" value="1">
+      <label class="t">Signal bandwidth <b><span id="mlw">80</span> MHz</b>,
+        so <b><span id="mlr">59.3</span> Msym/s</b></label>
+      <input type="range" id="mb" min="0" max="6" step="1" value="5">
+    </div>
+  </div>
+  <div class="hang">
+    <div>
+      <label class="t">Signal sits at <b><span id="mlc">5.040</span> GHz</b></label>
+      <input type="range" id="mc" min="5000" max="5400" step="1" value="5040">
     </div>
     <div>
-      <label class="t">Carrier <b><span id="mlc">5.040</span> GHz</b>, path difference
-        <b><span id="mld">1.8</span> m</b>, two paths</label>
-      <input type="range" id="mc" min="5000" max="5400" step="1" value="5040">
+      <label class="t">Path length difference <b><span id="mld">1.8</span> m</b>,
+        so notches every <b><span id="mlsp">167</span> MHz</b></label>
       <input type="range" id="md" min="3" max="60" step="1" value="18">
+    </div>
+    <div>
+      <label class="t" style="margin-bottom:6px">Rebuild the received waveform from
+        <b><span id="mlk">all</span></b> of its frequency components</label>
+      <input type="range" id="mk" min="1" max="60" step="1" value="60">
     </div>
   </div>
   <div style="margin-top:10px">
-    <label class="t" style="margin-bottom:6px">Rebuild the received waveform from
-      <b><span id="mlk">all</span></b> of its frequency components</label>
-    <input type="range" id="mk" min="1" max="60" step="1" value="60">
-  </div>
-  <div style="margin-top:10px">
-    <span class="nut" data-m="1" data-n="1" data-r="1" data-c="5040" data-d="18">Flat: a narrow signal</span>
-    <span class="nut" data-m="1" data-n="1" data-r="5" data-c="5040" data-d="18">Selective: a wide signal</span>
-    <span class="nut" data-m="1" data-n="1" data-r="0" data-c="5083" data-d="18">Flat but deep in a notch</span>
-    <span class="nut" data-m="2" data-n="1" data-r="5" data-c="5040" data-d="18">Selective, and 64-QAM to boot</span>
-    <span class="nut" data-m="1" data-n="1" data-r="5" data-c="5380" data-d="35">Every symbol misread: 16-QAM, 80 Msym/s</span>
+    <span class="nut" data-m="1" data-n="1" data-b="0" data-c="5040" data-d="18">Flat: a 1 MHz signal</span>
+    <span class="nut" data-m="1" data-n="1" data-b="5" data-c="5040" data-d="18">The textbook example: 80 MHz</span>
+    <span class="nut" data-m="1" data-n="1" data-b="0" data-c="5083" data-d="18">Flat but deep in a notch</span>
+    <span class="nut" data-m="1" data-n="1" data-b="0" data-c="5167" data-d="18">Flat and on a peak</span>
+    <span class="nut" data-m="1" data-n="1" data-b="6" data-c="5040" data-d="18">Selective: widen it to 160 MHz</span>
+    <span class="nut" data-m="2" data-n="1" data-b="6" data-c="5040" data-d="18">Selective, and 64-QAM to boot</span>
+    <span class="nut" data-m="1" data-n="1" data-b="5" data-c="5180" data-d="35">Same 80 MHz, every symbol misread</span>
   </div>
 </div>
 
 <div style="margin:0 0 14px">
-  <span class="chip" id="mq0">Lines are <b>0.63 MHz</b> apart</span>
   <span class="chip" id="mq1">Gain across the signal varies <b>0 dB</b></span>
   <span class="chip" id="mq2">Verdict <b>flat</b></span>
+  <span class="chip" id="cp">The signal covers <b>0%</b> of one period</span>
+  <span class="chip" id="mq0">Lines are <b>0.63 MHz</b> apart</span>
   <span class="chip" id="mq3">One common gain <b>1.00×</b></span>
   <span class="chip" id="mq5">Worst symbol <b>0×</b> the margin</span>
   <span class="chip" id="mq6">All <b>8</b> symbols read correctly</span>
 </div>
+
+<canvas id="cv2" width="1280" height="340"></canvas>
+
+<h2>Panel 1: what you are looking at</h2>
+<p class="sub">This is the <b>channel</b>, drawn as gain against frequency. It is computed, not
+sketched: the direct path and the echo are summed as waves with their real phases, exactly as the
+add-or-cancel slide did, and the only difference here is that the sum is evaluated at every
+frequency across the band instead of at one carrier. The room is two paths throughout this page:
+one direct, one echo arriving ΔL later and 0.9 as strong.</p>
+<p class="sub">The shaded block marks <b>which frequencies your signal occupies, and nothing
+else</b>. Its top and bottom edges are the edges of the frame, so its height carries no meaning.
+The strength of the signal, and what the channel does to that strength, is the subject of the
+panels below: this panel answers only <i>where on the curve are you sitting, and how much of the
+curve do you span</i>.</p>
+<p class="sub"><b>Why this axis is in decibels while the panels below are linear.</b> What the
+channel does is a <b>multiplication</b>, one frequency at a time: what arrives at a frequency is
+what was sent at that frequency, times the channel's gain at that frequency. Panels 4 to 6 draw
+that multiplication, so they use a plain linear ratio. In decibels the same statement becomes an
+<b>addition</b>, because a logarithm turns a product into a sum: a component sent at 0 dB through
+&minus;6 dB of channel arrives at &minus;6 dB. Multiply in linear, add in decibels, one physical
+statement written two ways. This panel is in decibels because a twenty decibel notch and a six
+decibel ripple both have to be legible in one frame; the panels below are linear because the
+<i>shape</i> of a spectrum is what the receiver has to recover, and a logarithmic axis changes
+that shape.</p>
+<p class="sub">Zero decibels on this axis is <b>the level that would arrive with one path and no
+echo</b>. Path loss has been divided out, so 0 dB is not the transmitted power: over any real
+distance the direct ray alone arrives tens of decibels down, and that loss is the subject of
+session 3 part 2 rather than of this page. With the echo at 0.9 of the direct ray the curve runs
+from about +5.6 dB where the two add to &minus;20 dB where they nearly cancel.</p>
+
+<h2>The one experiment to run</h2>
+<p class="sub">Press <b>Flat: a 1 MHz signal</b>, then <b>Selective: widen it to 160 MHz</b>.
+Nothing about the room changes between those two: same two paths, same path length difference,
+same notches in the same places. Only the width of the signal changes. The gain across the signal
+goes from <b>0.15 dB</b> to <b>25.57 dB</b>, the verdict flips, and in the last panel the
+constellation goes from every symbol read correctly to <b>three of eight read as the wrong
+symbol</b>. That is the whole of Stallings' point in one slider, and it is why the term selective
+is defined relative to the bandwidth of the signal rather than as a property of the channel.</p>
+
+<h2>Things worth noticing</h2>
+<ul>
+  <li><b>Flat does not mean harmless.</b> Press <b>Flat but deep in a notch</b>. The verdict is
+      flat, because the whole of that narrow signal moves together: the gain varies by only
+      0.37 dB across it, and every symbol is still read correctly. But the common gain has fallen
+      to <b>0.10</b>, which is twenty decibels down, and the link is in serious trouble. Then press
+      <b>Flat and on a peak</b>: same width, same room, and the gain is <b>1.90</b>, the two copies
+      adding perfectly. Flat and selective answer the question <i>is the band treated unevenly</i>,
+      not the question <i>is the signal any good</i>. The cure for the notch is power; the cure for
+      selectivity is not.</li>
+  <li><b>Width alone does not decide the outcome either.</b> <b>The textbook example: 80 MHz</b>
+      and <b>Same 80 MHz, every symbol misread</b> are the same width, and they even vary by
+      similar amounts, 21.74 dB against 25.58 dB. Yet the first reads <b>every symbol
+      correctly</b> and the second loses <b>all eight</b>. What differs is where the notch falls
+      inside the band: in the first the band runs from a peak down into a notch at its edge, so
+      most of the signal is in good gain; in the second the notch sits inside the band, so the
+      components on either side of it are pulled apart in opposite directions. Bandwidth sets how
+      much of the curve you span, and the variation number tells you the range, but neither tells
+      you the <i>shape</i> over that span, and the shape is what breaks the symbols.</li>
+  <li><b>Narrow is relative to the notch, not an absolute.</b> Leave the signal on the notch and
+      widen it step by step. The verdict flips to selective well before 160 MHz, because this notch
+      is only about 17 MHz wide at its ten decibel points. A signal is narrowband or wideband with
+      respect to the structure of the particular channel it is sitting in, which is exactly why
+      Stallings defines the term relative to the signal bandwidth and refuses to attach a number
+      to it.</li>
+  <li><b>Where the notch spacing comes from.</b> Two paths differing by ΔL put a whole extra
+      wavelength into the longer path every time the frequency rises by c / ΔL, so the pattern
+      repeats with that period. A long echo means a small period, which is why pushing the path
+      length difference up crowds the notches together and makes even a narrow signal look
+      selective. The chip above reports what fraction of one such period your signal covers.</li>
+  <li><b>The verdict needs a number, and neither textbook gives one.</b> This page calls the
+      channel selective when the gain varies by more than <b>3 dB</b> across the signal. That
+      three is a convention of this page and nothing more. Stallings states the test in words only:
+      if attenuation occurs over a portion of the bandwidth of the signal, the fading is selective;
+      nonselective fading implies the signal bandwidth is narrower than, and completely covered by,
+      the spectrum affected by the fading. The quantity that would make the boundary numerical is
+      the coherence bandwidth, which appears in neither book for this course and is therefore not
+      taught in it.</li>
+  <li><b>This is why wide channels are hard.</b> Every WiFi generation has widened the channel:
+      20, then 40, then 80, then 160 MHz. The bandwidth slider walks exactly those numbers. Hold
+      the room fixed and step up through them: 3.13 dB, 6.73 dB, 21.74 dB, 25.57 dB. The capacity
+      you are buying comes with a channel that is more selective at every step, and session 4 is
+      about what to do with that.</li>
+</ul>
+
+<h2>Panels 2 to 7: the same channel, now with a real signal through it</h2>
+<p class="sub">Panel 1 treated the signal as a block of spectrum. The panels below build it from
+the beginning, through the <b>same channel</b> and the <b>same controls</b>: bits, then symbols,
+then a waveform, then its spectrum, then the channel acting on each frequency component
+separately, then the components added back up at the receiver, and finally the constellation the
+receiver actually reads. Six more steps, every one of them computed rather than drawn. Change any
+control and panel 1 and these panels move together, because there is only one room and one
+signal on this page.</p>
 
 <canvas id="mcv" width="1280" height="1230"></canvas>
 
@@ -260,30 +236,33 @@ block and the difference is invisible; at 80 Msym/s it is 6 percent, and what di
 sits on the first symbol. None of it touches the lesson: the channel multiplies each frequency by
 its own gain whether the spectrum is a row of lines or a continuous curve.</p>
 
-<h2>The six panels</h2>
+<h2>What each panel shows</h2>
 <ul>
-  <li><b>1, the bits.</b> The raw stream, grouped into symbols. With 16-QAM each group of four bits
+  <li><b>2, the bits.</b> The raw stream, grouped into symbols. With 16-QAM each group of four bits
       becomes one symbol: the first two bits choose the horizontal level, the last two the vertical
       one, using the Gray mapping from session 2 part 2.</li>
-  <li><b>2, the symbols as a waveform.</b> Each symbol becomes a pulse of its own height, and the
-      pulses are added. The trace drawn is the in-phase part. Notice the pulses overlap in time,
+  <li><b>3, the symbols as a waveform.</b> Each symbol becomes a pulse of its own height, and the
+      pulses are added, then the sum is carried on the sine wave, so what is drawn is the real
+      transmitted waveform and not one of its two branches. Notice the pulses overlap in time,
       which is deliberate and not a fault: a raised cosine pulse is shaped so that at each symbol
       instant, marked by the ticks, every other pulse is passing through zero.</li>
-  <li><b>3, the spectrum of that waveform.</b> One bar per frequency component, spacing 1/T as
+  <li><b>4, the spectrum of that waveform.</b> One bar per frequency component, spacing 1/T as
       explained above. This is the same waveform, written differently.</li>
-  <li><b>4, the channel, component by component.</b> The channel gain is drawn across the signal's
+  <li><b>5, the channel, component by component.</b> The channel gain is drawn across the signal's
       own stretch of spectrum, and each bar is multiplied by the value of that curve at its own
       frequency. Grey is what was sent, colour is what arrived.</li>
-  <li><b>5, adding the components back up.</b> The received waveform is nothing more than the sum
+  <li><b>6, adding the components back up.</b> The received waveform is nothing more than the sum
       of the received bars. Drag the rebuild slider from 1 upwards and watch it assemble: a few
       components give a crude shape, all of them give the exact received signal. This is where the
       flat and selective cases part company. In the flat case every component was scaled by the
       same factor, so the sum is the transmitted waveform at a different size. In the selective
       case the components were scaled differently, so the sum is a <b>different waveform</b>, and
       no amount of volume will turn it back into the original.</li>
-  <li><b>6, the symbols the receiver reads.</b> Sampled at the symbol instants, after the receiver
-      has chosen its sampling moment and corrected one overall complex gain. Open circles are where
-      the symbols were sent.</li>
+  <li><b>7, the symbols the receiver reads.</b> Sampled at the symbol instants, after the receiver
+      has chosen its sampling moment and corrected one overall complex gain. Open circles are the
+      alphabet, dotted lines are the decision boundaries, and each arrow runs from where a symbol
+      was sent to where it arrived. An arrow that crosses a boundary is a symbol the receiver reads
+      as a different symbol, and those are drawn in red and ringed.</li>
 </ul>
 
 <h2>The number that decides whether it matters</h2>
@@ -291,12 +270,24 @@ its own gain whether the spectrum is a row of lines or a continuous curve.</p>
 nearest constellation point</b>, which is exactly how far a symbol may stray before it is read as
 its neighbour, and it reports the <b>worst</b> symbol rather than the average, because one symbol
 over the line is already a wrong symbol. Above 1.00 means at least one symbol was misread.</p>
-<p class="sub">Press the four presets in order. The narrow signal gives 0.06 and is perfect. The
-wide one gives 1.23 and loses a symbol. The narrow signal parked in a notch gives 0.23, so every
-symbol is still read correctly even though the common gain has fallen to 0.10, which is twenty
-decibels down: that signal is <b>weak but not distorted</b>, and the cure for it is power. The last
-preset keeps the channel and the width and only moves to 64-QAM, where the points sit closer
-together, and the figure rises to 2.20.</p>
+<p class="sub">Walk the presets from left to right and watch that one number.</p>
+<table class="bg">
+  <tr><th>preset</th><th>width</th><th>gain varies</th><th>worst symbol</th><th>misread</th></tr>
+  <tr><td>Flat: a 1 MHz signal</td><td>1 MHz</td><td>0.15 dB</td><td>0.01</td><td>0 of 8</td></tr>
+  <tr><td>The textbook example: 80 MHz</td><td>80 MHz</td><td>21.74 dB</td><td>0.85</td><td>0 of 8</td></tr>
+  <tr><td>Flat but deep in a notch</td><td>1 MHz</td><td>0.37 dB</td><td>0.17</td><td>0 of 8</td></tr>
+  <tr><td>Flat and on a peak</td><td>1 MHz</td><td>0.00 dB</td><td>0.01</td><td>0 of 8</td></tr>
+  <tr><td>Selective: widen it to 160 MHz</td><td>160 MHz</td><td>25.57 dB</td><td>2.09</td><td>3 of 8</td></tr>
+  <tr><td>Selective, and 64-QAM to boot</td><td>160 MHz</td><td>25.57 dB</td><td>3.47</td><td>7 of 8</td></tr>
+  <tr><td>Same 80 MHz, every symbol misread</td><td>80 MHz</td><td>25.58 dB</td><td>4.48</td><td>8 of 8</td></tr>
+</table>
+<p class="sub">Three readings worth taking from that table. The <b>notch</b> row is flat and
+undamaged yet twenty decibels down, so it is weak and not distorted, and power would fix it. The
+<b>64-QAM</b> row changes nothing about the room or the width and only moves the constellation
+points closer together, and the count of misread symbols more than doubles: how much distortion
+you can absorb is a property of the modulation, not only of the channel. The <b>last two 80 MHz
+rows</b> are the same width in the same kind of room and end at opposite extremes, which is the
+warning against reading bandwidth alone as the answer.</p>
 
 <footer>
   Sources. The mechanism and the worked example are Steenkiste, <i>Introduction to Wireless
@@ -319,7 +310,13 @@ together, and the figure rises to 2.20.</p>
   var TIA_R = [1.00, 1.68, 2.80, 3.54, 4.48, 5.66, 6.30];  // xep tang dan
   var TIA_A = [0.90, 0.55, 0.45, 0.38, 0.32, 0.28, 0.25];
   var BW = [1, 5, 10, 20, 40, 80, 160];            // MHz
-  var FA = 5.00e9, FB = 5.40e9;
+  // Cua so tan so cua bang 1 phai TRUNG voi dai dinh vi o bang 4, va phai du
+  // rong cho moi vi tri num: song mang toi 5,400 GHz voi nua be rong 80 MHz
+  // la 5,480 GHz. Truoc khi gop, bang nay lay 5,0 toi 5,4 va EP song mang
+  // vao trong, nen o 160 MHz dat tai 5,040 GHz no ve dai o 5,00 tới 5,16
+  // trong khi cac bang duoi dung 4,96 tới 5,12: hai nua trang mo ta hai tin
+  // hieu khac nhau. Cong kiem "cung mot kenh" bat duoc 2026-10-18.
+  var FA = 4.90e9, FB = 5.50e9;
   var DB_LO = -24, DB_HI = 6;
   var NGUONG = 3.0;
   // So chu ky song mang VE RA tren moi ky tu. Song mang that o 5 GHz voi
@@ -339,17 +336,22 @@ together, and the figure rises to 2.20.</p>
   window.dapUng = dapUng;                           // de cong doi chieu goi duoc
 
   var E = function(id){ return document.getElementById(id); };
-  var sl = {b:E('b'), c:E('c'), d:E('d'), k:E('k')};
+  // Khoi nay va khoi phia duoi dung CHUNG mot bo num. Mai chot 2026-10-18:
+  // gop hai phan thanh mot mach, vi tach ra thi sinh vien khong noi duoc
+  // "fading phang trong nhu the nay" voi "no lam hong ky tu nhu the kia".
+  var sl = {b:E('mb'), c:E('mc'), d:E('md')};
+  var NTIA = 2;   // co dinh hai tia: mot tia truc tiep va mot tieng vong
   var cv = E('cv2'), g = cv.getContext('2d');
 
   function tinh(){
     var bw = BW[+sl.b.value]*1e6;
     var dl = (+sl.d.value)/10;
-    var ntia = +sl.k.value;
+    var ntia = NTIA;
     var fc = (+sl.c.value)*1e6;
     // Giu ca dai tin hieu nam trong khung ve, neu khong thi phep do bien
     // thien se chi do phan nhin thay duoc, tuc do nham mot thu khac.
-    fc = Math.max(FA + bw/2, Math.min(FB - bw/2, fc));
+    // khong ep song mang nua: cua so da du rong, va ep thi bang 1 se noi
+    // ve mot tin hieu khac voi cac bang duoi
     var N = 1600, f = new Float64Array(N), h = new Float64Array(N), i;
     for (i = 0; i < N; i++){
       f[i] = FA + (FB - FA)*i/(N - 1);
@@ -371,8 +373,7 @@ together, and the figure rises to 2.20.</p>
     var W = cv.width, H = cv.height;
     g.clearRect(0, 0, W, H);
     var x0 = 78, x1 = W - 24;
-    var yA0 = 46,  yA1 = 272;                      // khung tren: dap ung kenh
-    var yB0 = 340, yB1 = 548;                      // khung duoi: pho nhan duoc
+    var yA0 = 66,  yA1 = 258;                      // khung duy nhat: dap ung kenh
     function fx(f){ return x0 + (f - FA)/(FB - FA)*(x1 - x0); }
     function fy(d){ var c = Math.max(DB_LO, Math.min(DB_HI, d));
                     return yA1 - (c - DB_LO)/(DB_HI - DB_LO)*(yA1 - yA0); }
@@ -406,14 +407,19 @@ together, and the figure rises to 2.20.</p>
       var mauD = s.bien < NGUONG ? '#2A9D8F' : '#D81E5B';
       g.strokeStyle = mauD; g.lineWidth = 1;
       g.beginPath();
-      g.moveTo(ba, yA1 + 6); g.lineTo(ba, yA1 + 12);
-      g.lineTo(bb, yA1 + 12); g.lineTo(bb, yA1 + 6); g.stroke();
+      g.moveTo(ba, yA1 + 34); g.lineTo(ba, yA1 + 40);
+      g.lineTo(bb, yA1 + 40); g.lineTo(bb, yA1 + 34); g.stroke();
       g.fillStyle = mauD; g.textAlign = 'center'; g.font = '13px Calibri, sans-serif';
-      var giua = Math.max(x0 + 120, Math.min(x1 - 120, (ba + bb)/2));
+      // Chan hai dau theo CHIEU RONG THAT cua dong chu, do bang measureText.
+      // Dat cung mot so nhu truoc thi doi chu dai hon mot chut la chu tran
+      // ra ngoai khung, va do dung la dieu da xay ra.
+      var tnhan = 'the band your signal occupies, ' + (s.bw/1e6).toFixed(0) +
+                  ' MHz wide · frequency only, not strength';
+      var nua = g.measureText(tnhan).width/2 + 4;
+      var giua = Math.max(x0 + nua, Math.min(x1 - nua, (ba + bb)/2));
       // Gop thanh MOT dong: hai dong o day bi ep sat vao ten truc cua khung
       // duoi, chi con 15 px.
-      g.fillText('the band your signal occupies, ' + (s.bw/1e6).toFixed(0) +
-                 ' MHz wide · frequency only, not strength', giua, yA1 + 28);
+      g.fillText(tnhan, giua, yA1 + 56);
     })();
 
     g.strokeStyle = '#1A1F36'; g.lineWidth = 1;
@@ -425,7 +431,13 @@ together, and the figure rises to 2.20.</p>
       g.fillText(dd + '', x0 - 10, fy(dd) + 4);
     }
     g.textAlign = 'left';
+    g.font = '14px Calibri, sans-serif'; g.fillStyle = '#1A1F36';
+    g.fillText('1 · the channel this room makes, and where your signal sits',
+               x0, yA0 - 30);
+    g.font = '13px Calibri, sans-serif'; g.fillStyle = '#5A6272';
     g.fillText('channel gain, dB', x0 + 4, yA0 - 10);
+    g.textAlign = 'right'; g.fillText('frequency, GHz', x1, yA0 - 10);
+    g.textAlign = 'left';
 
     g.strokeStyle = '#2A9D8F'; g.lineWidth = 2;
     g.beginPath();
@@ -435,102 +447,30 @@ together, and the figure rises to 2.20.</p>
     }
     g.stroke();
 
-    // --- khung duoi: pho phat va pho nhan ---------------------------------
-    // Thang dung cua khung duoi lay theo dinh cua chinh cau hinh nay, de
-    // khong bao gio phai cat ngon. Muc 1,0 la muc KHONG CO DA DUONG, va no
-    // duoc ve ra bang net dut nen nguoi doc thay duoc minh dang o tren hay
-    // duoi no. Ban dau em chia cho 1,9 roi cat o 1,05; voi nhieu tia thi
-    // dinh vuot qua 1,9 va hinh bi cat ngon ma khong noi gi.
-    var vmax = 1.05;
-    for (var q = 0; q <= 400; q++){
-      var a0 = Math.pow(10, dapUng(s.fc - s.bw/2 + s.bw*q/400, s.dl, s.ntia)/20);
-      if (a0 > vmax) vmax = a0;
-    }
-    vmax *= 1.10;
-    function gy(v){ return yB1 - (v/vmax)*(yB1 - yB0)*0.95; }
-    g.strokeStyle = '#1A1F36'; g.lineWidth = 1;
-    g.beginPath(); g.moveTo(x0, yB1); g.lineTo(x1, yB1);
-    g.moveTo(x0, yB0); g.lineTo(x0, yB1); g.stroke();
-    g.fillStyle = '#5A6272'; g.textAlign = 'left';
-    g.fillText('what arrives, as a multiple of the one-path level (amplitude, not power)',
-               x0 + 4, yB0 - 10);
-    // Truc dung cua khung duoi truoc day KHONG he co vach chia nao: chi co mot
-    // net dut o muc 1,0 lam moc. Khong doc duoc dinh cao bao nhieu, mep phai
-    // con lai bao nhieu. Nay chia vach 0,5 mot.
-    g.textAlign = 'right';
-    for (var vv = 0; vv <= vmax + 1e-9; vv += 0.5){
-      g.strokeStyle = '#1A1F36'; g.lineWidth = 1;
-      g.beginPath(); g.moveTo(x0, gy(vv)); g.lineTo(x0 - 6, gy(vv)); g.stroke();
-      g.fillStyle = '#5A6272';
-      g.fillText(vv.toFixed(1), x0 - 10, gy(vv) + 4);
-    }
-    g.textAlign = 'left';
-
-    var xa = fx(s.fc - s.bw/2), xb = fx(s.fc + s.bw/2);
-    // pho phat: khoi phang, ve bang net dut
-    g.setLineDash([5, 4]); g.strokeStyle = '#9AA3B2'; g.lineWidth = 1.5;
-    g.beginPath();
-    g.moveTo(xa, yB1); g.lineTo(xa, gy(1)); g.lineTo(xb, gy(1)); g.lineTo(xb, yB1);
-    g.stroke(); g.setLineDash([]);
-    g.fillStyle = '#9AA3B2'; g.textAlign = 'left';
-    // Nhan cu ghi "sent, and the level with no multipath", tuc mot net dut
-    // mang hai nghia cung luc. Hai nghia ay chi trung nhau vi hinh da chia
-    // het suy hao duong truyen di; noi gon lai thi nguoi doc tuong cong suat
-    // phat bang cong suat nhan. Nay chi ghi mot nghia, nghia con lai nam o
-    // ten truc va o doan van.
-    g.fillText('the flat spectrum that was sent, drawn at 1.0',
-               Math.min(xb + 8, x1 - 270), gy(1) + 4);
-
-    // pho nhan: khoi phang nhan voi dap ung
-    var mau = s.bien < NGUONG ? '#2A9D8F' : '#D81E5B';
-    g.fillStyle = s.bien < NGUONG ? 'rgba(42,157,143,0.22)' : 'rgba(216,30,91,0.22)';
-    g.strokeStyle = mau; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(xa, yB1);
-    var NP = 500;
-    for (var j = 0; j <= NP; j++){
-      var ff = s.fc - s.bw/2 + s.bw*j/NP;
-      var a = Math.pow(10, dapUng(ff, s.dl, s.ntia)/20);
-      g.lineTo(fx(ff), gy(a));
-    }
-    g.lineTo(xb, yB1); g.closePath(); g.fill(); g.stroke();
-    // Khoi to nay cung chua tung co nhan tren hinh.
-    // Dat o goc tren ben phai khung: vung nay luon trong, con ngay duoi khoi
-    // to thi dung vao hang so ghi tan so.
-    g.fillStyle = mau; g.textAlign = 'right';
-    g.fillText('the shaded block is what arrives', x1 - 6, yB0 + 16);
-    g.textAlign = 'left';
-
-    // truc tan so dung chung cho ca hai khung
+    // truc tan so, nay bam thang vao khung kenh vi khung pho nhan duoc da
+    // duoc bo di: Mai chot 2026-10-18 rang no thua, phan duoi trang da cho
+    // mot tin hieu dieu che that di qua kenh roi.
     g.fillStyle = '#5A6272'; g.textAlign = 'center';
-    for (var gf = 5.0; gf <= 5.401; gf += 0.1){
+    g.font = '13px Calibri, sans-serif';
+    for (var gf = 4.9; gf <= 5.501; gf += 0.1){
       g.strokeStyle = '#1A1F36'; g.lineWidth = 1;
-      g.beginPath(); g.moveTo(fx(gf*1e9), yB1); g.lineTo(fx(gf*1e9), yB1 + 6); g.stroke();
-      g.fillText(gf.toFixed(1), fx(gf*1e9), yB1 + 20);
+      g.beginPath(); g.moveTo(fx(gf*1e9), yA1); g.lineTo(fx(gf*1e9), yA1 + 6); g.stroke();
+      g.fillText(gf.toFixed(1), fx(gf*1e9), yA1 + 20);
     }
-    g.textAlign = 'right';
-    g.fillText('frequency, GHz', x1, yB1 + 38);
   }
 
   function chay(){
     var s = tinh();
-    E('lb').textContent = (s.bw/1e6).toFixed(0);
-    E('lc').textContent = (s.fc/1e9).toFixed(3);
-    E('ld').textContent = s.dl.toFixed(1);
-    E('lsp').textContent = (s.chuky/1e6).toFixed(0);
-    E('lk').textContent = s.ntia;
-    var phang = s.bien < NGUONG;
-    E('cv').innerHTML = 'Gain varies <b>' + s.bien.toFixed(1) + ' dB</b> across the signal';
-    E('cv').className = 'chip ' + (phang ? 'tot' : 'xau');
-    E('ck').innerHTML = 'Verdict <b>' + (phang ? 'flat' : 'selective') + '</b>';
-    E('ck').className = 'chip ' + (phang ? 'tot' : 'xau');
+    E('mlsp').textContent = (s.chuky/1e6).toFixed(0);
     E('cp').innerHTML = 'The signal covers <b>' +
       (s.bw/s.chuky*100).toFixed(0) + '%</b> of one period';
-    E('cm').innerHTML = 'Mean gain over the signal <b>' + s.tb.toFixed(1) + ' dB</b>';
-    E('cm').className = 'chip ' + (s.tb < -6 ? 'xau' : '');
+    // Cac nhan va chip con lai do khoi phia duoi ghi, de mot dai luong chi
+    // co MOT cho sinh ra no.
     ve(s);
   }
+  window.veKenh = chay;   // khoi phia duoi goi lai sau moi lan doi num
 
-  ['b','c','d','k'].forEach(function(x){ sl[x].addEventListener('input', chay); });
+  ['b','c','d'].forEach(function(x){ sl[x].addEventListener('input', chay); });
   // Bo loc PHAI ghi ro data-b. Trang co hai phan, moi phan mot bo num rieng,
   // va nut cua phan hai cung mang data-c va data-d. Bo loc '.nut' tran se
   // bat ca nut cua phan hai: bam mot nut o duoi thi bon num o tren deu doi,
@@ -539,7 +479,7 @@ together, and the figure rises to 2.20.</p>
   Array.prototype.forEach.call(document.querySelectorAll('.nut[data-b]'), function(n){
     n.addEventListener('click', function(){
       sl.b.value = n.dataset.b; sl.c.value = n.dataset.c;
-      sl.d.value = n.dataset.d; sl.k.value = n.dataset.k;
+      sl.d.value = n.dataset.d;
       chay();
     });
   });
@@ -570,7 +510,12 @@ together, and the figure rises to 2.20.</p>
   var A_VONG = 0.9;
   var MMAU = 32, BETA = 0.35;
   var MODS = [4, 16, 64], TENMOD = ['QPSK', '16-QAM', '64-QAM'];
-  var RS = [1e6, 5e6, 10e6, 20e6, 40e6, 80e6];
+  // Num dung chung cua ca trang la BE RONG BANG TAN, theo day be rong kenh
+  // WiFi. Toc do ky tu suy ra tu no: xung cosin nang he so BETA chiem
+  // (1+BETA)*Rs, nen Rs = bw/(1+BETA), va vi the day toc do khong tron.
+  // Phai khop nguyen van voi BWMHZ trong mohinh_dieuche.py.
+  var BWMHZ = [1, 5, 10, 20, 40, 80, 160];
+  function tocDo(bi){ return BWMHZ[bi]*1e6/(1 + BETA); }
   var NSYMS = [4, 8, 16, 32];
   var FA = 5.00e9, FB = 5.40e9;
   var NGUONG = 3.0;
@@ -631,11 +576,11 @@ together, and the figure rises to 2.20.</p>
   }
 
   var E = function(id){ return document.getElementById(id); };
-  var sl = {m:E('mm'), n:E('mn'), r:E('mr'), c:E('mc'), d:E('md'), k:E('mk')};
+  var sl = {m:E('mm'), n:E('mn'), b:E('mb'), c:E('mc'), d:E('md'), k:E('mk')};
   var cv = E('mcv'), g = cv.getContext('2d');
 
   function tinh(){
-    var M = MODS[+sl.m.value], Rs = RS[+sl.r.value], nsym = NSYMS[+sl.n.value];
+    var M = MODS[+sl.m.value], Rs = tocDo(+sl.b.value), nsym = NSYMS[+sl.n.value];
     var fc = (+sl.c.value)*1e6, dl = (+sl.d.value)/10, tau = dl/C0;
     var sym = kyTu(M, nsym);
     var Ts = 1/Rs, L = nsym*MMAU, dt = Ts/MMAU, i, k, n, r;
@@ -753,9 +698,17 @@ together, and the figure rises to 2.20.</p>
     s.saiKyTu = sai; s.docRa = nho;
     var chuan = Math.sqrt(s.sym.re.reduce(function(a,x,i){
       return a + x*x + s.sym.im[i]*s.sym.im[i]; }, 0)/s.nsym);
-    var lo = 1e9, hi = -1e9, k;
-    for (k = 0; k < s.L; k++) if (Math.abs(s.fk[k]) <= s.W){
-      var dB = 20*Math.log10(Math.sqrt(s.Hr[k]*s.Hr[k] + s.Hi[k]*s.Hi[k]));
+    // Do bien thien he so phai do bang cach QUET LIEN TUC qua bang, dung
+    // cach bang 1 ve duong cong. Truoc day no do tren cac VACH PHO roi rac,
+    // ma vach ngoai cung khong cham toi mep bang (voi 8 ky tu, vach cuoi o
+    // 37,0 MHz trong khi mep bang o 40,0 MHz), nen no bo sot dung cho he so
+    // cuc doan nhat: 17,75 dB thay vi 21,74 dB. Con so in ra khi ay khong
+    // khop voi duong cong nguoi doc dang nhin. Cong kiem bat duoc 2026-10-18.
+    var lo = 1e9, hi = -1e9, k, tau_b = s.dl/C0;
+    for (k = 0; k <= 2000; k++){
+      var fb = s.fc - s.W + 2*s.W*k/2000, ph_b = 2*Math.PI*fb*tau_b;
+      var hrb = 1 + A_VONG*Math.cos(ph_b), hib = -A_VONG*Math.sin(ph_b);
+      var dB = 20*Math.log10(Math.sqrt(hrb*hrb + hib*hib));
       if (dB < lo) lo = dB; if (dB > hi) hi = dB;
     }
     s.dmin = dmin; s.bienDuPhong = bdp;
@@ -824,7 +777,7 @@ together, and the figure rises to 2.20.</p>
     }
 
     // 1. bit va ky tu -----------------------------------------------------
-    nhan('1 · the bits, grouped into symbols', x0, 28, '#1A1F36', 14);
+    nhan('2 · the bits, grouped into symbols', x0, 28, '#1A1F36', 14);
     var kb = s.sym.kbit, nb = s.nsym*kb, bw = Math.min(20, (x1-x0)/nb);
     // Khi khoi dai va bac dieu che cao thi moi o chi con vai pixel, in chu
     // so vao do thi cac chu de len nhau. Qua nguong thi ve o tron, khong in.
@@ -853,7 +806,7 @@ together, and the figure rises to 2.20.</p>
     //    ky tu chua khoang mot nghin chu ky va khong the ve. Mo hinh van tinh
     //    o tan so that; day thuan tuy la chuyen hien thi, va trang noi ro.
     var a0 = 104, a1 = 226;
-    nhan('2 · the modulated waveform: one sine whose amplitude and phase '
+    nhan('3 · the modulated waveform: one sine whose amplitude and phase '
          + 'change each symbol', x0, a0 - 8, '#1A1F36', 14);
     var bmax = 0;
     for (i = 0; i < s.L; i++)
@@ -886,7 +839,7 @@ together, and the figure rises to 2.20.</p>
 
     // 3. pho vach ----------------------------------------------------------
     var b0 = 330, b1 = 450;
-    nhan('3 · its spectrum: one bar per frequency component, '
+    nhan('4 · its spectrum: one bar per frequency component, '
          + (s.khoangVach/1e6).toFixed(2) + ' MHz apart, sitting on the carrier',
          x0, b0 - 56, '#1A1F36', 14);
     // Dai dinh vi: cho thay doan pho nay nam o DAU trong ca bang 5,0 toi 5,4
@@ -966,7 +919,7 @@ together, and the figure rises to 2.20.</p>
 
     // 4. kenh tac dong tung thanh phan -------------------------------------
     var c0 = 506, c1 = 626;
-    nhan('4 · the channel, acting on each component separately',
+    nhan('5 · the channel, acting on each component separately',
          x0, c0 - 14, '#1A1F36', 14);
     veTruc(c1, true);
     for (k = 0; k < s.L; k++){
@@ -997,7 +950,7 @@ together, and the figure rises to 2.20.</p>
     // 5. cong cac thanh phan tro lai ---------------------------------------
     var d0 = 700, d1 = 830;
     var K = Math.min(+sl.k.value, s.L);
-    nhan('5 · adding the received components back up, ' + K + ' of ' + s.L,
+    nhan('6 · adding the received components back up, ' + K + ' of ' + s.L,
          x0, d0 - 8, '#1A1F36', 14);
     var yre = new Float64Array(s.L), yim = new Float64Array(s.L);
     for (var q = 0; q < K; q++){
@@ -1038,7 +991,7 @@ together, and the figure rises to 2.20.</p>
 
     // 6. chom sao ----------------------------------------------------------
     var e0 = 884, eS = 300, eX = x0;
-    nhan('6 · the symbols the receiver reads', x0, e0 - 8, '#1A1F36', 14);
+    nhan('7 · the symbols the receiver reads', x0, e0 - 8, '#1A1F36', 14);
     var R = 0, rx = [], ry6 = [];
     for (i = 0; i < s.bang.re.length; i++)
       R = Math.max(R, Math.abs(s.bang.re[i]), Math.abs(s.bang.im[i]));
@@ -1140,8 +1093,8 @@ together, and the figure rises to 2.20.</p>
     E('mlb').textContent = s.sym.kbit;
     E('mln').textContent = s.nsym;
     E('mlT').textContent = (s.nsym*s.Ts*1e6).toFixed(2);
-    E('mlr').textContent = (s.Rs/1e6).toFixed(0);
-    E('mlw').textContent = (2*s.W/1e6).toFixed(1);
+    E('mlr').textContent = (s.Rs/1e6).toFixed(1);
+    E('mlw').textContent = (2*s.W/1e6).toFixed(0);
     E('mlc').textContent = (s.fc/1e9).toFixed(3);
     E('mld').textContent = s.dl.toFixed(1);
     E('mlk').textContent = (+sl.k.value >= s.L) ? 'all' : sl.k.value;
@@ -1165,14 +1118,14 @@ together, and the figure rises to 2.20.</p>
     ve(s);
   }
 
-  ['m','n','r','c','d'].forEach(function(x){
+  ['m','n','b','c','d'].forEach(function(x){
     sl[x].addEventListener('input', function(){ sl.k.value = sl.k.max; chay(); });
   });
   sl.k.addEventListener('input', chay);
   Array.prototype.forEach.call(document.querySelectorAll('.nut[data-m]'), function(b){
     b.addEventListener('click', function(){
       sl.m.value = b.dataset.m; sl.n.value = b.dataset.n;
-      sl.r.value = b.dataset.r; sl.c.value = b.dataset.c;
+      sl.b.value = b.dataset.b; sl.c.value = b.dataset.c;
       sl.d.value = b.dataset.d; sl.k.value = 9999;
       chay();
     });
