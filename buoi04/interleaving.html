@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Why interleaving works</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;
+      --mut:#5A6272;--line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE;max-width:900px;line-height:1.5}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.55}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+.dk{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:0 0 16px;background:var(--tint)}
+.hang{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px 24px}
+label.t{display:block;font-size:13.5px;color:var(--mut);margin:0 0 3px}
+label.t b{color:var(--ink);font-size:14.5px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 11px;
+  font-size:13px;color:var(--mut);background:#fff;margin:0 6px 6px 0}
+.chip b{color:var(--ink)}
+.chip.xau b{color:var(--mag)}
+.chip.tot b{color:var(--teal)}
+h2{font-family:Cambria,Georgia,serif;font-size:19px;margin:24px 0 8px;padding-bottom:6px;
+   border-bottom:1px solid var(--line)}
+ul{margin:8px 0 0;padding-left:20px;font-size:14.5px;color:var(--mut);line-height:1.65}
+ul b{color:var(--ink)}
+.nut{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:8px;
+  padding:6px 12px;font-size:13.5px;color:var(--ink);cursor:pointer;margin:0 6px 6px 0}
+.nut:hover{border-color:var(--acc)}
+code{background:var(--tint);padding:1px 5px;border-radius:4px;font-size:13.5px}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13.5px;line-height:1.6}
+
+table.bg{border-collapse:collapse;margin:10px 0 14px;font:14px Calibri,sans-serif}
+table.bg th,table.bg td{border-bottom:1px solid var(--line);padding:5px 16px 5px 0;text-align:left}
+table.bg th{color:var(--mut);font-weight:600;border-bottom:1px solid #C9D0DB}
+table.bg td:nth-child(n+2),table.bg th:nth-child(n+2){text-align:right}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · SESSION 4 · PART 1</div>
+  <h1>Why interleaving works</h1>
+  <p>A deep fade is not instantaneous. It lasts while the geometry holds, and every bit sent
+  meanwhile is at risk, so the errors on a radio link arrive in clumps. Interleaving does not
+  remove one single error. It moves them, and that is enough.</p>
+</header>
+<a class="veml" href="../index.html">Back to the INT3303 simulation index</a>
+
+<main>
+
+<div class="dk">
+  <div class="hang">
+    <div>
+      <label class="t">Walking speed <b><span id="lv">4.0</span> km/h</b></label>
+      <input type="range" id="v" min="5" max="150" step="1" value="40">
+    </div>
+    <div>
+      <label class="t">Carrier <b><span id="lf">5 GHz</span></b>, half a wavelength is
+        <b><span id="lw">3.0</span> cm</b></label>
+      <input type="range" id="f" min="0" max="1" step="1" value="1">
+    </div>
+    <div>
+      <label class="t">Reflecting objects <b><span id="lk">4</span></b></label>
+      <input type="range" id="k" min="0" max="12" step="1" value="4">
+    </div>
+  </div>
+  <div class="hang">
+    <div>
+      <label class="t">Block <b><span id="ln">1000</span> bits</b> at
+        <b><span id="lr">1</span> Mbit/s</b>, so <b><span id="lt">1.00</span> ms</b> each</label>
+      <input type="range" id="n" min="0" max="3" step="1" value="2">
+    </div>
+    <div>
+      <label class="t">Data rate <b><span id="lr2">1</span> Mbit/s</b></label>
+      <input type="range" id="r" min="0" max="2" step="1" value="1">
+    </div>
+    <div>
+      <label class="t">Fade margin <b><span id="lb">14</span> dB</b> below the window mean</label>
+      <input type="range" id="b" min="6" max="24" step="1" value="14">
+    </div>
+  </div>
+  <div class="hang">
+    <div>
+      <label class="t">Interleaver depth <b><span id="ld">8</span> blocks</b></label>
+      <input type="range" id="d" min="0" max="4" step="1" value="3">
+    </div>
+    <div>
+      <label class="t">The code repairs up to <b><span id="lc">20</span>%</b> of a block,
+        <b><span id="lc2">200</span> bits</b></label>
+      <input type="range" id="c" min="5" max="40" step="1" value="20">
+    </div>
+  </div>
+  <div style="margin-top:10px">
+    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="2" data-r="1" data-b="14" data-d="3" data-c="20">A fade swallows four blocks</span>
+    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="2" data-r="1" data-b="14" data-d="0" data-c="20">Turn interleaving off</span>
+    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="2" data-r="1" data-b="14" data-d="1" data-c="20">Interleaving too shallow</span>
+    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="2" data-r="1" data-b="14" data-d="3" data-c="10">A code too weak: it backfires</span>
+    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="3" data-r="1" data-b="14" data-d="3" data-c="20">Longer blocks, 2000 bits</span>
+  </div>
+</div>
+
+<div style="margin:0 0 14px">
+  <span class="chip" id="q0">Window <b>48.0 ms</b>, 48 blocks</span>
+  <span class="chip" id="q1">Bits in error <b>0</b></span>
+  <span class="chip" id="q2">Longest run of lost blocks <b>0</b></span>
+  <span class="chip" id="q3">Lost without interleaving <b>0</b></span>
+  <span class="chip" id="q4">Lost with interleaving <b>0</b></span>
+  <span class="chip" id="q5">Delay added <b>0.0 ms</b></span>
+</div>
+
+<canvas id="cv" width="1280" height="700"></canvas>
+
+<h2>What you are looking at</h2>
+<p class="sub">The top panel is the received level over a short window of the walk, in decibels
+against its own average over that window. It is measured against the <b>local average</b> on
+purpose: the walker is also getting further away, and that steady loss is path loss, which is a
+different problem with a different cure. Taking the local average out leaves only the fading.</p>
+<p class="sub">The dashed line is the level below which the receiver can no longer read a bit.
+The page uses a <b>hard threshold</b>: a bit is counted wrong when, and only when, the level at
+that instant is below the line. In reality the probability of an error rises smoothly rather than
+switching, so this exaggerates the edges of a fade. It gets the thing that matters right, which is
+that errors come in <b>runs</b>, and it keeps the page exactly reproducible.</p>
+<p class="sub">The middle panel is the stream cut into blocks, one bar per block, showing how many
+bits in that block are wrong. The horizontal line is what the error-correcting code can repair. A
+bar above the line is a block the code cannot save. The bottom panel is the same stream after
+<b>block interleaving</b>: the blocks are shuffled in groups before transmission and unshuffled on
+arrival, exactly as in Stallings figure 5.16b, which shuffles in groups of four.</p>
+
+<h2>The one thing to notice</h2>
+<p class="sub">The <b>bits in error</b> chip does not change when you move the interleaver depth.
+Not approximately, exactly. Stallings says this twice, and it is the whole mechanism: <i>the same
+number of bits is in error, but the error-correcting code is applied to sets of bits that are
+spread out in time.</i> Interleaving repairs nothing. It converts a few blocks damaged beyond
+repair into many blocks damaged slightly, and slight damage is what a code is for.</p>
+
+<h2>Things worth trying</h2>
+<ul>
+  <li><b>Turn interleaving off.</b> Depth 1 means no shuffling. The same fade now destroys a run
+      of consecutive blocks, and the count of lost blocks jumps from zero to four.</li>
+  <li><b>Make the interleaver too shallow.</b> At depth 2 the burst is spread over two blocks
+      instead of one, which is not nearly enough: both still exceed what the code can repair. The
+      depth has to be comparable with the length of the burst measured in blocks, and the burst is
+      long because the geometry holds still for milliseconds.</li>
+  <li><b>Weaken the code and watch interleaving make things worse.</b> Press <b>A code too weak</b>.
+      When the average error rate across the whole window is already above what the code can
+      repair, spreading the errors evenly means every block is now slightly beyond repair instead
+      of a few being hopeless and the rest perfect. Interleaving buys nothing if the code cannot
+      cope with the average; it only converts bursts into an average.</li>
+  <li><b>Lengthen the blocks.</b> A 2000-bit block lasts twice as long, so the same fade spans
+      fewer blocks and the code has twice as many repairable bits to play with. Block length,
+      code strength and interleaver depth are three knobs on one tradeoff.</li>
+  <li><b>Watch the delay.</b> A block cannot be delivered until every block it was shuffled with
+      has arrived, so the depth sets a floor on latency that no processor can remove. That is the
+      cost, and it is why a voice call and a file transfer choose different depths.</li>
+</ul>
+
+<footer>
+  Sources. The mechanism and the quoted sentences are Stallings, <i>Wireless Communications and
+  Networks</i>, 2nd edition, section 5.4, printed pages 121 and 122, with figures 5.16a and 5.16b:
+  time diversity techniques aim to spread the data out over time so that a noise burst affects
+  fewer bits; if a mobile unit is moving slowly it may remain in a region of a high level of fading
+  for a relatively long interval, and the result will be a long burst of errors; the same number of
+  bits is in error, but the error-correcting code is applied to sets of bits that are spread out in
+  time; the tradeoff with time diversity is delay. The channel is the same two-ray-plus-reflectors
+  model as the slow and fast fading page of session 3, built on Steenkiste section 2.7, so the two
+  pages describe the same room. Every number on this page is computed in the browser, and a
+  separate Python implementation of the same model is compared against it number by number by the
+  build chain.
+</footer>
+</main>
+
+<script>
+/* Mo hinh kenh lay nguyen tu buoi03/fading.html: nguoi di bo roi xa may phat,
+   tia truc tiep cong cac tia phan xa. Ban Python la _build/mohinh_xen.py va
+   doichieu.py so tung so giua hai ban.
+
+   MO HINH LOI LA MOT PHEP DON GIAN HOA va trang noi ro dieu do: mot bit coi
+   nhu hong khi va chi khi muc tin hieu tai thoi diem ay nam duoi nguong. That
+   ra xac suat loi tang dan chu khong nhay bac. Doi lai, no hoan toan tat dinh,
+   khong co bo sinh so ngau nhien nao de hai ban ngon ngu troi ra khoi nhau. */
+(function(){
+  var C0 = 3.0e8, D0 = 10.0, TMAX = 60.0, NB = 48;
+  var NBIT = [100, 500, 1000, 2000];
+  var TOCDO = [1e5, 1e6, 1e7];
+  var SAU = [1, 2, 4, 8, 16];
+  var VAT = [
+    [ 33.995529,  -28.931804, 0.445832],
+    [  5.763093,   10.871483, 0.564291],
+    [ 74.700925,   24.334609, 0.491239],
+    [ 47.101206,   15.169276, 0.413592],
+    [ 19.334161,   28.432561, 0.328354],
+    [ 40.179206,    3.423474, 0.527402],
+    [ 41.722027,   25.360761, 0.629605],
+    [ 16.910812,    0.182819, 0.363373],
+    [ 12.979516,  -21.154203, 0.392368],
+    [ 71.630444,   20.417423, 0.667416],
+    [ 75.071210,  -18.018895, 0.433423],
+    [ 35.235940,   16.020553, 0.605423],
+    [  9.846527,  -29.989330, 0.310143],
+    [ 75.443902,    0.013166, 0.591709],
+    [ 41.137444,    6.697741, 0.377288],
+    [ 29.177950,   25.217769, 0.405773],
+  ];
+  var E = function(id){ return document.getElementById(id); };
+  var sl = {v:E('v'), f:E('f'), k:E('k'), n:E('n'), r:E('r'),
+            b:E('b'), d:E('d'), c:E('c')};
+  var cv = E('cv'), g = cv.getContext('2d');
+
+  function muc(t, v, lam, nref){
+    var d = D0 + v*t, i;
+    var re = Math.cos(-2*Math.PI*d/lam) * lam/(4*Math.PI*d);
+    var im = Math.sin(-2*Math.PI*d/lam) * lam/(4*Math.PI*d);
+    for (i = 0; i < nref; i++){
+      var L = Math.hypot(VAT[i][0], VAT[i][1])
+            + Math.hypot(d - VAT[i][0], VAT[i][1]);
+      var ai = VAT[i][2] * lam/(4*Math.PI*L);
+      re += ai*Math.cos(-2*Math.PI*L/lam);
+      im += ai*Math.sin(-2*Math.PI*L/lam);
+    }
+    return 20*Math.log10(Math.hypot(re, im)/(lam/(4*Math.PI*D0)));
+  }
+
+  // Cua so phai duoc chon TAT DINH, khong dat cung mot con so, neu khong thi
+  // van num mot chut la cua so lac khoi ho fade va trang trong nhu chang co
+  // chuyen gi xay ra.
+  function timHo(v, lam, nref, dai){
+    if (v <= 0) return 0;
+    var buoc = (lam/2)/v/12.0;
+    var n = Math.min(200000, Math.max(2000, Math.floor(TMAX/buoc)));
+    var sau = 1e9, tsau = 0, i;
+    for (i = 0; i < n; i++){
+      var t = i/(n-1)*TMAX;
+      if (t > TMAX - dai) break;
+      var m = muc(t, v, lam, nref);
+      if (m < sau){ sau = m; tsau = t; }
+    }
+    return Math.max(0, Math.min(TMAX - dai, tsau - dai/2));
+  }
+
+  function tinh(){
+    var v = (+sl.v.value/10)/3.6;
+    var lam = C0/(+sl.f.value === 0 ? 900e6 : 5e9);
+    var nref = +sl.k.value;
+    var N = NBIT[+sl.n.value], R = TOCDO[+sl.r.value], D = SAU[+sl.d.value];
+    var tpc = +sl.c.value, bien = +sl.b.value;
+    var Tk = N/R, dai = NB*Tk, t0 = timHo(v, lam, nref, dai);
+    var tong = NB*N, k, j;
+    var mk = new Float64Array(tong), tb = 0;
+    for (k = 0; k < tong; k++){ mk[k] = muc(t0 + k/R, v, lam, nref); tb += mk[k]; }
+    tb /= tong;
+    var nguong = tb - bien;
+    var loi = new Uint8Array(tong);
+    for (k = 0; k < tong; k++) loi[k] = mk[k] < nguong ? 1 : 0;
+
+    var khong = new Int32Array(NB), co = new Int32Array(NB);
+    for (k = 0; k < tong; k++) if (loi[k]) khong[(k/N)|0]++;
+    // Vi tri phat p trong mot nhom mang bit cua khoi goc (p % ngroup): day
+    // dung la hinh 5.16b cua Stallings, "shuffled in groups of four".
+    for (var gp = 0; gp < NB; gp += D){
+      var ng = Math.min(D, NB - gp);
+      for (var p = 0; p < ng*N; p++)
+        if (loi[gp*N + p]) co[gp + p % ng]++;
+    }
+    var tsua = tpc/100*N, i;
+    function mat(a){ var r = []; for (i = 0; i < NB; i++) if (a[i] > tsua) r.push(i); return r; }
+    var mK = mat(khong), mC = mat(co);
+    function day(a){
+      var s = new Set(a), t = 0, c = 0;
+      for (i = 0; i < NB; i++){ c = s.has(i) ? c+1 : 0; if (c > t) t = c; }
+      return t;
+    }
+    var tl = 0; for (i = 0; i < NB; i++) tl += khong[i];
+    return {v:v, lam:lam, N:N, R:R, D:D, Tk:Tk, dai:dai, t0:t0, tong:tong,
+            mk:mk, tb:tb, nguong:nguong, tongLoi:tl, khong:khong, co:co,
+            tsua:tsua, tpc:tpc, matKhong:mK.length, matCo:mC.length,
+            dayKhong:day(mK), dayCo:day(mC), tre:D*Tk, nref:nref};
+  }
+  window.moPhongXen = tinh;
+
+  var INK='#1A1F36', MUT='#5A6272', LINE='#E4E8EF', TEAL='#2A9D8F',
+      MAG='#D81E5B', ACC='#FF6B35', GREY='#C9D0DB';
+
+  function ve(s){
+    var W0 = cv.width, i;
+    g.clearRect(0, 0, W0, cv.height);
+    g.textBaseline = 'alphabetic';
+    var x0 = 78, x1 = W0 - 24;
+    function nhan(t, x, y, mau, cs, neo){
+      g.fillStyle = mau || INK;
+      g.font = (cs || 13) + 'px Calibri, sans-serif';
+      g.textAlign = neo || 'left'; g.fillText(t, x, y);
+    }
+    function X(k){ return x0 + k/s.tong*(x1 - x0); }
+
+    // --- 1. muc nhan trong cua so -----------------------------------------
+    var a0 = 44, a1 = 196;
+    nhan('1 · the received level across this window, ' +
+         (s.dai*1e3).toFixed(0) + ' ms of the walk', x0, a0 - 12, INK, 14);
+    var lo = 1e9, hi = -1e9;
+    for (i = 0; i < s.tong; i++){
+      if (s.mk[i] < lo) lo = s.mk[i];
+      if (s.mk[i] > hi) hi = s.mk[i];
+    }
+    var m = (hi - lo)*0.08 + 0.5; lo -= m; hi += m;
+    function Y(v){ return a1 - (v - lo)/(hi - lo)*(a1 - a0); }
+    // vung nam duoi nguong to mo, de thay ngay fade keo dai bao lau
+    g.fillStyle = 'rgba(216,30,91,0.12)';
+    var dang = -1;
+    for (i = 0; i <= s.tong; i++){
+      var xau = i < s.tong && s.mk[i] < s.nguong;
+      if (xau && dang < 0) dang = i;
+      if (!xau && dang >= 0){
+        g.fillRect(X(dang), a0, Math.max(X(i) - X(dang), 1), a1 - a0);
+        dang = -1;
+      }
+    }
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x0, a1); g.lineTo(x1, a1); g.stroke();
+    // duong muc: lay mau thua ra de ve, mot diem moi 2 px la du
+    g.strokeStyle = TEAL; g.lineWidth = 1.4;
+    g.beginPath();
+    var B = Math.max(1, Math.floor(s.tong/((x1 - x0)*2)));
+    for (i = 0; i < s.tong; i += B){
+      var xx = X(i), yy = Y(s.mk[i]);
+      if (i === 0) g.moveTo(xx, yy); else g.lineTo(xx, yy);
+    }
+    g.stroke();
+    g.strokeStyle = MAG; g.lineWidth = 1.4; g.setLineDash([6,4]);
+    g.beginPath(); g.moveTo(x0, Y(s.nguong)); g.lineTo(x1, Y(s.nguong));
+    g.stroke(); g.setLineDash([]);
+    nhan('a bit sent below this line is counted wrong', x0 + 6,
+         Y(s.nguong) - 6, MAG, 12);
+    g.textAlign = 'right'; g.fillStyle = MUT; g.font = '12px Calibri, sans-serif';
+    g.fillText(s.tb.toFixed(0) + ' dB', x0 - 8, Y(s.tb) + 4);
+    g.fillText(s.nguong.toFixed(0), x0 - 8, Y(s.nguong) + 4);
+    g.textAlign = 'left';
+
+    // --- hai bang cot: truoc va sau khi xen --------------------------------
+    var cao = 128, oH = 20;
+    function bang(top, ds, ten, duoi){
+      nhan(ten, x0, top - 12, INK, 14);
+      var b0 = top, b1 = top + cao;
+      var cucDai = s.tsua*1.35;
+      for (i = 0; i < NB; i++) if (ds[i] > cucDai) cucDai = ds[i];
+      function H(v){ return v/cucDai*(b1 - b0); }
+      g.strokeStyle = LINE; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(x0, b1); g.lineTo(x1, b1); g.stroke();
+      var bw = (x1 - x0)/NB;
+      for (i = 0; i < NB; i++){
+        var h = H(ds[i]), mat = ds[i] > s.tsua;
+        g.fillStyle = mat ? MAG : TEAL;
+        if (h > 0.5) g.fillRect(x0 + i*bw + 1.5, b1 - h, bw - 3, h);
+        // o duoi: mot o cho moi khoi, do la khoi ma khong cuu noi
+        g.fillStyle = mat ? MAG : '#DCE6E4';
+        g.fillRect(x0 + i*bw + 1.5, b1 + 10, bw - 3, oH);
+      }
+      g.strokeStyle = INK; g.lineWidth = 1.2; g.setLineDash([5,4]);
+      g.beginPath(); g.moveTo(x0, b1 - H(s.tsua)); g.lineTo(x1, b1 - H(s.tsua));
+      g.stroke(); g.setLineDash([]);
+      nhan('the code repairs up to ' + Math.round(s.tsua) + ' bits per block',
+           x1 - 6, b1 - H(s.tsua) - 6, INK, 12, 'right');
+      nhan(duoi, x0, b1 + oH + 26, MUT, 12);
+      return b1 + oH + 26;
+    }
+    var y2 = bang(248, s.khong,
+                  '2 · without interleaving, the burst lands on one run of blocks',
+                  'one bar per block, how many of its bits are wrong. a red cell '
+                  + 'below is a block the code cannot save: ' + s.matKhong
+                  + ' of ' + NB);
+    bang(y2 + 46, s.co,
+         '3 · with interleaving, depth ' + s.D + ', the same errors spread out',
+         'same ' + s.tongLoi + ' wrong bits, redistributed. blocks lost: '
+         + s.matCo + ' of ' + NB);
+  }
+
+  function chay(){
+    var s = tinh();
+    E('lv').textContent = (+sl.v.value/10).toFixed(1);
+    E('lf').textContent = (+sl.f.value === 0) ? '900 MHz' : '5 GHz';
+    E('lw').textContent = (s.lam/2*100).toFixed(1);
+    E('lk').textContent = s.nref;
+    E('ln').textContent = s.N;
+    E('lr').textContent = (s.R/1e6 >= 1) ? (s.R/1e6) : (s.R/1e3 + ' k');
+    E('lr2').textContent = (s.R/1e6 >= 1) ? (s.R/1e6) : (s.R/1e3 + ' k');
+    E('lt').textContent = (s.Tk*1e3).toFixed(2);
+    E('lb').textContent = sl.b.value;
+    E('ld').textContent = s.D;
+    E('lc').textContent = s.tpc;
+    E('lc2').textContent = Math.round(s.tsua);
+    E('q0').innerHTML = 'Window <b>' + (s.dai*1e3).toFixed(1) + ' ms</b>, ' +
+                        NB + ' blocks';
+    E('q1').innerHTML = 'Bits in error <b>' + s.tongLoi + '</b> of ' + s.tong;
+    E('q2').innerHTML = 'Longest run of lost blocks <b>' + s.dayKhong + '</b>';
+    E('q2').className = 'chip ' + (s.dayKhong ? 'xau' : 'tot');
+    E('q3').innerHTML = 'Lost without interleaving <b>' + s.matKhong + '</b>';
+    E('q3').className = 'chip ' + (s.matKhong ? 'xau' : 'tot');
+    E('q4').innerHTML = 'Lost with interleaving <b>' + s.matCo + '</b>';
+    E('q4').className = 'chip ' + (s.matCo ? 'xau' : 'tot');
+    E('q5').innerHTML = 'Delay added <b>' + (s.tre*1e3).toFixed(1) + ' ms</b>';
+    ve(s);
+  }
+
+  ['v','f','k','n','r','b','d','c'].forEach(function(x){
+    sl[x].addEventListener('input', chay);
+  });
+  // Bo loc ghi ro data-v. Trang chi co mot bo nut, nhung ghi ro van la thoi
+  // quen dung: cong kiem kiemxen.py doi moi nut ma bo xu ly voi toi phai
+  // mang du moi khoa ma no doc.
+  Array.prototype.forEach.call(document.querySelectorAll('.nut[data-v]'),
+    function(b){
+      b.addEventListener('click', function(){
+        ['v','f','k','n','r','b','d','c'].forEach(function(x){
+          sl[x].value = b.dataset[x];
+        });
+        chay();
+      });
+    });
+  chay();
+})();
+</script>
+
+<div data-tacgia="1" style="margin:28px 0 0;padding:16px 26px;border-top:1px solid #E4E8EF;background:#F7F9FC;font-family:Calibri,Segoe UI,system-ui,sans-serif;font-size:13.5px;line-height:1.7;color:#5A6272">
+<b style="color:#1A1F36">Dr Mai Tran</b><br>
+Faculty of Information Technology<br>
+University of Engineering and Technology, Vietnam National University<br>
+<a href="mailto:mai.tran@vnu.edu.vn" style="color:#5A6272">mai.tran@vnu.edu.vn</a>
+</div>
+</body>
+</html>

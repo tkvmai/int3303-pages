@@ -153,9 +153,21 @@ footer{padding:20px 26px;border-top:1px solid var(--line);color:var(--mut);
     <b>Flat and selective fading</b>
     <span>Cùng một căn phòng, cùng một kênh, chỉ đổi bề rộng tín hiệu. Hiệu đường đi đo bằng số
     bước sóng, mà bước sóng đổi theo tần số, nên hai mép của một kênh rộng nhìn thấy hai số khác
-    nhau: đó là lý do kênh không phẳng. Bấm hai nút đầu để thấy cùng căn phòng ấy phẳng với tín
-    hiệu 5 MHz và chọn lọc với tín hiệu 80 MHz. Có ví dụ 802.11n của giáo trình, kênh 80 MHz ở
-    5 GHz với hai đường đi lệch nhau 1,8 m, ra 30,00 và 30,48 bước sóng ở hai mép.</span>
+    nhau: đó là lý do kênh không phẳng. Một mạch bảy bảng dùng chung một bộ núm: bảng 1 là kênh
+    truyền với dải tín hiệu đặt lên nó, bảng 2 tới 7 cho một tín hiệu điều chế thật đi qua kênh
+    ấy, từ dãy bit tới chòm sao máy thu đọc được. Kéo núm bề rộng theo dãy kênh WiFi 20, 40, 80,
+    160 MHz để thấy cùng căn phòng ấy chuyển từ phẳng sang chọn lọc, và chòm sao hỏng dần.</span>
+  </a>
+
+  <h2>Buổi 4: Bù lỗi và phân tập</h2>
+
+  <a class="card" href="buoi04/interleaving.html">
+    <b>Vì sao xen khối có tác dụng</b>
+    <span>Một lần fade sâu không xảy ra tức thì, nó kéo dài chừng nào hình học còn giữ nguyên, nên
+    lỗi trên đường truyền vô tuyến đi thành từng cụm chứ không rải rác. Trang cho thấy mức tín hiệu
+    tụt xuống, một dãy khối liên tiếp chết theo, rồi bật xen khối lên: <b>đúng từng ấy bit lỗi</b>,
+    chỉ rơi vào chỗ khác, và mã sửa lỗi cứu được hết. Có cả trường hợp ngược: mã quá yếu thì xen
+    khối làm mọi thứ xấu hơn.</span>
   </a>
 
   <h2>Bài thực hành</h2>
