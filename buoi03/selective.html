@@ -868,7 +868,13 @@ together, and the figure rises to 2.20.</p>
     // GHz. Khong co no thi truc ghi theo do lech so voi tam, va nguoi doc
     // tuong tin hieu nam o tan so khong. Mai hoi dung cho ay 2026-10-18.
     var sy = b0 - 32, sh = 13;
-    function bx2(f){ return x0 + (f - FA)/(FB - FA)*(x1 - x0); }
+    // Dai nay PHAI rong hon khoang song mang chay duoc. Num song mang di tu
+    // 5,000 toi 5,400 GHz va nua be rong tin hieu len toi 54 MHz, nen tin
+    // hieu co the trai tu 4,946 toi 5,454 GHz. Lay dai 5,0 toi 5,4 nhu truoc
+    // thi o 80 Msym/s gan mep, khoi to vuot ra ngoai khung va bi cat mat,
+    // ma dai lai van ghi la 5,0 toi 5,4: hinh noi sai. Do duoc 2026-10-18.
+    var FA2 = 4.90e9, FB2 = 5.50e9;
+    function bx2(f){ return x0 + (f - FA2)/(FB2 - FA2)*(x1 - x0); }
     g.fillStyle = '#EEF1F6'; g.fillRect(x0, sy, x1 - x0, sh);
     g.strokeStyle = '#C9D0DB'; g.lineWidth = 1;
     g.strokeRect(x0, sy, x1 - x0, sh);
@@ -876,20 +882,21 @@ together, and the figure rises to 2.20.</p>
     g.fillStyle = mauK;
     g.fillRect(bx2(lo2), sy, Math.max(bx2(hi2) - bx2(lo2), 2), sh);
     g.fillStyle = '#5A6272'; g.font = '11px Calibri, sans-serif';
-    g.textAlign = 'left'; g.fillText('5.00 GHz', x0, sy - 4);
-    g.textAlign = 'right'; g.fillText('5.40 GHz', x1, sy - 4);
-    // Dat nhan ve PHIA CON CHO. Neu dat giua dai tin hieu thi khi song mang
-    // o gan mep trai no se de len nhan "5.00 GHz".
-    var xg2 = (bx2(lo2) + bx2(hi2))/2, giua = (x0 + x1)/2;
-    if (xg2 < giua){
-      g.textAlign = 'left';
-      g.fillText('your signal is this sliver', Math.min(xg2 + 16, x1 - 180),
-                 sy + sh - 2);
-    } else {
-      g.textAlign = 'right';
-      g.fillText('your signal is this sliver', Math.max(xg2 - 16, x0 + 180),
-                 sy + sh - 2);
-    }
+    g.textAlign = 'left';  g.fillText('4.90 GHz', x0, sy - 4);
+    g.textAlign = 'right'; g.fillText('5.50 GHz', x1, sy - 4);
+    // Hai vach nho danh dau doan 5,0 toi 5,4 GHz, la khoang num song mang
+    // chay duoc, de dai rong them ma van doc duoc vi tri.
+    g.strokeStyle = '#9AA3B2'; g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(bx2(5.0e9), sy - 3); g.lineTo(bx2(5.0e9), sy);
+    g.moveTo(bx2(5.4e9), sy - 3); g.lineTo(bx2(5.4e9), sy);
+    g.stroke();
+    // Nhan dat DUOI dai, can giua khoi to. Dat trong dai thi chu xam nam
+    // tren nen hong, gan nhu khong doc duoc.
+    var xg2 = (bx2(lo2) + bx2(hi2))/2;
+    g.textAlign = 'center';
+    g.fillText('your signal is this sliver',
+               Math.max(x0 + 74, Math.min(x1 - 74, xg2)), sy + sh + 12);
     // hai duong hoi tu, noi dai dinh vi xuong khung phong to
     g.strokeStyle = '#C9D0DB'; g.lineWidth = 1; g.setLineDash([3,3]);
     g.beginPath();
