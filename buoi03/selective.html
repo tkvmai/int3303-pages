@@ -100,6 +100,14 @@ band instead of at one carrier. The shaded block is the stretch of spectrum your
 multiplied by the channel. That product is the thing the receiver has to demodulate, and when it is
 no longer the shape that was sent, the signal has been <b>distorted</b> rather than merely
 weakened.</p>
+<p class="sub"><b>What the lower scale means.</b> It is an <b>amplitude</b> ratio, not a power
+ratio, and the reference level 1.0 is <b>the level that would arrive if there were one path and no
+echo</b>. Path loss has been divided out, so 1.0 is not the transmitted power: over any real
+distance the direct ray alone arrives tens of decibels down, and that loss is the subject of
+session 3 part 2 rather than of this page. Dividing it out is what lets the sent spectrum be drawn
+on the same axis, flat at 1.0, so the two shapes can be compared. With two paths of equal strength
+the scale would run from 0 to 2: the echo either doubles the direct ray or cancels it. Here the
+echo is 0.9 of the direct ray, so the peaks reach 1.9 and the notches fall to 0.1.</p>
 
 <h2>The one experiment to run</h2>
 <p class="sub">Press <b>The textbook example</b>, then <b>Same room, a 5 MHz radio</b>. Nothing about
@@ -367,6 +375,22 @@ together, and the figure rises to 2.20.</p>
     g.strokeRect(fx(s.fc - s.bw/2), yA0, Math.max(fx(s.fc + s.bw/2) - fx(s.fc - s.bw/2), 2),
                  yA1 - yA0);
 
+    // Dai nay truoc day khong he co nhan tren hinh, chi duoc nhac toi trong
+    // doan van ben duoi. Mai hoi "hinh mau hong the hien cai gi" chinh vi the.
+    // Nay ghi thang ra, dat duoi khung tren va to cung mau voi dai.
+    (function(){
+      var ba = fx(s.fc - s.bw/2), bb = fx(s.fc + s.bw/2);
+      var mauD = s.bien < NGUONG ? '#2A9D8F' : '#D81E5B';
+      g.strokeStyle = mauD; g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(ba, yA1 + 6); g.lineTo(ba, yA1 + 12);
+      g.lineTo(bb, yA1 + 12); g.lineTo(bb, yA1 + 6); g.stroke();
+      g.fillStyle = mauD; g.textAlign = 'center'; g.font = '13px Calibri, sans-serif';
+      var giua = Math.max(x0 + 120, Math.min(x1 - 120, (ba + bb)/2));
+      g.fillText('the band your signal occupies, ' + (s.bw/1e6).toFixed(0) +
+                 ' MHz wide', giua, yA1 + 28);
+    })();
+
     g.strokeStyle = '#1A1F36'; g.lineWidth = 1;
     g.beginPath(); g.moveTo(x0, yA1); g.lineTo(x1, yA1);
     g.moveTo(x0, yA0); g.lineTo(x0, yA1); g.stroke();
@@ -403,7 +427,19 @@ together, and the figure rises to 2.20.</p>
     g.beginPath(); g.moveTo(x0, yB1); g.lineTo(x1, yB1);
     g.moveTo(x0, yB0); g.lineTo(x0, yB1); g.stroke();
     g.fillStyle = '#5A6272'; g.textAlign = 'left';
-    g.fillText('what arrives, relative to a channel with no multipath', x0 + 4, yB0 - 10);
+    g.fillText('what arrives, as a multiple of the one-path level (amplitude, not power)',
+               x0 + 4, yB0 - 10);
+    // Truc dung cua khung duoi truoc day KHONG he co vach chia nao: chi co mot
+    // net dut o muc 1,0 lam moc. Khong doc duoc dinh cao bao nhieu, mep phai
+    // con lai bao nhieu. Nay chia vach 0,5 mot.
+    g.textAlign = 'right';
+    for (var vv = 0; vv <= vmax + 1e-9; vv += 0.5){
+      g.strokeStyle = '#1A1F36'; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(x0, gy(vv)); g.lineTo(x0 - 6, gy(vv)); g.stroke();
+      g.fillStyle = '#5A6272';
+      g.fillText(vv.toFixed(1), x0 - 10, gy(vv) + 4);
+    }
+    g.textAlign = 'left';
 
     var xa = fx(s.fc - s.bw/2), xb = fx(s.fc + s.bw/2);
     // pho phat: khoi phang, ve bang net dut
@@ -412,8 +448,13 @@ together, and the figure rises to 2.20.</p>
     g.moveTo(xa, yB1); g.lineTo(xa, gy(1)); g.lineTo(xb, gy(1)); g.lineTo(xb, yB1);
     g.stroke(); g.setLineDash([]);
     g.fillStyle = '#9AA3B2'; g.textAlign = 'left';
-    g.fillText('sent, and the level with no multipath',
-               Math.min(xb + 8, x1 - 230), gy(1) + 4);
+    // Nhan cu ghi "sent, and the level with no multipath", tuc mot net dut
+    // mang hai nghia cung luc. Hai nghia ay chi trung nhau vi hinh da chia
+    // het suy hao duong truyen di; noi gon lai thi nguoi doc tuong cong suat
+    // phat bang cong suat nhan. Nay chi ghi mot nghia, nghia con lai nam o
+    // ten truc va o doan van.
+    g.fillText('the flat spectrum that was sent, drawn at 1.0',
+               Math.min(xb + 8, x1 - 270), gy(1) + 4);
 
     // pho nhan: khoi phang nhan voi dap ung
     var mau = s.bien < NGUONG ? '#2A9D8F' : '#D81E5B';
@@ -427,6 +468,12 @@ together, and the figure rises to 2.20.</p>
       g.lineTo(fx(ff), gy(a));
     }
     g.lineTo(xb, yB1); g.closePath(); g.fill(); g.stroke();
+    // Khoi to nay cung chua tung co nhan tren hinh.
+    // Dat o goc tren ben phai khung: vung nay luon trong, con ngay duoi khoi
+    // to thi dung vao hang so ghi tan so.
+    g.fillStyle = mau; g.textAlign = 'right';
+    g.fillText('the shaded block is what arrives', x1 - 6, yB0 + 16);
+    g.textAlign = 'left';
 
     // truc tan so dung chung cho ca hai khung
     g.fillStyle = '#5A6272'; g.textAlign = 'center';
