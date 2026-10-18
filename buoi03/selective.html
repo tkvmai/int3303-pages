@@ -151,6 +151,12 @@ signal rather than as a property of the channel.</p>
 the beginning: bits, then symbols, then a waveform, then its spectrum, then the channel acting on
 each frequency component separately, then the components added back up at the receiver. Six steps,
 every one of them computed rather than drawn.</p>
+<p class="sub"><b>The two parts are independent.</b> Each has its own set of controls, and moving
+one part leaves the other exactly where it was. They do share a room: the same two-ray model, with
+one direct path and one echo arriving 1.8 m later by default. Part one lets you add up to eight
+paths, which part two does not; part two lets you choose a modulation and a symbol rate, which
+part one does not. So the carrier and the path difference mean the same thing on both, but set
+them yourself on each part if you want the two to agree.</p>
 
 <div class="dk">
   <div class="hang">
@@ -453,7 +459,12 @@ together, and the figure rises to 2.20.</p>
   }
 
   ['b','c','d','k'].forEach(function(x){ sl[x].addEventListener('input', chay); });
-  Array.prototype.forEach.call(document.querySelectorAll('.nut'), function(n){
+  // Bo loc PHAI ghi ro data-b. Trang co hai phan, moi phan mot bo num rieng,
+  // va nut cua phan hai cung mang data-c va data-d. Bo loc '.nut' tran se
+  // bat ca nut cua phan hai: bam mot nut o duoi thi bon num o tren deu doi,
+  // trong do data-b va data-k khong ton tai nen trinh duyet lam sach ve diem
+  // giua thang do, tuc ra 4,5 tia. Da do duoc dung nhu vay 2026-10-18.
+  Array.prototype.forEach.call(document.querySelectorAll('.nut[data-b]'), function(n){
     n.addEventListener('click', function(){
       sl.b.value = n.dataset.b; sl.c.value = n.dataset.c;
       sl.d.value = n.dataset.d; sl.k.value = n.dataset.k;
