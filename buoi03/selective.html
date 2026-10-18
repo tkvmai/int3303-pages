@@ -95,11 +95,25 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
 <p class="sub">The upper plot is the <b>channel</b>, drawn as gain against frequency. It is computed,
 not sketched: every path is summed as a wave with its real phase, exactly as the add-or-cancel
 slide did, and the only difference here is that the sum is evaluated at every frequency across the
-band instead of at one carrier. The shaded block is the stretch of spectrum your signal occupies.</p>
+band instead of at one carrier. The shaded block marks <b>which frequencies your signal occupies,
+and nothing else</b>: its top and bottom edges are just the edges of the frame, so its height
+carries no meaning. The strength of what is sent appears in the lower plot, as the flat dashed
+block at 1.0.</p>
 <p class="sub">The lower plot is what comes out: the transmitted spectrum, drawn flat and dashed,
 multiplied by the channel. That product is the thing the receiver has to demodulate, and when it is
 no longer the shape that was sent, the signal has been <b>distorted</b> rather than merely
 weakened.</p>
+<p class="sub"><b>Two vertical scales, and why multiplying is the same as adding.</b> The upper
+plot is in <b>decibels</b>; the lower plot is a plain <b>linear ratio</b>. A channel that halves
+the amplitude reads as &minus;6 dB in the upper plot and as 0.5 in the lower one. What the channel
+does is a <b>multiplication</b>, one frequency at a time: what arrives at a frequency is what was
+sent at that frequency, times the channel's gain at that frequency. That is the operation the lower
+plot draws, which is why the lower plot is linear. In decibels the very same statement becomes an
+<b>addition</b>, because a logarithm turns a product into a sum: the sent spectrum is flat at 1.0,
+which is 0 dB, so 0 dB plus the channel's &minus;6 dB gives &minus;6 dB arriving. Multiply in
+linear, add in decibels, one physical statement written two ways. The lower plot is kept linear on
+purpose: the <i>shape</i> of the spectrum is what the receiver has to recover, and a logarithmic
+axis changes that shape.</p>
 <p class="sub"><b>What the lower scale means.</b> It is an <b>amplitude</b> ratio, not a power
 ratio, and the reference level 1.0 is <b>the level that would arrive if there were one path and no
 echo</b>. Path loss has been divided out, so 1.0 is not the transmitted power: over any real
@@ -367,13 +381,22 @@ together, and the figure rises to 2.20.</p>
     g.textBaseline = 'alphabetic';
 
     // --- khung tren -------------------------------------------------------
-    g.fillStyle = s.bien < NGUONG ? 'rgba(42,157,143,0.14)' : 'rgba(216,30,91,0.14)';
-    g.fillRect(fx(s.fc - s.bw/2), yA0, Math.max(fx(s.fc + s.bw/2) - fx(s.fc - s.bw/2), 2),
-               yA1 - yA0);
+    // Khoi nay danh dau TAN SO, khong danh dau do lon. Truoc day no duoc to
+    // dac bang dung mau voi khoi pho o khung duoi, nen doc ra nhu mot pho co
+    // bien do phang. Mai hieu dung nhu vay 2026-10-18, va suy luan cua Mai
+    // hop ly: thu nhan duoc voi dap ung kenh phai la mot do lon. Nhung thu
+    // ay nam o khung DUOI, la khoi net dut o muc 1,0. Nen o day doi sang to
+    // xam trung tinh, chi vien va nhan moi mang mau phan dinh.
+    var bdx = fx(s.fc - s.bw/2);
+    var bdw = Math.max(fx(s.fc + s.bw/2) - bdx, 2);
+    g.fillStyle = 'rgba(26,31,54,0.05)';
+    g.fillRect(bdx, yA0, bdw, yA1 - yA0);
     g.strokeStyle = s.bien < NGUONG ? '#2A9D8F' : '#D81E5B';
-    g.lineWidth = 1.2;
-    g.strokeRect(fx(s.fc - s.bw/2), yA0, Math.max(fx(s.fc + s.bw/2) - fx(s.fc - s.bw/2), 2),
-                 yA1 - yA0);
+    g.lineWidth = 1.2; g.setLineDash([4,3]);
+    g.beginPath();
+    g.moveTo(bdx, yA0);       g.lineTo(bdx, yA1);
+    g.moveTo(bdx + bdw, yA0); g.lineTo(bdx + bdw, yA1);
+    g.stroke(); g.setLineDash([]);
 
     // Dai nay truoc day khong he co nhan tren hinh, chi duoc nhac toi trong
     // doan van ben duoi. Mai hoi "hinh mau hong the hien cai gi" chinh vi the.
@@ -387,8 +410,10 @@ together, and the figure rises to 2.20.</p>
       g.lineTo(bb, yA1 + 12); g.lineTo(bb, yA1 + 6); g.stroke();
       g.fillStyle = mauD; g.textAlign = 'center'; g.font = '13px Calibri, sans-serif';
       var giua = Math.max(x0 + 120, Math.min(x1 - 120, (ba + bb)/2));
+      // Gop thanh MOT dong: hai dong o day bi ep sat vao ten truc cua khung
+      // duoi, chi con 15 px.
       g.fillText('the band your signal occupies, ' + (s.bw/1e6).toFixed(0) +
-                 ' MHz wide', giua, yA1 + 28);
+                 ' MHz wide · frequency only, not strength', giua, yA1 + 28);
     })();
 
     g.strokeStyle = '#1A1F36'; g.lineWidth = 1;
