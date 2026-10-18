@@ -214,6 +214,22 @@ chose to look through, not a property of the modulation. They are drawn because 
 can point at is worth more here than a component hidden inside a curve, and nothing about the
 argument changes when the lines merge.</p>
 
+<p class="sub">So yes, a block length of eight means the model has the transmitter sending those
+eight symbols over and over, for ever. Two things are worth saying about that assumption, because
+it is the one students query.</p>
+<p class="sub"><b>It is not a trick peculiar to this page.</b> Every numerical spectrum carries the
+same assumption. Feed a block of samples to a discrete Fourier transform and the transform treats
+that block as one period, whether anyone says so or not. "The block repeats" and "I took the
+transform of this block" are the same sentence. That is also why a spectrum analyser shows you
+bins rather than a true curve.</p>
+<p class="sub"><b>Where it differs from reality is at the two edges.</b> In a real stream the
+symbol before the first one is some other symbol, not the last one in the block, and the tail of
+the echo that runs off the end of the block would spill into the next block of data rather than
+wrapping round to the start. With eight symbols at 5 Msym/s the 6 ns echo is 0.4 percent of the
+block and the difference is invisible; at 80 Msym/s it is 6 percent, and what difference there is
+sits on the first symbol. None of it touches the lesson: the channel multiplies each frequency by
+its own gain whether the spectrum is a row of lines or a continuous curve.</p>
+
 <h2>The six panels</h2>
 <ul>
   <li><b>1, the bits.</b> The raw stream, grouped into symbols. With 16-QAM each group of four bits
