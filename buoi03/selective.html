@@ -197,7 +197,7 @@ every one of them computed rather than drawn.</p>
   <span class="chip" id="mq5">Worst symbol <b>0×</b> the margin</span>
 </div>
 
-<canvas id="mcv" width="1280" height="1130"></canvas>
+<canvas id="mcv" width="1280" height="1160"></canvas>
 
 <h2>Why the spectrum is a set of lines, and not a curve</h2>
 <p class="sub">This is the step that surprises people, so it has its own control. A signal that
@@ -291,7 +291,11 @@ together, and the figure rises to 2.20.</p>
   var BW = [1, 5, 10, 20, 40, 80, 160];            // MHz
   var FA = 5.00e9, FB = 5.40e9;
   var DB_LO = -24, DB_HI = 6;
-  var NGUONG = 3.0;                                 // quy uoc cua rieng trang nay
+  var NGUONG = 3.0;
+  // So chu ky song mang VE RA tren moi ky tu. Song mang that o 5 GHz voi
+  // ky tu 200 ns chua khoang mot nghin chu ky, khong the ve ra man hinh.
+  // Day la quy uoc hien thi, mo hinh van tinh o tan so that.
+  var VECHUKY = 6;                                 // quy uoc cua rieng trang nay
 
   function dapUng(f, dl, ntia){
     var re = 1, im = 0;
@@ -485,6 +489,10 @@ together, and the figure rises to 2.20.</p>
   var NSYMS = [4, 8, 16, 32];
   var FA = 5.00e9, FB = 5.40e9;
   var NGUONG = 3.0;
+  // So chu ky song mang VE RA tren moi ky tu. Song mang that o 5 GHz voi
+  // ky tu 200 ns chua khoang mot nghin chu ky, khong the ve ra man hinh.
+  // Day la quy uoc hien thi, mo hinh van tinh o tan so that.
+  var VECHUKY = 6;
 
   // Day bit co dinh, viet thang ra. Ban dau hai ben cung chay mot bo sinh
   // so tuyen tinh, nhung JavaScript tinh bang so thuc 64 bit nen phep nhan
@@ -658,6 +666,24 @@ together, and the figure rises to 2.20.</p>
   function tinhDu(){ return themSo(tinh()); }
   window.moPhongDieuChe = tinhDu;
 
+  // Ve dang song cao tan. Bang goc chi co 32 mau moi ky tu, con song mang ve
+  // ra co 6 chu ky moi ky tu, tuc chi hon 5 mau moi chu ky: ve thang ra se
+  // rang cua. Nen noi suy tuyen tinh bang goc giua cac mau, chi de VE. Bang
+  // goc bien thien cham hon song mang rat nhieu nen noi suy la chinh xac du.
+  var NOISUY = 8;
+  function veCaoTan(g, bi, bq, L, wx, wy){
+    g.beginPath();
+    for (var i = 0; i < (L-1)*NOISUY; i++){
+      var u = i/NOISUY, i0 = Math.floor(u), fr = u - i0;
+      var ir = bi[i0] + (bi[i0+1] - bi[i0])*fr;
+      var qr = bq[i0] + (bq[i0+1] - bq[i0])*fr;
+      var ph = 2*Math.PI*VECHUKY*u/MMAU;
+      var v = ir*Math.cos(ph) - qr*Math.sin(ph);
+      if (i === 0) g.moveTo(wx(u), wy(v)); else g.lineTo(wx(u), wy(v));
+    }
+    g.stroke();
+  }
+
   function ve(s){
     var W0 = cv.width, i, k, n;
     g.clearRect(0, 0, W0, cv.height);
@@ -692,30 +718,48 @@ together, and the figure rises to 2.20.</p>
          + (inSo ? '' : ', too many to print at this block length'),
          x0, 78, '#5A6272', 12);
 
-    // 2. dang song ---------------------------------------------------------
-    var a0 = 104, a1 = 206;
-    nhan('2 · the symbols as a waveform, in phase part', x0, a0 - 8, '#1A1F36', 14);
+    // 2. dang song CAO TAN --------------------------------------------------
+    //    Ve dung thu sinh vien quen: mot hinh sin co BIEN DO va PHA doi theo
+    //    tung ky tu, tuc s(t) = I(t)cos(2 pi fc t) - Q(t)sin(2 pi fc t).
+    //    Khong ve rieng nhanh I cua bang goc: Mai da bao chuyen nay mot lan o
+    //    hinh ISI cua Buoi 3, va em lai mac lai o day.
+    //    Song mang VE RA thap hon song mang that rat nhieu, neu khong thi mot
+    //    ky tu chua khoang mot nghin chu ky va khong the ve. Mo hinh van tinh
+    //    o tan so that; day thuan tuy la chuyen hien thi, va trang noi ro.
+    var a0 = 104, a1 = 226;
+    nhan('2 · the modulated waveform: one sine whose amplitude and phase '
+         + 'change each symbol', x0, a0 - 8, '#1A1F36', 14);
     var bmax = 0;
-    for (i = 0; i < s.L; i++) bmax = Math.max(bmax, Math.abs(s.sre[i]));
+    for (i = 0; i < s.L; i++)
+      bmax = Math.max(bmax, Math.sqrt(s.sre[i]*s.sre[i] + s.sim[i]*s.sim[i]));
     function wx(i2){ return x0 + i2/(s.L-1)*(x1-x0); }
-    function wy(v){ return (a0+a1)/2 - v/bmax*(a1-a0)/2*0.90; }
+    function wy(v){ return (a0+a1)/2 - v/bmax*(a1-a0)/2*0.92; }
     g.strokeStyle = '#EDF0F5'; g.lineWidth = 1;
     g.beginPath(); g.moveTo(x0, (a0+a1)/2); g.lineTo(x1, (a0+a1)/2); g.stroke();
-    g.strokeStyle = '#6C5CE7'; g.lineWidth = 2;
-    g.beginPath();
-    for (i = 0; i < s.L; i++){
-      if (i === 0) g.moveTo(wx(i), wy(s.sre[i])); else g.lineTo(wx(i), wy(s.sre[i]));
+    // duong bao, ve mo, de thay bien do doi theo ky tu
+    g.strokeStyle = '#D8D0F5'; g.lineWidth = 1.2;
+    for (var dau = -1; dau <= 1; dau += 2){
+      g.beginPath();
+      for (i = 0; i < s.L; i++){
+        var bb = dau*Math.sqrt(s.sre[i]*s.sre[i] + s.sim[i]*s.sim[i]);
+        if (i === 0) g.moveTo(wx(i), wy(bb)); else g.lineTo(wx(i), wy(bb));
+      }
+      g.stroke();
     }
-    g.stroke();
+    g.strokeStyle = '#6C5CE7'; g.lineWidth = 1.5;
+    veCaoTan(g, s.sre, s.sim, s.L, wx, wy);
     g.fillStyle = '#9AA3B2';
     for (n = 0; n < s.nsym; n++){
       var xi = wx(n*MMAU);
-      g.fillRect(xi-0.6, a1-6, 1.2, 6);
+      g.fillRect(xi-0.6, a1-7, 1.2, 7);
     }
-    nhan('ticks are the symbol instants', x0, a1 + 16, '#5A6272', 12);
+    nhan('ticks are the symbol instants, faint lines are the envelope. '
+         + 'Carrier drawn at ' + VECHUKY + ' cycles per symbol so it is '
+         + 'visible; the real one is about a thousand.',
+         x0, a1 + 16, '#5A6272', 12);
 
     // 3. pho vach ----------------------------------------------------------
-    var b0 = 254, b1 = 372;
+    var b0 = 284, b1 = 402;
     nhan('3 · its spectrum: one bar per frequency component, '
          + (s.khoangVach/1e6).toFixed(2) + ' MHz apart',
          x0, b0 - 8, '#1A1F36', 14);
@@ -740,7 +784,7 @@ together, and the figure rises to 2.20.</p>
     }
 
     // 4. kenh tac dong tung thanh phan -------------------------------------
-    var c0 = 420, c1 = 538;
+    var c0 = 450, c1 = 568;
     nhan('4 · the channel, acting on each component separately',
          x0, c0 - 8, '#1A1F36', 14);
     veTruc(c1);
@@ -770,40 +814,40 @@ together, and the figure rises to 2.20.</p>
          x0, c1 + 16, '#5A6272', 12);
 
     // 5. cong cac thanh phan tro lai ---------------------------------------
-    var d0 = 596, d1 = 726;
+    var d0 = 626, d1 = 756;
     var K = Math.min(+sl.k.value, s.L);
     nhan('5 · adding the received components back up, ' + K + ' of ' + s.L,
          x0, d0 - 8, '#1A1F36', 14);
-    var yre = new Float64Array(s.L);
+    var yre = new Float64Array(s.L), yim = new Float64Array(s.L);
     for (var q = 0; q < K; q++){
       k = s.thutu[q].k;
       for (i = 0; i < s.L; i++){
         var t5 = i*s.dt + s.d, p5 = 2*Math.PI*s.fk[k]*t5;
-        yre[i] += s.Yr[k]*Math.cos(p5) - s.Yi[k]*Math.sin(p5);
+        var c5 = Math.cos(p5), s5 = Math.sin(p5);
+        yre[i] += s.Yr[k]*c5 - s.Yi[k]*s5;
+        yim[i] += s.Yr[k]*s5 + s.Yi[k]*c5;
       }
     }
     var gm5 = s.gr*s.gr + s.gi*s.gi, rmax = bmax;
     g.strokeStyle = '#EDF0F5'; g.lineWidth = 1;
     g.beginPath(); g.moveTo(x0, (d0+d1)/2); g.lineTo(x1, (d0+d1)/2); g.stroke();
-    function ry(v){ return (d0+d1)/2 - v/rmax*(d1-d0)/2*0.90; }
-    g.strokeStyle = '#9AA3B2'; g.lineWidth = 1.5; g.setLineDash([5,4]);
-    g.beginPath();
+    function ry(v){ return (d0+d1)/2 - v/rmax*(d1-d0)/2*0.92; }
+    // cung mot ngon ngu voi bang 2: dang song cao tan, khong phai bang goc
+    g.strokeStyle = '#9AA3B2'; g.lineWidth = 1.2; g.setLineDash([5,4]);
+    veCaoTan(g, s.sre, s.sim, s.L, wx, ry);
+    g.setLineDash([]);
+    var bR = new Float64Array(s.L), bI = new Float64Array(s.L);
     for (i = 0; i < s.L; i++){
-      if (i === 0) g.moveTo(wx(i), ry(s.sre[i])); else g.lineTo(wx(i), ry(s.sre[i]));
+      bR[i] = (yre[i]*s.gr + yim[i]*s.gi)/gm5;
+      bI[i] = (yim[i]*s.gr - yre[i]*s.gi)/gm5;
     }
-    g.stroke(); g.setLineDash([]);
-    g.strokeStyle = mauK; g.lineWidth = 2.2;
-    g.beginPath();
-    for (i = 0; i < s.L; i++){
-      var vr = (yre[i]*s.gr)/gm5;
-      if (i === 0) g.moveTo(wx(i), ry(vr)); else g.lineTo(wx(i), ry(vr));
-    }
-    g.stroke();
-    nhan('dashed grey is what was sent, solid is the partial sum so far',
-         x0, d1 + 16, '#5A6272', 12);
+    g.strokeStyle = mauK; g.lineWidth = 1.6;
+    veCaoTan(g, bR, bI, s.L, wx, ry);
+    nhan('dashed grey is what was sent, solid is the partial sum so far, '
+         + 'both drawn on the same carrier', x0, d1 + 16, '#5A6272', 12);
 
     // 6. chom sao ----------------------------------------------------------
-    var e0 = 790, eS = 300, eX = x0;
+    var e0 = 820, eS = 300, eX = x0;
     nhan('6 · the symbols the receiver reads', x0, e0 - 8, '#1A1F36', 14);
     var R = 0;
     for (i = 0; i < s.bang.re.length; i++)
