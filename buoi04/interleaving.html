@@ -98,13 +98,20 @@ table.bg td:nth-child(n+2),table.bg th:nth-child(n+2){text-align:right}
         <b><span id="lc2">200</span> bits</b></label>
       <input type="range" id="c" min="5" max="40" step="1" value="20">
     </div>
+    <div>
+      <label class="t">The link is shared by <b><span id="lu">1</span></b> user,
+        one time slot each per frame</label>
+      <input type="range" id="u" min="0" max="3" step="1" value="0">
+    </div>
   </div>
   <div style="margin-top:10px">
-    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="2" data-r="1" data-b="14" data-d="3" data-c="20">A fade swallows four blocks</span>
-    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="2" data-r="1" data-b="14" data-d="0" data-c="20">Turn interleaving off</span>
-    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="2" data-r="1" data-b="14" data-d="1" data-c="20">Interleaving too shallow</span>
-    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="2" data-r="1" data-b="14" data-d="3" data-c="10">A code too weak: it backfires</span>
-    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="3" data-r="1" data-b="14" data-d="3" data-c="20">Longer blocks, 2000 bits</span>
+    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="2" data-r="1" data-b="14" data-d="3" data-c="20" data-u="0">A fade swallows four blocks</span>
+    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="2" data-r="1" data-b="14" data-d="0" data-c="20" data-u="0">Neither method: both off</span>
+    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="2" data-r="1" data-b="14" data-d="1" data-c="20" data-u="0">Shuffling too shallow</span>
+    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="2" data-r="1" data-b="14" data-d="3" data-c="10" data-u="0">A code too weak: it backfires</span>
+    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="3" data-r="1" data-b="14" data-d="3" data-c="20" data-u="0">Longer blocks, 2000 bits</span>
+    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="2" data-r="1" data-b="14" data-d="0" data-c="20" data-u="2">First method only: 4 users share the link</span>
+    <span class="nut" data-v="40" data-f="1" data-k="4" data-n="2" data-r="1" data-b="14" data-d="3" data-c="20" data-u="2">Both methods at once</span>
   </div>
 </div>
 
@@ -133,7 +140,26 @@ that errors come in <b>runs</b>, and it keeps the page exactly reproducible.</p>
 bits in that block are wrong. The horizontal line is what the error-correcting code can repair. A
 bar above the line is a block the code cannot save. The bottom panel is the same stream after
 <b>block interleaving</b>: the blocks are shuffled in groups before transmission and unshuffled on
-arrival, exactly as in Stallings figure 5.16b, which shuffles in groups of four.</p>
+arrival.</p>
+
+<h2>Two ways to spread the damage, and they are not the same mechanism</h2>
+<p class="sub">Stallings gives two, and both have a control here.</p>
+<ul>
+  <li><b>Shuffle your own blocks.</b> The interleaver depth. Your blocks go out in a different
+      order and come back into order at the receiver. The burst still lands where it lands, but it
+      now falls on blocks that end up scattered through your stream, so no single block collects
+      all of it. Your data occupies exactly as much wall-clock time as before.</li>
+  <li><b>Use time slots that already exist.</b> The number of users sharing the link. On a link
+      divided into time slots, you own one slot per frame, so your blocks go out one frame apart
+      rather than back to back. Your stream is <b>stretched</b> over more wall-clock time, and a
+      fade of fixed duration therefore touches fewer of your blocks. Nothing is shuffled: the
+      damage is spread <b>across the other users</b> instead.</li>
+</ul>
+<p class="sub">That difference shows in the chips. Raise the interleaver depth and <b>bits in
+error does not move</b>, because the same bits are hit and only their destination changes. Raise
+the number of users and <b>bits in error falls</b>, because fewer of the bits inside the fade are
+yours. The two compose, and that is what Stallings means by combining both giving greater
+diversity: press <b>First method only</b>, then <b>Both methods at once</b>.</p>
 
 <h2>The one thing to notice</h2>
 <p class="sub">The <b>bits in error</b> chip does not change when you move the interleaver depth.
@@ -144,8 +170,13 @@ repair into many blocks damaged slightly, and slight damage is what a code is fo
 
 <h2>Things worth trying</h2>
 <ul>
-  <li><b>Turn interleaving off.</b> Depth 1 means no shuffling. The same fade now destroys a run
-      of consecutive blocks, and the count of lost blocks jumps from zero to four.</li>
+  <li><b>Turn both methods off.</b> Depth 1 and one user. The same fade now destroys a run of
+      consecutive blocks, and the count of lost blocks jumps from zero to four.</li>
+  <li><b>Share the link with three other people.</b> Press <b>First method only</b>. Nothing is
+      shuffled, yet the loss falls from four blocks to one, because three quarters of the bits
+      inside the fade now belong to somebody else. Their codes deal with their share. This is the
+      method that costs you nothing and is already there whenever a link is shared by time
+      slots.</li>
   <li><b>Make the interleaver too shallow.</b> At depth 2 the burst is spread over two blocks
       instead of one, which is not nearly enough: both still exceed what the code can repair. The
       depth has to be comparable with the length of the burst measured in blocks, and the burst is
@@ -159,8 +190,10 @@ repair into many blocks damaged slightly, and slight damage is what a code is fo
       fewer blocks and the code has twice as many repairable bits to play with. Block length,
       code strength and interleaver depth are three knobs on one tradeoff.</li>
   <li><b>Watch the delay.</b> A block cannot be delivered until every block it was shuffled with
-      has arrived, so the depth sets a floor on latency that no processor can remove. That is the
-      cost, and it is why a voice call and a file transfer choose different depths.</li>
+      has arrived, so the depth sets a floor on latency that no processor can remove. Sharing the
+      link multiplies that wait, because the blocks you are waiting for are now a frame apart
+      rather than back to back. That is the cost, and it is why a voice call and a file transfer
+      choose different depths.</li>
 </ul>
 
 <footer>
@@ -192,6 +225,12 @@ repair into many blocks damaged slightly, and slight damage is what a code is fo
   var NBIT = [100, 500, 1000, 2000];
   var TOCDO = [1e5, 1e6, 1e7];
   var SAU = [1, 2, 4, 8, 16];
+  // Phuong phap thu nhat cua Stallings, hinh 5.16a: duong truyen chia
+  // theo khe thoi gian cho U nguoi dung, moi nguoi mot khe moi khung.
+  // Khoi thu i cua TA nam o khe thu i*U, nen dong cua ta bi keo dai ra
+  // U lan tren truc thoi gian that, va mot lan fade dai bang ay giay chi
+  // cham vao 1/U so khoi cua ta.
+  var NGUOI = [1, 2, 4, 8];
   var VAT = [
     [ 33.995529,  -28.931804, 0.445832],
     [  5.763093,   10.871483, 0.564291],
@@ -212,7 +251,7 @@ repair into many blocks damaged slightly, and slight damage is what a code is fo
   ];
   var E = function(id){ return document.getElementById(id); };
   var sl = {v:E('v'), f:E('f'), k:E('k'), n:E('n'), r:E('r'),
-            b:E('b'), d:E('d'), c:E('c')};
+            b:E('b'), d:E('d'), c:E('c'), u:E('u')};
   var cv = E('cv'), g = cv.getContext('2d');
 
   function muc(t, v, lam, nref){
@@ -251,11 +290,14 @@ repair into many blocks damaged slightly, and slight damage is what a code is fo
     var lam = C0/(+sl.f.value === 0 ? 900e6 : 5e9);
     var nref = +sl.k.value;
     var N = NBIT[+sl.n.value], R = TOCDO[+sl.r.value], D = SAU[+sl.d.value];
-    var tpc = +sl.c.value, bien = +sl.b.value;
-    var Tk = N/R, dai = NB*Tk, t0 = timHo(v, lam, nref, dai);
+    var tpc = +sl.c.value, bien = +sl.b.value, U = NGUOI[+sl.u.value];
+    var Tk = N/R, dai = NB*U*Tk, t0 = timHo(v, lam, nref, dai);
     var tong = NB*N, k, j;
     var mk = new Float64Array(tong), tb = 0;
-    for (k = 0; k < tong; k++){ mk[k] = muc(t0 + k/R, v, lam, nref); tb += mk[k]; }
+    for (k = 0; k < tong; k++){
+      var tt = t0 + ((k/N)|0)*U*Tk + (k % N)/R;
+      mk[k] = muc(tt, v, lam, nref); tb += mk[k];
+    }
     tb /= tong;
     var nguong = tb - bien;
     var loi = new Uint8Array(tong);
@@ -282,7 +324,7 @@ repair into many blocks damaged slightly, and slight damage is what a code is fo
     return {v:v, lam:lam, N:N, R:R, D:D, Tk:Tk, dai:dai, t0:t0, tong:tong,
             mk:mk, tb:tb, nguong:nguong, tongLoi:tl, khong:khong, co:co,
             tsua:tsua, tpc:tpc, matKhong:mK.length, matCo:mC.length,
-            dayKhong:day(mK), dayCo:day(mC), tre:D*Tk, nref:nref};
+            dayKhong:day(mK), dayCo:day(mC), tre:D*U*Tk, U:U, nref:nref};
   }
   window.moPhongXen = tinh;
 
@@ -303,8 +345,10 @@ repair into many blocks damaged slightly, and slight damage is what a code is fo
 
     // --- 1. muc nhan trong cua so -----------------------------------------
     var a0 = 44, a1 = 196;
-    nhan('1 · the received level across this window, ' +
-         (s.dai*1e3).toFixed(0) + ' ms of the walk', x0, a0 - 12, INK, 14);
+    nhan('1 · the level during your own slots, over ' +
+         (s.dai*1e3).toFixed(0) + ' ms of the walk' +
+         (s.U > 1 ? ', shared with ' + (s.U-1) + ' others' : ''),
+         x0, a0 - 12, INK, 14);
     var lo = 1e9, hi = -1e9;
     for (i = 0; i < s.tong; i++){
       if (s.mk[i] < lo) lo = s.mk[i];
@@ -372,12 +416,12 @@ repair into many blocks damaged slightly, and slight damage is what a code is fo
       return b1 + oH + 26;
     }
     var y2 = bang(248, s.khong,
-                  '2 · without interleaving, the burst lands on one run of blocks',
+                  '2 · before shuffling, the burst lands on one run of your blocks',
                   'one bar per block, how many of its bits are wrong. a red cell '
                   + 'below is a block the code cannot save: ' + s.matKhong
                   + ' of ' + NB);
     bang(y2 + 46, s.co,
-         '3 · with interleaving, depth ' + s.D + ', the same errors spread out',
+         '3 · after shuffling in groups of ' + s.D + ', the same errors spread out',
          'same ' + s.tongLoi + ' wrong bits, redistributed. blocks lost: '
          + s.matCo + ' of ' + NB);
   }
@@ -396,8 +440,10 @@ repair into many blocks damaged slightly, and slight damage is what a code is fo
     E('ld').textContent = s.D;
     E('lc').textContent = s.tpc;
     E('lc2').textContent = Math.round(s.tsua);
+    E('lu').textContent = s.U;
     E('q0').innerHTML = 'Window <b>' + (s.dai*1e3).toFixed(1) + ' ms</b>, ' +
-                        NB + ' blocks';
+                        NB + ' of your blocks' +
+                        (s.U > 1 ? ', link shared by <b>' + s.U + '</b>' : '');
     E('q1').innerHTML = 'Bits in error <b>' + s.tongLoi + '</b> of ' + s.tong;
     E('q2').innerHTML = 'Longest run of lost blocks <b>' + s.dayKhong + '</b>';
     E('q2').className = 'chip ' + (s.dayKhong ? 'xau' : 'tot');
@@ -409,7 +455,7 @@ repair into many blocks damaged slightly, and slight damage is what a code is fo
     ve(s);
   }
 
-  ['v','f','k','n','r','b','d','c'].forEach(function(x){
+  ['v','f','k','n','r','b','d','c','u'].forEach(function(x){
     sl[x].addEventListener('input', chay);
   });
   // Bo loc ghi ro data-v. Trang chi co mot bo nut, nhung ghi ro van la thoi
@@ -418,7 +464,7 @@ repair into many blocks damaged slightly, and slight damage is what a code is fo
   Array.prototype.forEach.call(document.querySelectorAll('.nut[data-v]'),
     function(b){
       b.addEventListener('click', function(){
-        ['v','f','k','n','r','b','d','c'].forEach(function(x){
+        ['v','f','k','n','r','b','d','c','u'].forEach(function(x){
           sl[x].value = b.dataset[x];
         });
         chay();
