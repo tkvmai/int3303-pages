@@ -46,7 +46,8 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
   <h1>One lorry, or ten bicycles</h1>
   <p>A road with ten lanes, and ten parcels to deliver. Send one lorry straddling every lane, or
   ten bicycles one per lane. A rock sits in one lane. The two convoys cover the same road in the
-  same time, and the rock costs them very different amounts.</p>
+  same time, and the rock costs them very different amounts. <b>Section 2 drops the metaphor</b>
+  and runs the same comparison on a real indoor channel and a real 20 MHz WiFi band.</p>
 </header>
 <a class="veml" href="../index.html">Back to the INT3303 simulation index</a>
 
@@ -115,6 +116,87 @@ bicycles meet it in one lane only, so one parcel is lost and the rest roll past.
       good.</li>
   <li><b>Not honest: a rock is sharp, a notch is not.</b> A notch attenuates its neighbourhood
       gradually, so lanes near the rock are slowed rather than stopped.</li>
+</ul>
+
+<h2>Section 2: the same story without the metaphor</h2>
+<p class="sub">Above, a rock in a lane. Here, the real thing: a measured-looking indoor channel, a
+real 20 MHz WiFi band, and a slider that cuts the band into slices. <b>Nothing about the room
+changes when you move that slider.</b> The only thing that changes is how wide each signal is, and
+therefore how much of the channel's unevenness any one signal has to swallow. Start on
+<b>One wide carrier</b> and then press <b>Switch to OFDM</b>.</p>
+
+<div class="dk">
+  <div class="hang">
+    <div>
+      <label class="t">Cut the band into <b><span id="sln">1</span></b> slice, each
+        <b><span id="slw">20000</span> kHz</b> wide</label>
+      <input type="range" id="sn" min="0" max="7" step="1" value="0">
+    </div>
+    <div>
+      <label class="t">The room, echoes <b>×<span id="sld">1.0</span></b> as late</label>
+      <input type="range" id="sd" min="0" max="3" step="1" value="1">
+    </div>
+    <div>
+      <label class="t">Coding can rebuild <b><span id="slc">10</span>%</b> of the slices</label>
+      <input type="range" id="sc" min="0" max="4" step="1" value="2">
+    </div>
+  </div>
+  <div style="margin-top:10px">
+    <span class="nut" data-s="0" data-sd="1" data-sc="2">One wide carrier, 20 MHz</span>
+    <span class="nut" data-s="6" data-sd="1" data-sc="2">Switch to OFDM, 64 slices</span>
+    <span class="nut" data-s="3" data-sd="1" data-sc="2">Only eight slices, not enough</span>
+    <span class="nut" data-s="6" data-sd="2" data-sc="2">A rougher room, still 64 slices</span>
+  </div>
+</div>
+
+<div style="margin:0 0 14px">
+  <span class="chip" id="s0">The whole band varies <b>0 dB</b></span>
+  <span class="chip" id="s1">A typical slice sees <b>0 dB</b></span>
+  <span class="chip" id="s2">Selective slices <b>0</b></span>
+  <span class="chip" id="s3">Slices in a notch <b>0</b></span>
+  <span class="chip" id="s4">Delivered after coding <b>0</b></span>
+</div>
+
+<canvas id="cv2" width="1280" height="620"></canvas>
+
+<h2>Reading the three panels</h2>
+<p class="sub"><b>Panel 1 is the room.</b> It is the gain of a four-path indoor channel plotted
+against frequency across one 20 MHz WiFi channel, and it does not move when you change the number
+of slices. The blocks drawn on it are the signals: one wide block, or many narrow ones. Teal means
+the slice came through, magenta means it did not.</p>
+<p class="sub"><b>Panel 2 is the whole argument in one picture.</b> Each bar is how much the gain
+varies <i>across that one signal</i>, which is the quantity that decides whether the signal is
+treated evenly. The dashed line near the top is what a single wide carrier has to swallow. Press
+<b>Switch to OFDM</b> and watch every bar collapse to the floor: in this room the figure falls
+from <b>13.69 dB</b> for one wide carrier to a typical <b>0.47 dB</b> per slice, about twenty nine
+times smaller. The room did not improve. The signals got narrower.</p>
+<p class="sub"><b>Panel 3 is what arrives.</b> One cell per slice. The wide carrier is a single
+cell, so when it fails there is nothing left. With 64 slices the failures are a minority, and a
+code carrying a little redundancy rebuilds them, which is the slide on coding in the lecture.</p>
+
+<h2>Two different ways a slice can fail, and the difference matters</h2>
+<p class="sub">This page marks a slice failed for either of two reasons, and colours the panel 2
+bar accordingly, because they are not the same problem and they do not have the same cure.</p>
+<ul>
+  <li><b>Selective: the gain varies by more than 3 dB across the slice.</b> The slice is treated
+      unevenly, so its own spectrum comes out distorted and its symbols smear into each other.
+      <b>Power does not cure this.</b> It is the failure that dominates when the signal is wide,
+      and it is the one OFDM removes.</li>
+  <li><b>Weak: the slice sits in a notch, average gain below &minus;6 dB.</b> The slice is treated
+      evenly but faintly. <b>This one power or coding can cure</b>, and OFDM does not remove it,
+      it merely confines it to a few slices instead of ruining everything.</li>
+  <li><b>Watch the two trade places as you slide.</b> At one slice the failure is entirely
+      selectivity. By 32 slices no slice is selective at all, and every remaining failure is a
+      slice that fell in a notch. That exchange is what OFDM actually does: <b>it converts a
+      problem that cannot be coded around into one that can.</b></li>
+  <li><b>More slices stops helping.</b> Step from 64 to 128 and the typical slice gets flatter
+      still, but the count of failures does not keep falling, because the notch is a fixed width
+      of the band and slicing it finer just divides the same bad region into more pieces. The gain
+      from narrowing runs out once each slice is already flat.</li>
+  <li><b>A rougher room needs more than slicing.</b> Press <b>A rougher room</b>: the echoes
+      arrive twice as late, the notches crowd twice as close, and some slices turn selective again
+      even at 64. That is the honest limit, and it is why a real system also carries a cyclic
+      prefix and a code rather than relying on narrow slices alone.</li>
 </ul>
 
 <footer>
@@ -384,5 +466,274 @@ Faculty of Information Technology<br>
 University of Engineering and Technology, Vietnam National University<br>
 <a href="mailto:mai.tran@vnu.edu.vn" style="color:#5A6272">mai.tran@vnu.edu.vn</a>
 </div>
+<script>
+/* Muc 2: chinh cau chuyen tren, bo an du di.
+   Kenh BON TIA, dung dung bo tre cua figs_b04t2.py (40, 90, 150 ns), tuc
+   trai tre rms 46,7 ns, nam giua dai Molisch do cho van phong trong nha.
+   Dung chung mot kenh voi hinh tren slide thi trang va slide khong noi hai
+   dieu khac nhau, va do la loi em da mac mot lan roi giua selective.html
+   voi figs_b04t2.py.
+
+   Bo num cua muc nay dung khoa data-s, data-sd, data-sc, va bo xu ly chi
+   voi toi '.nut[data-s]'. KHONG dung '.nut' tran: muc 1 cung co nut mang
+   class ay, va mot bo loc rong hon y dinh chinh la lop loi Mai bat duoc
+   tren selective.html ngay 18/10. */
+(function(){
+  var E = function(id){ return document.getElementById(id); };
+  var sl = {n:E('sn'), d:E('sd'), c:E('sc')};
+  var cv = E('cv2'), g = cv.getContext('2d');
+  var INK='#1A1F36', MUT='#5A6272', LINE='#E4E8EF', TEAL='#2A9D8F',
+      MAG='#D81E5B', ACC='#FF6B35', PUR='#6C5CE7', FADE='#EEF1F6';
+
+  // Bo tia: do tre giay, bien do. Giong het _TRE trong figs_b04t2.py.
+  var TIA = [[0.0,1.00],[40e-9,0.62],[90e-9,0.48],[150e-9,0.38]];
+  var NORM = Math.sqrt(TIA.reduce(function(s,t){ return s + t[1]*t[1]; }, 0));
+  var BW = 20e6;
+  var NLAT  = [1,2,4,8,16,32,64,128];
+  var PHONG = [0.5,1.0,2.0,3.0];
+  var MA    = [0,5,10,20,30];
+  var NGUONG_PHANG =  3.0;   // dB, giong nguong chon loc cua trang Buoi 3
+  var NGUONG_YEU   = -6.0;   // dB, giong hinh f4t2_chonloc tren slide
+
+  function hdB(f, s){
+    var re = 0, im = 0, i, ph;
+    for (i = 0; i < TIA.length; i++){
+      ph = -2*Math.PI*f*TIA[i][0]*s;
+      re += TIA[i][1]*Math.cos(ph);
+      im += TIA[i][1]*Math.sin(ph);
+    }
+    return 20*Math.log10(Math.sqrt(re*re + im*im)/NORM);
+  }
+
+  /* Luoi do DUNG CHUNG cho moi so lat. Ban dau moi lat tu dung luoi rieng
+     max(81, 2001/N) diem, va cong kiem kiemofdm.py bat ngay: cat bang lam
+     DOI thi bien thien trung vi lon hon truong hop mot bang, 13,693256883
+     so voi 13,693256104. Ve toan hoc dieu ay khong the xay ra, vi mot doan
+     CON cua mot doan thi hieu lon nhat tru nho nhat khong the lon hon.
+     Chenh lech 8e-10 dB la cua PHEP DO chu khong phai cua vat ly: hai luoi
+     khac nhau roi vao hai cho khac nhau. Chua bang cach cho moi lat doc
+     cung mot bo mau, chu khong noi long phep kiem. 16385 diem tren 20 MHz
+     la buoc 1,22 kHz, con 128 mau cho mot lat ngay ca o N = 128, va 16384
+     la luy thua cua hai nen ranh gioi moi lat deu roi dung vao mau. */
+  var NMAU = 16385, _fm = null, _hm = null, _sm = null;
+  function luoi(s){
+    if (_sm === s) return;
+    _fm = new Float64Array(NMAU); _hm = new Float64Array(NMAU);
+    for (var j = 0; j < NMAU; j++){
+      _fm[j] = -BW/2 + BW*j/(NMAU - 1);
+      _hm[j] = hdB(_fm[j], s);
+    }
+    _sm = s;
+  }
+
+  function tinh(){
+    var N = NLAT[+sl.n.value], s = PHONG[+sl.d.value], pc = MA[+sl.c.value];
+    var df = BW/N;
+    luoi(s);
+    var lat = [], k, j, w, lo, hi, tong, p, a, b;
+    for (k = 0; k < N; k++){
+      a = Math.floor(k*(NMAU - 1)/N);
+      b = Math.floor((k + 1)*(NMAU - 1)/N);
+      lo = 1e9; hi = -1e9; tong = 0;
+      for (j = a; j <= b; j++){
+        w = _hm[j];
+        if (w < lo) lo = w;
+        if (w > hi) hi = w;
+        tong += Math.pow(10, w/10);
+      }
+      p = 10*Math.log10(tong/(b - a + 1));
+      lat.push({f0:-BW/2 + k*df, f1:-BW/2 + (k + 1)*df, bien:hi - lo, tb:p,
+                chonloc:(hi - lo) > NGUONG_PHANG, yeu:p < NGUONG_YEU});
+    }
+    // Duong cong de VE lay thua tu luoi chung, moi 16 diem mot lan.
+    var NG = (NMAU - 1)/16 + 1, f = new Float64Array(NG), h = new Float64Array(NG);
+    lo = 1e9; hi = -1e9;
+    for (j = 0; j < NMAU; j++){
+      if (_hm[j] < lo) lo = _hm[j];
+      if (_hm[j] > hi) hi = _hm[j];
+    }
+    for (j = 0; j < NG; j++){ f[j] = _fm[j*16]; h[j] = _hm[j*16]; }
+    var hong = 0, cl = 0, yeu = 0;
+    for (k = 0; k < N; k++){
+      if (lat[k].chonloc){ cl++; hong++; }
+      else if (lat[k].yeu){ yeu++; hong++; }
+    }
+    var bs = lat.map(function(l){ return l.bien; }).slice().sort(
+               function(a, b){ return a - b; });
+    var tv = N % 2 ? bs[(N - 1)/2] : (bs[N/2 - 1] + bs[N/2])/2;
+    var sua = Math.min(hong, Math.floor(N*pc/100));
+    return {N:N, s:s, pc:pc, lat:lat, f:f, h:h, bienCaBang:hi - lo,
+            trungvi:tv, sochonloc:cl, soyeu:yeu, sohong:hong,
+            sua:sua, den:N - hong + sua};
+  }
+
+  function ve(s){
+    var W = cv.width, H = cv.height, i, k;
+    g.clearRect(0, 0, W, H);
+    var x0 = 86, x1 = W - 26;
+    function fx(f){ return x0 + (f + BW/2)/BW*(x1 - x0); }
+    g.font = '13px Calibri, sans-serif';
+    g.textBaseline = 'alphabetic';
+
+    function tieuDe(y, t){
+      g.fillStyle = INK; g.font = 'bold 14px Calibri, sans-serif';
+      g.textAlign = 'left'; g.fillText(t, x0 - 6, y);
+      g.font = '13px Calibri, sans-serif';
+    }
+
+    // ---- khung 1: kenh, va cac tin hieu dat tren no -------------------
+    // Tieu de o y 26 va hai nhan truc o y 50. Truoc day tieu de dat y 30
+    // con nhan truc y 38, nen chu "channel gain, dB" DE LEN duoi tieu de.
+    // figtext khong soi trang HTML, chi soi hinh matplotlib, nen cho nay
+    // phai dung mat de bat. Do 2026-10-19 tren ban soihinh.
+    tieuDe(26, '1 · the channel this room makes, with your signals sitting on it');
+    var yA0 = 56, yA1 = 248, DL = -24, DH = 9;
+    function fy(d){ var c = Math.max(DL, Math.min(DH, d));
+                    return yA1 - (c - DL)/(DH - DL)*(yA1 - yA0); }
+    // luoi ngang
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    g.textAlign = 'right'; g.fillStyle = MUT;
+    for (i = -20; i <= 5; i += 5){
+      g.beginPath(); g.moveTo(x0, fy(i)); g.lineTo(x1, fy(i)); g.stroke();
+      g.fillText(i + '', x0 - 8, fy(i) + 4);
+    }
+    // cac lat, ve TRUOC duong cong de duong cong nam tren cung
+    for (k = 0; k < s.N; k++){
+      var L = s.lat[k], xa = fx(L.f0), xb = fx(L.f1);
+      var hongL = L.chonloc || L.yeu;
+      g.fillStyle = hongL ? 'rgba(216,30,91,0.17)' : 'rgba(42,157,143,0.15)';
+      g.fillRect(xa + (s.N > 32 ? 0 : 1), yA0,
+                 Math.max(xb - xa - (s.N > 32 ? 0 : 2), 1), yA1 - yA0);
+      if (s.N <= 32){
+        g.strokeStyle = hongL ? MAG : TEAL; g.lineWidth = 1;
+        g.strokeRect(xa + 1, yA0, Math.max(xb - xa - 2, 1), yA1 - yA0);
+      }
+    }
+    // duong cong kenh
+    g.strokeStyle = PUR; g.lineWidth = 2; g.beginPath();
+    for (i = 0; i < s.f.length; i++){
+      var X = fx(s.f[i]), Y = fy(s.h[i]);
+      if (i === 0) g.moveTo(X, Y); else g.lineTo(X, Y);
+    }
+    g.stroke();
+    // nhan truc
+    g.textAlign = 'left'; g.fillStyle = MUT;
+    g.fillText('channel gain, dB', x0, yA0 - 6);
+    g.textAlign = 'right';
+    g.fillText('frequency across one 20 MHz WiFi channel', x1, yA0 - 6);
+    g.textAlign = 'center'; g.fillStyle = MUT;
+    g.fillText('−10 MHz', x0 + 34, yA1 + 17);
+    g.fillText('centre of the channel', (x0 + x1)/2, yA1 + 17);
+    g.fillText('+10 MHz', x1 - 32, yA1 + 17);
+
+    // ---- khung 2: moi tin hieu thay bao nhieu TREN CHINH NO -----------
+    tieuDe(288, '2 · how much the gain varies across each signal, measured on itself');
+    var yB0 = 302, yB1 = 432, BMAX = 16;
+    function by(v){ return yB1 - Math.min(v, BMAX)/BMAX*(yB1 - yB0); }
+    // Vach chia, truoc day khung nay khong he co thang do nao nen khong doc
+    // duoc mot cot cao bao nhieu dB.
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    g.textAlign = 'right'; g.fillStyle = MUT;
+    for (i = 0; i <= BMAX; i += 4){
+      g.beginPath(); g.moveTo(x0, by(i)); g.lineTo(x1, by(i)); g.stroke();
+      g.fillText(i + '', x0 - 8, by(i) + 4);
+    }
+    // Cac cot ve TRUOC, hai duong moc ve SAU. Truoc day nguoc lai, nen o
+    // che do mot song mang rong cai cot cao kin khung da PHU MAT duong moc
+    // 3 dB lan nhan cua no, tuc giau di dung cai cau tra loi cho cau hoi
+    // "vi sao song mang rong hong". Do 2026-10-19.
+    for (k = 0; k < s.N; k++){
+      var L2 = s.lat[k], a2 = fx(L2.f0), b2 = fx(L2.f1);
+      var wc = Math.max(b2 - a2 - (s.N > 32 ? 0.5 : 2), 1);
+      g.fillStyle = L2.chonloc ? MAG : (L2.yeu ? ACC : TEAL);
+      g.fillRect(a2 + (s.N > 32 ? 0.25 : 1), by(L2.bien), wc,
+                 yB1 - by(L2.bien));
+    }
+    g.strokeStyle = INK; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x0, yB1); g.lineTo(x1, yB1); g.stroke();
+    g.strokeStyle = MAG; g.lineWidth = 1.4; g.setLineDash([5,3]);
+    g.beginPath(); g.moveTo(x0, by(NGUONG_PHANG));
+    g.lineTo(x1, by(NGUONG_PHANG)); g.stroke();
+    g.strokeStyle = ACC;
+    g.beginPath(); g.moveTo(x0, by(s.bienCaBang));
+    g.lineTo(x1, by(s.bienCaBang)); g.stroke();
+    g.setLineDash([]);
+    // Nhan dat tren nen trang nho, de doc duoc ca khi nam de len cot.
+    function nhanMoc(y, mau, chu){
+      g.font = 'bold 13px Calibri, sans-serif';
+      var w2 = g.measureText(chu).width;
+      g.fillStyle = 'rgba(255,255,255,0.88)';
+      g.fillRect(x0 + 5, y - 18, w2 + 8, 16);
+      g.fillStyle = mau; g.textAlign = 'left';
+      g.fillText(chu, x0 + 9, y - 6);
+      g.font = '13px Calibri, sans-serif';
+    }
+    nhanMoc(by(NGUONG_PHANG), MAG, 'above here the slice is selective, 3 dB');
+    nhanMoc(by(s.bienCaBang), ACC, 'one wide carrier swallows all of this, ' +
+            s.bienCaBang.toFixed(2) + ' dB');
+    g.textAlign = 'right'; g.fillStyle = MUT;
+    g.fillText('dB across one signal', x1, yB0 - 6);
+    g.textAlign = 'left';
+    g.fillText('magenta: selective.  orange: flat but sitting in a notch.  ' +
+               'teal: came through.', x0, yB1 + 17);
+
+    // ---- khung 3: cai gi toi noi ---------------------------------------
+    tieuDe(478, '3 · what arrives, one cell per signal');
+    var yC0 = 492, yC1 = 552, con = s.sua;
+    for (k = 0; k < s.N; k++){
+      var L3 = s.lat[k], a3 = fx(L3.f0), b3 = fx(L3.f1);
+      var hong3 = L3.chonloc || L3.yeu, vaMa = false;
+      if (hong3 && con > 0){ vaMa = true; con--; }
+      g.fillStyle = !hong3 ? TEAL : (vaMa ? ACC : MAG);
+      g.fillRect(a3 + (s.N > 32 ? 0.25 : 1), yC0,
+                 Math.max(b3 - a3 - (s.N > 32 ? 0.5 : 2), 1), yC1 - yC0);
+    }
+    g.textAlign = 'left'; g.fillStyle = MUT;
+    g.fillText('teal: delivered.  orange: lost but rebuilt by the code.  ' +
+               'magenta: lost for good.', x0, yC1 + 19);
+    g.textAlign = 'right';
+    g.fillStyle = s.den === s.N ? TEAL : (s.den === 0 ? MAG : INK);
+    g.font = 'bold 14px Calibri, sans-serif';
+    g.fillText(s.den + ' of ' + s.N + ' delivered', x1, yC1 + 19);
+    g.font = '13px Calibri, sans-serif';
+  }
+
+  function capNhat(){
+    var s = tinh();
+    E('sln').textContent = s.N;
+    E('slw').textContent = (BW/s.N/1e3).toFixed(s.N > 64 ? 1 : 0);
+    E('sld').textContent = s.s.toFixed(1);
+    E('slc').textContent = s.pc;
+    E('s0').innerHTML = 'The whole band varies <b>' +
+      s.bienCaBang.toFixed(2) + ' dB</b>';
+    E('s1').innerHTML = 'A typical slice sees <b>' +
+      s.trungvi.toFixed(2) + ' dB</b>';
+    E('s2').className = 'chip ' + (s.sochonloc ? 'xau' : 'tot');
+    E('s2').innerHTML = 'Selective slices <b>' + s.sochonloc + ' of ' +
+      s.N + '</b>';
+    E('s3').className = 'chip ' + (s.soyeu ? 'xau' : 'tot');
+    E('s3').innerHTML = 'Slices in a notch <b>' + s.soyeu + ' of ' +
+      s.N + '</b>';
+    E('s4').className = 'chip ' + (s.den === s.N ? 'tot' : 'xau');
+    E('s4').innerHTML = 'Delivered after coding <b>' + s.den + ' of ' +
+      s.N + '</b>';
+    ve(s);
+  }
+
+  ['n','d','c'].forEach(function(x){
+    sl[x].addEventListener('input', capNhat); });
+  Array.prototype.forEach.call(document.querySelectorAll('.nut[data-s]'),
+    function(b){
+      b.addEventListener('click', function(){
+        sl.n.value = b.dataset.s;
+        sl.d.value = b.dataset.sd;
+        sl.c.value = b.dataset.sc;
+        capNhat();
+      });
+    });
+  capNhat();
+  window.moPhongOFDM = tinh;        // de cong doi chieu goi duoc
+})();
+</script>
 </body>
 </html>
