@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · One lorry or ten bicycles</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;
+      --mut:#5A6272;--line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE;max-width:900px;line-height:1.5}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.55}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+.dk{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:0 0 16px;background:var(--tint)}
+.hang{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px 24px}
+label.t{display:block;font-size:13.5px;color:var(--mut);margin:0 0 3px}
+label.t b{color:var(--ink);font-size:14.5px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 11px;
+  font-size:13px;color:var(--mut);background:#fff;margin:0 6px 6px 0}
+.chip b{color:var(--ink)}
+.chip.xau b{color:var(--mag)}
+.chip.tot b{color:var(--teal)}
+h2{font-family:Cambria,Georgia,serif;font-size:19px;margin:24px 0 8px;padding-bottom:6px;
+   border-bottom:1px solid var(--line)}
+ul{margin:8px 0 0;padding-left:20px;font-size:14.5px;color:var(--mut);line-height:1.65}
+ul b{color:var(--ink)}
+.nut{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:8px;
+  padding:6px 12px;font-size:13.5px;color:var(--ink);cursor:pointer;margin:0 6px 6px 0}
+.nut:hover{border-color:var(--acc)}
+code{background:var(--tint);padding:1px 5px;border-radius:4px;font-size:13.5px}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13.5px;line-height:1.6}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · SESSION 4 · PART 2</div>
+  <h1>One lorry, or ten bicycles</h1>
+  <p>A road with ten lanes, and ten parcels to deliver. Send one lorry straddling every lane, or
+  ten bicycles one per lane. A rock sits in one lane. The two convoys cover the same road in the
+  same time, and the rock costs them very different amounts.</p>
+</header>
+<a class="veml" href="../index.html">Back to the INT3303 simulation index</a>
+
+<main>
+
+<div class="dk">
+  <div class="hang">
+    <div>
+      <label class="t">Lanes, and parcels to deliver <b><span id="ln">10</span></b></label>
+      <input type="range" id="n" min="4" max="16" step="1" value="10">
+    </div>
+    <div>
+      <label class="t">Rocks on the road <b><span id="lr">1</span></b></label>
+      <input type="range" id="r" min="0" max="4" step="1" value="1">
+    </div>
+    <div>
+      <label class="t">The code can rebuild <b><span id="lc">1</span></b> lost parcel</label>
+      <input type="range" id="c" min="0" max="4" step="1" value="1">
+    </div>
+  </div>
+  <div style="margin-top:10px">
+    <span class="nut" data-m="0">Send the lorry</span>
+    <span class="nut" data-m="1">Send the bicycles</span>
+    <span class="nut" data-m="2">Send both, side by side</span>
+    <span class="nut" data-m="3">Four rocks instead of one</span>
+  </div>
+</div>
+
+<div style="margin:0 0 14px">
+  <span class="chip" id="q0">Parcels sent <b>10</b></span>
+  <span class="chip" id="q1">Lorry delivers <b>0</b></span>
+  <span class="chip" id="q2">Bicycles deliver <b>0</b></span>
+  <span class="chip" id="q3">After the code <b>0</b></span>
+</div>
+
+<canvas id="cv" width="1280" height="620"></canvas>
+
+<h2>What the picture means</h2>
+<p class="sub">The road is the channel. <b>Across the road, the lanes are frequencies.</b> A vehicle
+that straddles every lane is using the whole band at once. A vehicle in one lane is using one
+narrow slice. <b>Along the road, distance is time.</b> A short vehicle occupies the band only
+briefly; a long one occupies its lane for much longer.</p>
+<p class="sub">That is why the lorry is <b>wide and short</b> and each bicycle is <b>narrow and
+long</b>. It is not an artistic choice: a narrow slice cannot carry quick changes, so a narrow
+vehicle has to be a long one. Both convoys cover exactly the same rectangle of road, which is why
+they set out together and arrive together. <b>Nothing has been traded away for safety.</b></p>
+<p class="sub">The rock is a notch in the channel, sitting at one frequency and staying there. The
+lorry meets it because the lorry is in every lane, and it loses everything it carries. The
+bicycles meet it in one lane only, so one parcel is lost and the rest roll past.</p>
+
+<h2>Where the metaphor is honest, and where it is not</h2>
+<ul>
+  <li><b>Honest: the same work in the same time.</b> Both convoys deliver the same number of
+      parcels over the same stretch of road. The slow bicycle is slow because it is narrow, and
+      there are as many of them as the lorry is wide.</li>
+  <li><b>Honest: one rock, very different damage.</b> A single fixed obstacle removes everything
+      from a vehicle that spans the whole band, and one parcel in ten from a convoy that does
+      not.</li>
+  <li><b>Honest: the code finishes the job.</b> Nine parcels that arrive can carry enough
+      redundancy to rebuild the tenth. Nine parcels that never set out cannot.</li>
+  <li><b>Not honest: rocks do not sit still.</b> A real notch moves when anything in the room
+      moves, which is why a receiver measures the band again and again rather than learning the
+      bad lanes once.</li>
+  <li><b>Not honest: bicycles do not interfere.</b> Real subcarriers overlap heavily in frequency
+      and avoid each other only because their spacing is exact. No lane markings are that
+      good.</li>
+  <li><b>Not honest: a rock is sharp, a notch is not.</b> A notch attenuates its neighbourhood
+      gradually, so lanes near the rock are slowed rather than stopped.</li>
+</ul>
+
+<footer>
+  Sources. The idea that OFDM confines frequency-selective damage to some subcarriers rather than
+  spreading it across the whole signal is Stallings, <i>Wireless Communications and Networks</i>,
+  2nd edition, printed page 338, and Steenkiste, <i>Introduction to Wireless Networking and Its
+  Impact on Applications</i>, 2nd edition, section 3.6.2. That a narrower subcarrier must carry a
+  longer symbol is the reciprocal relation between bandwidth and symbol time, taught in session 2
+  part 3 through Nyquist. The counts on this page are computed, not drawn: the parcels lost are
+  the vehicles whose lane holds a rock, and the recovery is the plain arithmetic of a code that
+  can rebuild a stated number of lost parcels.
+</footer>
+</main>
+
+<script>
+/* Mot chiec xe tai hay muoi chiec xe dap.
+   Duong la kenh truyen. NGANG duong, cac lan la TAN SO. DOC duong, quang
+   duong la THOI GIAN. Nen xe tai RONG va NGAN, moi xe dap HEP va DAI, va
+   hai doan phu DUNG CUNG MOT hinh chu nhat: cung xuat phat, cung ve dich.
+
+   Day la cho em sua lai so voi cach Mai ke ban dau. Neu xe dap vua cham
+   hon vua ve dich muon hon thi hinh dang day rang OFDM danh doi toc do, ma
+   do dung la hieu nham pho bien nhat ve OFDM, va la dieu slide ngay truoc
+   no bac bo. Giu nguyen phan vui nhon, chi sua phan sai. */
+(function(){
+  var E = function(id){ return document.getElementById(id); };
+  var sl = {n:E('n'), r:E('r'), c:E('c')};
+  var cv = E('cv'), g = cv.getContext('2d');
+  var INK='#1A1F36', MUT='#5A6272', LINE='#E4E8EF', TEAL='#2A9D8F',
+      MAG='#D81E5B', ACC='#FF6B35', PUR='#6C5CE7', FADE='#EEF1F6';
+  var cheDo = 2, t = 0, chay = true;
+
+  // Vi tri cac tang da, chon TAT DINH tu so lan, khong dung bo sinh ngau
+  // nhien: trang phai ve lai y het sau moi lan tai.
+  function daO(n, soDa){
+    var ds = [], i;
+    for (i = 0; i < soDa; i++)
+      ds.push({lan: (i*7 + 3) % n, x: 0.30 + 0.16*((i*5) % 4)});
+    return ds;
+  }
+
+  function tinh(){
+    var n = +sl.n.value, soDa = +sl.r.value, sua = +sl.c.value;
+    var da = daO(n, soDa);
+    var lanDinh = {};
+    da.forEach(function(d){ lanDinh[d.lan] = true; });
+    var soLanDinh = Object.keys(lanDinh).length;
+    // Xe tai nam tren MOI lan, nen chi can mot tang da la mat het.
+    var taiGiao = soDa > 0 ? 0 : n;
+    // Moi xe dap mot lan, nen chi mat dung so lan co da.
+    var dapGiao = n - soLanDinh;
+    var dapMat = soLanDinh;
+    // Ma sua loi vot lai duoc toi `sua` kien, nhung chi khi con du kien de
+    // doc ra: khong con kien nao thi khong co gi de tinh toan tu do.
+    var sauMa = dapGiao > 0 ? Math.min(n, dapGiao + Math.min(sua, dapMat))
+                            : 0;
+    return {n:n, soDa:soDa, da:da, sua:sua, taiGiao:taiGiao,
+            dapGiao:dapGiao, dapMat:dapMat, sauMa:sauMa,
+            soLanDinh:soLanDinh};
+  }
+  window.moPhongXe = tinh;
+
+  function xeDap(x, y, h, mau, vo){
+    // mot chiec xe dap nhin ngang, don gian nhung ra hinh xe dap
+    var r = h*0.26, y0 = y + h - r;
+    g.strokeStyle = vo ? '#C9D0DB' : mau; g.lineWidth = 2;
+    g.beginPath(); g.arc(x + r, y0, r, 0, 6.2832); g.stroke();
+    g.beginPath(); g.arc(x + h*1.30, y0, r, 0, 6.2832); g.stroke();
+    g.beginPath();
+    g.moveTo(x + r, y0); g.lineTo(x + h*0.62, y0 - h*0.30);
+    g.lineTo(x + h*1.30, y0); g.moveTo(x + h*0.62, y0 - h*0.30);
+    g.lineTo(x + h*0.86, y0); g.lineTo(x + r, y0);
+    g.stroke();
+    g.beginPath();
+    g.moveTo(x + h*0.86, y0 - h*0.02); g.lineTo(x + h*1.42, y0 - h*0.42);
+    g.stroke();
+  }
+
+  function veXeTai(x, y, w, h, soKien, hong){
+    var than = w*0.78, cab = w*0.22;
+    g.fillStyle = hong ? '#F2D3DC' : ACC;
+    g.fillRect(x, y, than, h);
+    g.strokeStyle = hong ? MAG : '#C44D1C'; g.lineWidth = 2;
+    g.strokeRect(x, y, than, h);
+    // cabin o dau xe, phia ben phai vi xe chay sang phai
+    g.fillStyle = hong ? '#E3B9C6' : '#C44D1C';
+    g.fillRect(x + than, y + h*0.30, cab, h*0.40);
+    // banh xe doc than
+    g.fillStyle = '#3A3F52';
+    var nb = 4, k;
+    for (k = 0; k < nb; k++){
+      var yb = y + h*(0.12 + 0.25*k);
+      g.fillRect(x - 3, yb, 6, h*0.09);
+      g.fillRect(x + than - 3, yb, 6, h*0.09);
+    }
+    // kien hang xep doc than xe
+    var sK = Math.min(than*0.42, h/soKien*0.70);
+    for (k = 0; k < soKien; k++)
+      kien(x + than/2 - sK/2, y + 6 + k*((h - 12)/soKien),
+           sK, '#FFFFFF', hong);
+  }
+
+  function kien(x, y, s, mau, mo){
+    g.fillStyle = mo ? '#DDE2EA' : mau;
+    g.fillRect(x, y, s, s);
+    g.strokeStyle = mo ? '#C9D0DB' : 'rgba(0,0,0,0.18)'; g.lineWidth = 1;
+    g.strokeRect(x + 0.5, y + 0.5, s - 1, s - 1);
+    g.beginPath(); g.moveTo(x, y + s/2); g.lineTo(x + s, y + s/2);
+    g.moveTo(x + s/2, y); g.lineTo(x + s/2, y + s); g.stroke();
+  }
+
+  function tangDa(x, y, s){
+    g.fillStyle = '#7A6A5F';
+    g.beginPath();
+    g.moveTo(x, y + s); g.lineTo(x + s*0.22, y + s*0.30);
+    g.lineTo(x + s*0.56, y); g.lineTo(x + s*0.88, y + s*0.34);
+    g.lineTo(x + s, y + s);
+    g.closePath(); g.fill();
+  }
+
+  function veDuong(s, x0, x1, y0, y1, nhan){
+    var n = s.n, lh = (y1 - y0)/n, i;
+    g.fillStyle = '#F7F9FC'; g.fillRect(x0, y0, x1 - x0, y1 - y0);
+    g.strokeStyle = '#C9D0DB'; g.lineWidth = 1.4;
+    g.strokeRect(x0, y0, x1 - x0, y1 - y0);
+    g.strokeStyle = '#DDE2EA'; g.lineWidth = 1; g.setLineDash([7, 7]);
+    for (i = 1; i < n; i++){
+      g.beginPath(); g.moveTo(x0, y0 + i*lh); g.lineTo(x1, y0 + i*lh);
+      g.stroke();
+    }
+    g.setLineDash([]);
+    g.fillStyle = MUT; g.font = '12px Calibri, sans-serif';
+    g.textAlign = 'left';  g.fillText('start', x0, y1 + 16);
+    g.textAlign = 'right'; g.fillText('finish', x1, y1 + 16);
+    g.textAlign = 'center';
+    g.fillText('along the road: time', (x0 + x1)/2, y1 + 16);
+    g.save(); g.translate(x0 - 14, (y0 + y1)/2); g.rotate(-Math.PI/2);
+    g.textAlign = 'center'; g.fillText('across the road: frequency', 0, 0);
+    g.restore();
+    g.textAlign = 'left'; g.fillStyle = INK;
+    g.font = '14px Calibri, sans-serif';
+    g.fillText(nhan, x0, y0 - 10);
+    return lh;
+  }
+
+  function ve(){
+    var s = tinh(), i, j;
+    var W0 = cv.width;
+    g.clearRect(0, 0, W0, cv.height);
+    g.textBaseline = 'alphabetic';
+    var x0 = 176, x1 = W0 - 40;
+    var hai = cheDo === 2;
+    var cao = hai ? 236 : 420;
+    var yA = 50;
+    var u = Math.min(t, 1);
+
+    function veDa(xx0, xx1, yy0, lh){
+      for (i = 0; i < s.da.length; i++){
+        var d = s.da[i];
+        tangDa(xx0 + d.x*(xx1 - xx0) - lh*0.33, yy0 + d.lan*lh + lh*0.22,
+               lh*0.66);
+      }
+    }
+
+    // ---- xe tai: rong het lan, ngan theo duong -----------------------
+    if (cheDo === 0 || hai){
+      var hA = cao - 64;
+      var lh = veDuong(s, x0, x1, yA, yA + hA,
+                       'One lorry, straddling every lane');
+      veDa(x0, x1, yA, lh/1);
+      var wT = (x1 - x0)*0.12;
+      // Tang da gan nhat phia truoc. Xe tai nam tren MOI lan nen bat ky
+      // tang nao cung chan duong no.
+      var chan = null;
+      for (i = 0; i < s.da.length; i++){
+        var xd = x0 + s.da[i].x*(x1 - x0);
+        if (chan === null || xd < chan) chan = xd;
+      }
+      var xTuDo = x0 + u*((x1 - x0) - wT);
+      var dung = chan !== null && xTuDo + wT >= chan;
+      var xT = dung ? chan - wT : xTuDo;
+      veXeTai(xT, yA + 5, wT, hA - 10, s.n, dung);
+      if (dung){
+        g.fillStyle = MAG; g.font = 'bold 16px Calibri, sans-serif';
+        g.textAlign = 'left';
+        g.fillText('stopped here, all ' + s.n + ' parcels lost',
+                   chan + 18, yA + hA/2);
+      }
+    }
+
+    // ---- xe dap: moi chiec mot lan, chay song song --------------------
+    if (cheDo === 1 || hai){
+      var yy = hai ? yA + cao + 34 : yA;
+      var hB = cao - 64;
+      var lh2 = veDuong(s, x0, x1, yy, yy + hB,
+                        s.n + ' bicycles, one to a lane');
+      veDa(x0, x1, yy, lh2);
+      var wB = lh2*1.65;
+      for (i = 0; i < s.n; i++){
+        var chan2 = null;
+        for (j = 0; j < s.da.length; j++)
+          if (s.da[j].lan === i){
+            var xdd = x0 + s.da[j].x*(x1 - x0);
+            if (chan2 === null || xdd < chan2) chan2 = xdd;
+          }
+        var xFree = x0 + u*((x1 - x0) - wB);
+        var hong = chan2 !== null && xFree + wB >= chan2;
+        var xB = hong ? chan2 - wB : xFree;
+        xeDap(xB, yy + i*lh2 + lh2*0.12, lh2*0.76, TEAL, hong);
+        kien(xB + wB*0.30, yy + i*lh2 + lh2*0.02, lh2*0.32,
+             PUR, hong);
+        if (hong){
+          g.fillStyle = MAG; g.font = 'bold 13px Calibri, sans-serif';
+          g.textAlign = 'left';
+          g.fillText('1 parcel lost', chan2 + 16,
+                     yy + i*lh2 + lh2*0.62);
+        }
+      }
+      g.fillStyle = TEAL; g.font = 'bold 14px Calibri, sans-serif';
+      g.textAlign = 'right';
+      g.fillText((s.n - s.soLanDinh) + ' of ' + s.n + ' get through',
+                 x1 - 8, yy - 10);
+    }
+  }
+
+  function capNhat(){
+    var s = tinh();
+    E('ln').textContent = s.n;
+    E('lr').textContent = s.soDa;
+    E('lc').textContent = s.sua;
+    E('q0').innerHTML = 'Parcels sent <b>' + s.n + '</b>';
+    E('q1').innerHTML = 'Lorry delivers <b>' + s.taiGiao + '</b> of ' + s.n;
+    E('q1').className = 'chip ' + (s.taiGiao === s.n ? 'tot' : 'xau');
+    E('q2').innerHTML = 'Bicycles deliver <b>' + s.dapGiao + '</b> of ' + s.n;
+    E('q2').className = 'chip ' + (s.dapGiao === s.n ? 'tot' : '');
+    E('q3').innerHTML = 'After the code <b>' + s.sauMa + '</b> of ' + s.n;
+    E('q3').className = 'chip ' + (s.sauMa === s.n ? 'tot' : 'xau');
+  }
+
+  function khung(){
+    if (chay) t += 0.0045;
+    if (t > 1.18) t = 0;
+    ve();
+    requestAnimationFrame(khung);
+  }
+
+  ['n','r','c'].forEach(function(x){
+    sl[x].addEventListener('input', function(){ t = 0; capNhat(); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.nut[data-m]'),
+    function(b){
+      b.addEventListener('click', function(){
+        var m = +b.dataset.m;
+        if (m === 3){ sl.r.value = 4; cheDo = 2; }
+        else cheDo = m;
+        t = 0; capNhat();
+      });
+    });
+  cv.addEventListener('click', function(){ chay = !chay; });
+  capNhat(); khung();
+})();
+</script>
+
+<div data-tacgia="1" style="margin:28px 0 0;padding:16px 26px;border-top:1px solid #E4E8EF;background:#F7F9FC;font-family:Calibri,Segoe UI,system-ui,sans-serif;font-size:13.5px;line-height:1.7;color:#5A6272">
+<b style="color:#1A1F36">Dr Mai Tran</b><br>
+Faculty of Information Technology<br>
+University of Engineering and Technology, Vietnam National University<br>
+<a href="mailto:mai.tran@vnu.edu.vn" style="color:#5A6272">mai.tran@vnu.edu.vn</a>
+</div>
+</body>
+</html>
