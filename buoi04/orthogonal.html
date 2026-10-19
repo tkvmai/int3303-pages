@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Overlapping without interfering</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;
+      --mut:#5A6272;--line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE;max-width:920px;line-height:1.5}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.55}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+.dk{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:0 0 16px;background:var(--tint)}
+.hang{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px 24px}
+label.t{display:block;font-size:13.5px;color:var(--mut);margin:0 0 3px}
+label.t b{color:var(--ink);font-size:14.5px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 11px;
+  font-size:13px;color:var(--mut);background:#fff;margin:0 6px 6px 0}
+.chip b{color:var(--ink)}
+.chip.xau b{color:var(--mag)}
+.chip.tot b{color:var(--teal)}
+h2{font-family:Cambria,Georgia,serif;font-size:19px;margin:24px 0 8px;padding-bottom:6px;
+   border-bottom:1px solid var(--line)}
+ul{margin:8px 0 0;padding-left:20px;font-size:14.5px;color:var(--mut);line-height:1.65}
+ul b{color:var(--ink)}
+.nut{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:8px;
+  padding:6px 12px;font-size:13.5px;color:var(--ink);cursor:pointer;margin:0 6px 6px 0}
+.nut:hover{border-color:var(--acc)}
+code{background:var(--tint);padding:1px 5px;border-radius:4px;font-size:13.5px}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13.5px;line-height:1.6}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · SESSION 4 · PART 2</div>
+  <h1>Overlapping without interfering</h1>
+  <p>Frequency division multiplexing keeps a gap between neighbours so they cannot reach each
+  other. OFDM removes the gaps and lets the neighbours overlap heavily, and still reads each one
+  cleanly. This page shows how that is possible, and it shows it in the place the magic actually
+  happens, which is not the spectrum but the receiver's integrator.</p>
+</header>
+<a class="veml" href="../index.html">Back to the INT3303 simulation index</a>
+
+<main>
+
+<h2>Section 1: where the two schemes put their carriers</h2>
+<p class="sub">Both schemes carry the same number of subcarriers. FDM gives each one a
+band-limited shape and spaces them so they just touch, which costs a guard band on every gap.
+OFDM spaces them exactly one subcarrier width apart, so they overlap heavily. Move the guard
+slider to nothing and the two become the same width, which is the honest statement of what the
+guard actually buys and costs.</p>
+
+<div class="dk">
+  <div class="hang">
+    <div>
+      <label class="t">Subcarriers <b><span id="lon">8</span></b></label>
+      <input type="range" id="on" min="4" max="16" step="1" value="8">
+    </div>
+    <div>
+      <label class="t">FDM guard band, <b><span id="log">30</span>%</b> of a subcarrier
+        width</label>
+      <input type="range" id="og" min="0" max="80" step="5" value="30">
+    </div>
+  </div>
+</div>
+
+<div style="margin:0 0 14px">
+  <span class="chip" id="g0">FDM needs <b>0</b> subcarrier widths</span>
+  <span class="chip" id="g1">OFDM needs <b>0</b></span>
+  <span class="chip" id="g2">OFDM saves <b>0%</b> of the band</span>
+</div>
+
+<canvas id="cv1" width="1280" height="368"></canvas>
+
+<h2>Section 2: why the overlap does not interfere</h2>
+<p class="sub">The receiver reads one subcarrier by <b>multiplying the arriving waveform by that
+subcarrier's own frequency and adding up the result over exactly one symbol</b>. That is the whole
+operation, and orthogonality is a statement about what it returns. Watch the running total at the
+bottom: the interfering neighbour contributes something at every single instant, sometimes a lot,
+and the total still arrives at <b>zero</b> at the end of the symbol. Nothing is filtered out. It
+cancels itself.</p>
+
+<div class="dk">
+  <div class="hang">
+    <div>
+      <label class="t">The interferer is <b><span id="lok">1</span></b> subcarrier away</label>
+      <input type="range" id="ok" min="1" max="4" step="1" value="1">
+    </div>
+    <div>
+      <label class="t">Its frequency is off the grid by
+        <b><span id="loo">0.00</span></b> of a spacing</label>
+      <input type="range" id="oo" min="-50" max="50" step="5" value="0">
+    </div>
+    <div>
+      <label class="t">Its phase <b><span id="lop">0</span>°</b></label>
+      <input type="range" id="op" min="0" max="350" step="10" value="0">
+    </div>
+  </div>
+  <div style="margin-top:10px">
+    <span class="nut" data-k="1" data-o="0" data-p="0">Exactly on the grid</span>
+    <span class="nut" data-k="4" data-o="0" data-p="120">A distant neighbour, still zero</span>
+    <span class="nut" data-k="1" data-o="25" data-p="0">A quarter of a spacing off</span>
+    <span class="nut" data-k="1" data-o="-50" data-p="0">Halfway off: the worst case</span>
+  </div>
+</div>
+
+<div style="margin:0 0 14px">
+  <span class="chip" id="o0">Whole cycles in the window <b>0</b></span>
+  <span class="chip" id="o1">Area above zero <b>0</b></span>
+  <span class="chip" id="o2">Area below zero <b>0</b></span>
+  <span class="chip" id="o3">What the receiver reads <b>0</b></span>
+  <span class="chip" id="o4">Leakage <b>0%</b> of a wanted carrier</span>
+</div>
+
+<canvas id="cv2" width="1280" height="700"></canvas>
+
+<h2>The one sentence to take away</h2>
+<p class="sub">Two subcarriers are orthogonal over a symbol when <b>their product completes a whole
+number of cycles inside that symbol</b>, because a sine wave swept over a whole number of cycles
+encloses exactly as much area above the axis as below, and the two cancel. Panel 2 is that
+sentence drawn: the product of a carrier at <i>a</i> cycles and one at <i>b</i> cycles is a pair
+of waves at <i>b&minus;a</i> and <i>b+a</i> cycles, and when <i>a</i> and <i>b</i> are both whole
+numbers so are their sum and difference. That is the entire content of the word orthogonal here,
+and it is also why the subcarrier spacing has to be exactly one over the symbol length and nothing
+near it.</p>
+
+<h2>Things worth noticing</h2>
+<ul>
+  <li><b>The interference is present, and it is large.</b> Press <b>Exactly on the grid</b> and
+      look at the product trace in the middle panel before looking at the total. It is not small
+      and it is not zero. At many instants during the symbol the neighbour is contributing more
+      than the wanted carrier is. Students often picture orthogonality as the neighbours somehow
+      being kept apart. They are not kept apart at all; their contributions arrive in full and
+      then sum to nothing.</li>
+  <li><b>It cancels only at the end, and only at the right end.</b> Watch the running total pass
+      through large positive and negative values on its way. If the receiver stopped integrating
+      early, or carried on late, it would read whatever the total happened to be at that moment,
+      which is not zero. Orthogonality is a property of the signals <i>and</i> of the window the
+      receiver uses, exactly as flat and selective were properties of the channel and the signal
+      bandwidth together.</li>
+  <li><b>Move it off the grid and the cancellation fails immediately.</b> A nudge of a twentieth
+      of a spacing is already enough to leave a visible residue. This is not a tolerance band with
+      a comfortable margin; it is an exact condition, which is why the subcarriers are computed as
+      one block of arithmetic rather than generated by separate oscillators.</li>
+  <li><b>Distance does not help much, and that is surprising.</b> Set the offset to a quarter and
+      then walk the interferer from one subcarrier away to four. The leakage falls, but slowly,
+      roughly as one over the distance. A neighbour four slices away still leaks. So OFDM does not
+      survive a frequency error by having most subcarriers far apart; it survives only by having
+      the error be zero.</li>
+  <li><b>One reference on its own can lie to you.</b> The receiver correlates against both a
+      cosine and a sine at the subcarrier frequency, and the page draws both running totals. At
+      an offset of exactly half a spacing with a phase of zero, the cosine total lands on zero
+      while the sine total does not. A page that drew only the cosine would appear to show
+      orthogonality surviving in precisely the case where it fails worst. Judge by the length of
+      the pair, which is the <b>Leakage</b> chip, not by either total alone.</li>
+  <li><b>The phase moves the leakage between the two totals but never removes it.</b> Set any
+      non-zero offset and sweep the phase slider through a full turn. The split between the cosine
+      total and the sine total changes continuously, and the leakage chip stays away from zero the
+      whole way round. On the grid, the same sweep keeps it at zero the whole way round.</li>
+</ul>
+
+<h2>Where this page simplifies</h2>
+<ul>
+  <li><b>The wanted subcarrier sits at two cycles per symbol.</b> A real 802.11a subcarrier sits
+      at a few thousand cycles per symbol, which cannot be drawn. The argument does not depend on
+      the number being small: it depends only on it being a whole number.</li>
+  <li><b>Only one interferer is drawn.</b> A real symbol carries all the other subcarriers at
+      once. Each of them is separately orthogonal to the one being read, and a sum of zeros is
+      zero, so nothing in the argument changes.</li>
+  <li><b>The FDM shape is a choice this page makes.</b> Real FDM filters are built to a
+      specification rather than to a formula, so the exact shape above is illustrative. What is
+      not illustrative is the structure of the comparison: FDM pays a gap on every boundary and
+      OFDM pays none.</li>
+  <li><b>The channel is perfect here.</b> This page is about the receiver's arithmetic, so there
+      is no multipath and no noise. Multipath is what the previous pages covered, and the cyclic
+      prefix exists precisely to keep multipath from breaking the whole-number-of-cycles condition
+      that this page relies on.</li>
+</ul>
+
+<footer>
+  Sources. The orthogonality condition, that subcarriers are spaced at exactly the reciprocal of
+  the symbol length so that each one's spectral peak falls on every other one's null, is
+  Steenkiste, <i>Introduction to Wireless Networking and Its Impact on Applications</i>, 2nd
+  edition, section 3.6.3 and his figure 3.7b, and Stallings, <i>Wireless Communications and
+  Networks</i>, 2nd edition, figure 11.12 on page 339. That guard bands between adjacent
+  subcarriers waste spectrum and reduce the capacity of the link, which is what section 1
+  measures, is Steenkiste 3.6.3 and his figure 3.7a. The requirement that the spacing be exact,
+  and that this is why the subcarriers are generated digitally as one block rather than by
+  separate oscillators, is also Steenkiste 3.6.3. Correlating against a cosine and a sine at the
+  same frequency is the I and Q pair taught in session 2 part 3. Everything numerical on this page
+  is computed from the definitions rather than quoted: the running totals are the actual integrals
+  evaluated over the symbol, and the leakage is their vector length.
+</footer>
+</main>
+
+<div data-tacgia="1" style="margin:28px 0 0;padding:16px 26px;border-top:1px solid #E4E8EF;background:#F7F9FC;font-family:Calibri,Segoe UI,system-ui,sans-serif;font-size:13.5px;line-height:1.7;color:#5A6272">
+<b style="color:#1A1F36">Dr Mai Tran</b><br>
+Faculty of Information Technology<br>
+University of Engineering and Technology, Vietnam National University<br>
+<a href="mailto:mai.tran@vnu.edu.vn" style="color:#5A6272">mai.tran@vnu.edu.vn</a>
+</div>
+
+<script>
+/* Muc 1: FDM dat khoang bao ve, OFDM khong.
+   Hinh dang FDM la raised cosine do doc r = khoang bao ve, do rong gia do
+   dung bang 1 + r, nen hai song mang canh nhau cach nhau 1 + r la vua cham
+   nhau o muc khong. Chon the nay de phep so sanh CHI noi ve khoang cach,
+   khong phai ve bo loc: r = 0 cho hinh chu nhat rong 1, tuc bo loc ly
+   tuong, va khi ay FDM rong bang OFDM. Do dung la dieu sach noi: khoang
+   bao ve ton tai vi bo loc that khong vuong. */
+(function(){
+  var E = function(id){ return document.getElementById(id); };
+  var sl = {n:E('on'), g:E('og')};
+  var cv = E('cv1'), g = cv.getContext('2d');
+  var INK='#1A1F36', MUT='#5A6272', LINE='#E4E8EF', TEAL='#2A9D8F',
+      MAG='#D81E5B', ACC='#FF6B35', PUR='#6C5CE7';
+
+  function rc(x, r){                       // raised cosine, tam o 0
+    var a = Math.abs(x);
+    if (r <= 1e-9) return a <= 0.5 ? 1 : 0;
+    if (a <= (1 - r)/2) return 1;
+    if (a >= (1 + r)/2) return 0;
+    return 0.5*(1 + Math.cos(Math.PI*(a - (1 - r)/2)/r));
+  }
+  function sinc(x){
+    return Math.abs(x) < 1e-12 ? 1 : Math.sin(Math.PI*x)/(Math.PI*x);
+  }
+
+  function tinh(){
+    var N = +sl.n.value, r = (+sl.g.value)/100;
+    return {N:N, r:r, bFDM:N*(1 + r), bOFDM:N,
+            tietkiem: r/(1 + r)};
+  }
+
+  function ve(s){
+    var W = cv.width, H = cv.height, i, k;
+    g.clearRect(0, 0, W, H);
+    var x0 = 70, x1 = W - 250;
+    // Truc tan so chung cho ca hai, tinh bang DO RONG MOT SONG MANG CON.
+    var FMAX = s.bFDM + 0.2;
+    function fx(f){ return x0 + f/FMAX*(x1 - x0); }
+    g.font = '13px Calibri, sans-serif'; g.textBaseline = 'alphabetic';
+
+    function hang(yTop, yBot, ten, mau, veMot, bang){
+      g.fillStyle = INK; g.font = 'bold 14px Calibri, sans-serif';
+      g.textAlign = 'left'; g.fillText(ten, x0 - 44, yTop - 8);
+      g.font = '13px Calibri, sans-serif';
+      g.strokeStyle = LINE; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(x0, yBot); g.lineTo(x1, yBot); g.stroke();
+      for (k = 0; k < s.N; k++) veMot(k, yTop, yBot);
+      // thanh do be rong da dung
+      g.strokeStyle = mau; g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(fx(0), yBot + 16); g.lineTo(fx(0), yBot + 22);
+      g.lineTo(fx(bang), yBot + 22); g.lineTo(fx(bang), yBot + 16);
+      g.stroke();
+      g.fillStyle = mau; g.textAlign = 'left';
+      g.font = 'bold 13px Calibri, sans-serif';
+      g.fillText(bang.toFixed(1) + ' subcarrier widths', fx(bang) + 8,
+                 yBot + 26);
+      g.font = '13px Calibri, sans-serif';
+    }
+
+    // --- FDM ---------------------------------------------------------
+    hang(44, 150, 'FDM', MAG, function(k, yT, yB){
+      var c = (k + 0.5)*(1 + s.r), j, X, Y;
+      g.beginPath();
+      for (j = 0; j <= 160; j++){
+        var f = c - (1 + s.r)/2 + (1 + s.r)*j/160;
+        X = fx(f); Y = yB - rc(f - c, s.r)*(yB - yT);
+        if (j === 0) g.moveTo(X, Y); else g.lineTo(X, Y);
+      }
+      g.lineTo(fx(c + (1 + s.r)/2), yB); g.lineTo(fx(c - (1 + s.r)/2), yB);
+      g.closePath();
+      g.fillStyle = 'rgba(216,30,91,0.14)'; g.fill();
+      g.strokeStyle = MAG; g.lineWidth = 1.6; g.stroke();
+      // Danh dau PHAN VAY cua moi song mang, tuc phan vuot qua be rong mot
+      // don vi. Ban dau cho nay to mot dai giua hai song mang, nhung voi
+      // cach dung hinh o day hai song mang vua CHAM nhau nen khong he co
+      // dai trong o giua: cai ton kem that su la hai vay, moi ben r/2, nen
+      // moi song mang rong 1 + r thay vi 1. To dung cai ton kem ay thi
+      // tong phan to bang N*r, dung bang hieu hai be rong o duoi hinh.
+      if (s.r > 1e-9){
+        g.fillStyle = 'rgba(216,30,91,0.30)';
+        g.fillRect(fx(c - (1 + s.r)/2), yB - 9,
+                   fx(c - (1 - s.r)/2) - fx(c - (1 + s.r)/2), 9);
+        g.fillRect(fx(c + (1 - s.r)/2), yB - 9,
+                   fx(c + (1 + s.r)/2) - fx(c + (1 - s.r)/2), 9);
+      }
+    }, s.bFDM);
+    g.fillStyle = MUT; g.textAlign = 'left';
+    if (s.r > 1e-9){
+      g.fillText('the dark feet are the guard, ' + (s.N*s.r).toFixed(1) +
+                 ' subcarrier widths of band spent on nothing', x0 + 4, 36);
+    } else {
+      g.fillText('no guard at all, which would need a filter with a '
+                 + 'vertical edge', x0 + 4, 36);
+    }
+
+    // --- OFDM --------------------------------------------------------
+    hang(204, 288, 'OFDM', TEAL, function(k, yT, yB){
+      var c = k + 0.5, j, f, dau = true;
+      g.beginPath();
+      for (j = 0; j <= 400; j++){
+        f = c - 2.5 + 5*j/400;
+        if (f < 0 || f > FMAX) continue;
+        var X = fx(f), Y = yB - Math.abs(sinc(f - c))*(yB - yT);
+        if (dau){ g.moveTo(X, Y); dau = false; } else g.lineTo(X, Y);
+      }
+      g.strokeStyle = k === 2 ? PUR : 'rgba(42,157,143,0.70)';
+      g.lineWidth = k === 2 ? 2.4 : 1.1;
+      g.stroke();
+      g.fillStyle = k === 2 ? PUR : TEAL;
+      g.beginPath(); g.arc(fx(c), yT, 3, 0, 7); g.fill();
+      // Voi duong duoc to dam, danh dau CAC DIEM KHONG cua no: chung roi
+      // dung vao dinh cua moi duong con lai, va do la ca cau chuyen.
+      if (k === 2){
+        for (j = -4; j <= 4; j++){
+          if (j === 0) continue;
+          var fz = c + j;
+          if (fz < 0 || fz > FMAX) continue;
+          // Vach noi tu diem khong cua duong dam len tan dinh cua duong
+          // ben canh. Khong co vach nay thi cham o day va cham o dinh nam
+          // cach nhau ca khung, va dieu phai nhin thay, rang chung THANG
+          // HANG, lai khong nhin thay duoc.
+          g.strokeStyle = 'rgba(108,92,231,0.45)'; g.lineWidth = 1;
+          g.setLineDash([3,3]);
+          g.beginPath(); g.moveTo(fx(fz), yB); g.lineTo(fx(fz), yT);
+          g.stroke(); g.setLineDash([]);
+          g.strokeStyle = PUR; g.lineWidth = 1.2;
+          g.beginPath(); g.arc(fx(fz), yB, 3.4, 0, 7); g.stroke();
+        }
+      }
+    }, s.bOFDM);
+    g.fillStyle = MUT; g.textAlign = 'left';
+    g.fillText('follow the dashed lines: every zero of the bold curve lands '
+               + 'on a neighbour’s peak', x0 + 4, 196);
+
+    // truc tan so
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    // Truc tan so dat DUOI hai thanh do be rong. Dat o 300..320 thi no
+    // chay dung qua thanh do cua hang OFDM, hai thu cung mot hang.
+    g.textAlign = 'center'; g.fillStyle = MUT;
+    for (i = 0; i <= Math.floor(FMAX); i += 2){
+      g.beginPath(); g.moveTo(fx(i), 334); g.lineTo(fx(i), 340); g.stroke();
+      g.fillText(i + '', fx(i), 354);
+    }
+    // Nhan truc dat BEN PHAI vung ve, khong dat o x1: o x1 no dung ngay
+    // canh nhan be rong cua hang OFDM va hai chuoi de len nhau.
+    g.textAlign = 'left';
+    g.fillText('frequency, in subcarrier widths', x1 + 10, 354);
+  }
+
+  function capNhat(){
+    var s = tinh();
+    E('lon').textContent = s.N;
+    E('log').textContent = (s.r*100).toFixed(0);
+    E('g0').innerHTML = 'FDM needs <b>' + s.bFDM.toFixed(1) +
+      ' subcarrier widths</b>';
+    E('g1').innerHTML = 'OFDM needs <b>' + s.bOFDM.toFixed(1) + '</b>';
+    E('g2').className = 'chip ' + (s.tietkiem > 0 ? 'tot' : '');
+    E('g2').innerHTML = 'OFDM saves <b>' + (s.tietkiem*100).toFixed(1) +
+      '%</b> of the band';
+    ve(s);
+  }
+  ['n','g'].forEach(function(x){
+    sl[x].addEventListener('input', capNhat); });
+  capNhat();
+  window.moPhongPho = tinh;
+})();
+</script>
+
+<script>
+/* Muc 2: vi sao chong lan ma khong nhieu.
+   T = 1, khoang cach song mang = 1. Song mang CAN DOC o chi so M_DOC = 2,
+   tuc hai chu ky tron trong mot ky tu, du nho de ve ma van la so nguyen.
+   Nhieu o M_DOC + n + delta, pha phi.
+
+   May thu tuong quan voi CA cosin lan sin. Luc dau em dinh chi ve cosin,
+   nhung do thu thi o delta = -0,5 pha 0, tich phan cosin ve DUNG BANG 0
+   trong khi 57 phan tram ro ri sang nhanh sin. Mot trang chi ve cosin se
+   trinh bay tinh truc giao con nguyen o dung truong hop no hong nang nhat.
+   Nen phai ve ca hai, va con so bao cao la DO DAI cua cap.
+
+   Bo xu ly nut chi voi toi '.nut[data-k]'. Trang nay hien chi co mot bo
+   nut, nhung van ghi ro de sau nay them muc khac thi khong voi nham, dung
+   lop loi Mai bat duoc tren selective.html ngay 18/10. */
+(function(){
+  var E = function(id){ return document.getElementById(id); };
+  var sl = {k:E('ok'), o:E('oo'), p:E('op')};
+  var cv = E('cv2'), g = cv.getContext('2d');
+  var INK='#1A1F36', MUT='#5A6272', LINE='#E4E8EF', TEAL='#2A9D8F',
+      MAG='#D81E5B', ACC='#FF6B35', PUR='#6C5CE7';
+  var M_DOC = 2;        // song mang can doc: 2 chu ky tron trong mot ky tu
+  var NMAU = 4001;      // so mau tren mot ky tu, dung het cho moi phep tinh
+
+  function tinh(){
+    var n = +sl.k.value, d = (+sl.o.value)/100;
+    var phi = (+sl.p.value)*Math.PI/180;
+    var fN = M_DOC + n + d;                 // tan so ke nhieu
+    var t = new Float64Array(NMAU), sMuon = new Float64Array(NMAU),
+        sNhieu = new Float64Array(NMAU), tichC = new Float64Array(NMAU),
+        tichS = new Float64Array(NMAU), tichMuon = new Float64Array(NMAU),
+        conC = new Float64Array(NMAU), conS = new Float64Array(NMAU),
+        conM = new Float64Array(NMAU);
+    var i, dt = 1/(NMAU - 1), ac = 0, as = 0, am = 0, tren = 0, duoi = 0;
+    for (i = 0; i < NMAU; i++){
+      t[i] = i*dt;
+      sMuon[i]  = Math.cos(2*Math.PI*M_DOC*t[i]);
+      sNhieu[i] = Math.cos(2*Math.PI*fN*t[i] + phi);
+      tichC[i]    = 2*sNhieu[i]*Math.cos(2*Math.PI*M_DOC*t[i]);
+      tichS[i]    = -2*sNhieu[i]*Math.sin(2*Math.PI*M_DOC*t[i]);
+      tichMuon[i] = 2*sMuon[i]*Math.cos(2*Math.PI*M_DOC*t[i]);
+      if (i > 0){
+        // hinh thang, dung cong thuc giong het ban Python
+        ac += (tichC[i] + tichC[i - 1])/2*dt;
+        as += (tichS[i] + tichS[i - 1])/2*dt;
+        am += (tichMuon[i] + tichMuon[i - 1])/2*dt;
+        var tb = (tichC[i] + tichC[i - 1])/2*dt;
+        if (tb > 0) tren += tb; else duoi += -tb;
+      }
+      conC[i] = ac; conS[i] = as; conM[i] = am;
+    }
+    return {n:n, d:d, phi:phi, fN:fN, t:t, sMuon:sMuon, sNhieu:sNhieu,
+            tichC:tichC, tichS:tichS, conC:conC, conS:conS, conM:conM,
+            I:ac, Q:as, muon:am, tren:tren, duoi:duoi,
+            roRi:Math.sqrt(ac*ac + as*as),
+            chuKyHieu:n + d, chuKyTong:2*M_DOC + n + d};
+  }
+
+  function ve(s){
+    var W = cv.width, H = cv.height, i;
+    g.clearRect(0, 0, W, H);
+    // Le phai phai du rong cho nhan dai nhat. Dat W - 150 thi chuoi
+    // "the one being read, 2 cycles" bi cat cut ngay tren ban soi dau tien.
+    var x0 = 92, x1 = W - 268;
+    function tx(u){ return x0 + u*(x1 - x0); }
+    g.font = '13px Calibri, sans-serif'; g.textBaseline = 'alphabetic';
+
+    function tieuDe(y, t2){
+      g.fillStyle = INK; g.font = 'bold 14px Calibri, sans-serif';
+      g.textAlign = 'left'; g.fillText(t2, x0 - 66, y);
+      g.font = '13px Calibri, sans-serif';
+    }
+    function duongT(y){                       // truc thoi gian
+      g.strokeStyle = LINE; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke();
+    }
+    function duongCong(a, y0, bien, mau, rong, y){
+      g.strokeStyle = mau; g.lineWidth = rong; g.beginPath();
+      for (i = 0; i < a.length; i += 2){
+        var X = tx(s.t[i]), Y = y0 - a[i]/bien*y;
+        if (i === 0) g.moveTo(X, Y); else g.lineTo(X, Y);
+      }
+      g.stroke();
+    }
+    function nhan(y, mau, chu){
+      g.fillStyle = mau; g.textAlign = 'left';
+      g.font = 'bold 13px Calibri, sans-serif';
+      g.fillText(chu, x1 + 10, y);
+      g.font = '13px Calibri, sans-serif';
+    }
+
+    // ---- a: hai song mang -------------------------------------------
+    tieuDe(26, 'a · the two subcarriers, over exactly one symbol');
+    var ya = 84;
+    duongT(ya);
+    duongCong(s.sMuon, ya, 1.15, PUR, 1.6, 42);
+    duongCong(s.sNhieu, ya, 1.15, MAG, 1.8, 42);
+    nhan(ya - 20, PUR, 'the one being read, ' + M_DOC + ' cycles');
+    nhan(ya + 24, MAG, 'the neighbour, ' + s.fN.toFixed(2) + ' cycles');
+
+    // ---- b: tich voi tham chieu, to kin hai phan dien tich ----------
+    tieuDe(162, 'b · the neighbour multiplied by the receiver’s cosine');
+    var yb = 232, hb = 54;
+    // to kin: tren truc mot mau, duoi truc mau khac
+    for (i = 1; i < s.tichC.length; i++){
+      var v = s.tichC[i], Xa = tx(s.t[i - 1]), Xb = tx(s.t[i]);
+      g.fillStyle = v > 0 ? 'rgba(42,157,143,0.35)' : 'rgba(216,30,91,0.35)';
+      g.fillRect(Xa, v > 0 ? yb - v/2.2*hb : yb,
+                 Math.max(Xb - Xa, 0.6), Math.abs(v)/2.2*hb);
+    }
+    duongT(yb);
+    duongCong(s.tichC, yb, 2.2, INK, 1.4, hb);
+    nhan(yb - 30, TEAL, 'area above: ' + s.tren.toFixed(4));
+    nhan(yb + 34, MAG, 'area below: ' + s.duoi.toFixed(4));
+
+    // ---- c: tong chay -----------------------------------------------
+    tieuDe(324, 'c · the running total, which is what the receiver returns');
+    var yc = 452, hc = 100, CMAX = 1.25;
+    // luoi
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    g.textAlign = 'right'; g.fillStyle = MUT;
+    for (var v2 = -1; v2 <= 1; v2 += 0.5){
+      var Y2 = yc - v2/CMAX*hc;
+      g.beginPath(); g.moveTo(x0, Y2); g.lineTo(x1, Y2); g.stroke();
+      g.fillText(v2.toFixed(1), x0 - 8, Y2 + 4);
+    }
+    duongCong(s.conM, yc, CMAX, PUR, 1.8, hc);
+    duongCong(s.conC, yc, CMAX, MAG, 2.2, hc);
+    duongCong(s.conS, yc, CMAX, ACC, 1.5, hc);
+    // cham ket thuc
+    function cham(val, mau){
+      g.fillStyle = mau; g.beginPath();
+      g.arc(x1, yc - val/CMAX*hc, 4.5, 0, 7); g.fill();
+    }
+    cham(s.muon, PUR); cham(s.I, MAG); cham(s.Q, ACC);
+    // Ba nhan nay deu dat theo gia tri cuoi, ma hai gia tri cua ke nhieu
+    // thuong cung gan khong, nen chung DE LEN NHAU. Day nhau ra toi thieu
+    // 17 diem theo chieu doc, giu nguyen thu tu tren duoi.
+    var nh = [{y:yc - s.muon/CMAX*hc, c:PUR,
+               t:'wanted carrier: ' + s.muon.toFixed(4)},
+              {y:yc - s.I/CMAX*hc, c:MAG,
+               t:'neighbour, cosine: ' + s.I.toFixed(4)},
+              {y:yc - s.Q/CMAX*hc, c:ACC,
+               t:'neighbour, sine: ' + s.Q.toFixed(4)}];
+    nh.sort(function(a, b){ return a.y - b.y; });
+    for (i = 1; i < nh.length; i++)
+      if (nh[i].y - nh[i - 1].y < 17) nh[i].y = nh[i - 1].y + 17;
+    for (i = 0; i < nh.length; i++){
+      // gach noi tu cham toi nhan, de biet nhan nao cua duong nao
+      g.strokeStyle = nh[i].c; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(x1 + 5, nh[i].y - 4);
+      g.lineTo(x1 + 8, nh[i].y - 4); g.stroke();
+      nhan(nh[i].y, nh[i].c, nh[i].t);
+    }
+    g.textAlign = 'left'; g.fillStyle = MUT;
+    g.fillText('one symbol, from here', x0, yc + hc + 32);
+    g.textAlign = 'right';
+    g.fillText('to exactly here', x1, yc + hc + 32);
+    g.strokeStyle = INK; g.lineWidth = 1.4; g.setLineDash([5,3]);
+    g.beginPath(); g.moveTo(x1, yc - hc - 16); g.lineTo(x1, yc + hc + 16);
+    g.stroke(); g.setLineDash([]);
+
+    // ---- d: ro ri theo do lech --------------------------------------
+    tieuDe(610, 'd · leakage against how far off the grid the neighbour sits');
+    var yd = 676, hd = 52, xd0 = x0, xd1 = x1;
+    // Thang doc chuan theo DINH cua chinh duong cong nay, khong dat cung.
+    // Dat cung 1,0 thi voi n lon duong cong gan nhu nam bet tren truc va
+    // khong doc duoc gi, va do dung la dieu xay ra o ban soi dau tien.
+    var dmax = 0;
+    for (i = 0; i <= 200; i++)
+      dmax = Math.max(dmax, Math.abs(sincQ(s.n - 0.5 + i/200)));
+    dmax = Math.max(dmax, 1e-6);
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(xd0, yd); g.lineTo(xd1, yd); g.stroke();
+    g.strokeStyle = PUR; g.lineWidth = 1.8; g.beginPath();
+    for (i = 0; i <= 200; i++){
+      var dd = -0.5 + i/200, xx = xd0 + (i/200)*(xd1 - xd0);
+      var yy = yd - Math.abs(sincQ(s.n + dd))/dmax*hd;
+      if (i === 0) g.moveTo(xx, yy); else g.lineTo(xx, yy);
+    }
+    g.stroke();
+    g.textAlign = 'right'; g.fillStyle = MUT;
+    g.fillText((dmax*100).toFixed(0) + '%', xd0 - 8, yd - hd + 4);
+    g.fillText('0', xd0 - 8, yd + 4);
+    var xcur = xd0 + ((s.d + 0.5))*(xd1 - xd0);
+    g.fillStyle = s.roRi < 1e-9 ? TEAL : MAG;
+    g.beginPath();
+    g.arc(xcur, yd - Math.abs(s.roRi)/dmax*hd, 5, 0, 7); g.fill();
+    g.textAlign = 'center'; g.fillStyle = MUT;
+    g.fillText('half a spacing low', xd0 + 60, yd + 18);
+    g.fillText('exactly on the grid', (xd0 + xd1)/2, yd + 18);
+    g.fillText('half a spacing high', xd1 - 60, yd + 18);
+    nhan(yd - 6, s.roRi < 1e-9 ? TEAL : MAG,
+         (s.roRi*100).toFixed(2) + '% leaks');
+  }
+  function sincQ(x){
+    return Math.abs(x) < 1e-12 ? 1 : Math.sin(Math.PI*x)/(Math.PI*x);
+  }
+
+  function capNhat(){
+    var s = tinh();
+    E('lok').textContent = s.n;
+    E('loo').textContent = s.d.toFixed(2);
+    E('lop').textContent = (s.phi*180/Math.PI).toFixed(0);
+    var tron = Math.abs(s.chuKyHieu - Math.round(s.chuKyHieu)) < 1e-9;
+    E('o0').className = 'chip ' + (tron ? 'tot' : 'xau');
+    E('o0').innerHTML = 'The product runs at <b>' + s.chuKyHieu.toFixed(2) +
+      '</b> and <b>' + s.chuKyTong.toFixed(2) + '</b> cycles';
+    E('o1').innerHTML = 'Area above zero <b>' + s.tren.toFixed(4) + '</b>';
+    E('o2').innerHTML = 'Area below zero <b>' + s.duoi.toFixed(4) + '</b>';
+    E('o3').innerHTML = 'A wanted carrier reads <b>' + s.muon.toFixed(4) +
+      '</b>';
+    E('o4').className = 'chip ' + (s.roRi < 1e-9 ? 'tot' : 'xau');
+    E('o4').innerHTML = 'Leakage <b>' + (s.roRi*100).toFixed(2) +
+      '%</b> of a wanted carrier';
+    ve(s);
+  }
+  ['k','o','p'].forEach(function(x){
+    sl[x].addEventListener('input', capNhat); });
+  Array.prototype.forEach.call(document.querySelectorAll('.nut[data-k]'),
+    function(b){
+      b.addEventListener('click', function(){
+        sl.k.value = b.dataset.k;
+        sl.o.value = b.dataset.o;
+        sl.p.value = b.dataset.p;
+        capNhat();
+      });
+    });
+  capNhat();
+  window.moPhongTrucGiao = tinh;
+})();
+</script>
+</body>
+</html>
