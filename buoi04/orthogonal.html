@@ -122,7 +122,7 @@ cancels itself.</p>
   <span class="chip" id="o4">Leakage <b>0%</b> of a wanted carrier</span>
 </div>
 
-<canvas id="cv2" width="1280" height="700"></canvas>
+<canvas id="cv2" width="1280" height="748"></canvas>
 
 <h2>The one sentence to take away</h2>
 <p class="sub">Two subcarriers are orthogonal over a symbol when <b>their product completes a whole
@@ -477,27 +477,66 @@ University of Engineering and Technology, Vietnam National University<br>
     duongT(ya);
     duongCong(s.sMuon, ya, 1.15, PUR, 1.6, 42);
     duongCong(s.sNhieu, ya, 1.15, MAG, 1.8, 42);
-    nhan(ya - 20, PUR, 'the one being read, ' + M_DOC + ' cycles');
+    // Duong tim nay vua la song mang can doc, vua CHINH LA cosin tham
+    // chieu ma khung b nhan vao. Khong ghi ra thi khung b noi toi mot thu
+    // khong he xuat hien o dau co nhan nhu vay.
+    nhan(ya - 30, PUR, 'the one being read, ' + M_DOC + ' cycles,');
+    nhan(ya - 13, PUR, 'and also the receiver’s reference');
     nhan(ya + 24, MAG, 'the neighbour, ' + s.fN.toFixed(2) + ' cycles');
 
     // ---- b: tich voi tham chieu, to kin hai phan dien tich ----------
-    tieuDe(162, 'b · the neighbour multiplied by the receiver’s cosine');
-    var yb = 232, hb = 54;
+    // Mai hoi 2026-10-19 "hinh b la duong gi", va cau hoi ay la mot loi
+    // bao. Truoc do khung nay chi co mot dong tieu de, khong thang do,
+    // khong noi duong den ay tu dau ma ra, va hai thua so cua phep nhan
+    // thi nam o khung tren khong co gi noi sang. Nay: ve mo HAI THUA SO
+    // ngay sau duong tich, ghi thang phep nhan len hinh, va them thang do.
+    tieuDe(156, 'b · the neighbour times the receiver’s cosine, instant '
+                + 'by instant');
+    var yb = 236, hb = 58, BSC = 2.2;
+    g.textAlign = 'left'; g.fillStyle = MUT;
+    g.fillText('this is the product of the two curves above, multiplied '
+               + 'point by point, and nothing else', x0, 176);
+    // thang do
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    g.textAlign = 'right'; g.fillStyle = MUT;
+    for (var vb = -2; vb <= 2; vb += 1){
+      var Yb = yb - vb/BSC*hb;
+      g.beginPath(); g.moveTo(x0, Yb); g.lineTo(x1, Yb); g.stroke();
+      g.fillText(vb + '', x0 - 8, Yb + 4);
+    }
     // to kin: tren truc mot mau, duoi truc mau khac
     for (i = 1; i < s.tichC.length; i++){
       var v = s.tichC[i], Xa = tx(s.t[i - 1]), Xb = tx(s.t[i]);
       g.fillStyle = v > 0 ? 'rgba(42,157,143,0.35)' : 'rgba(216,30,91,0.35)';
-      g.fillRect(Xa, v > 0 ? yb - v/2.2*hb : yb,
-                 Math.max(Xb - Xa, 0.6), Math.abs(v)/2.2*hb);
+      g.fillRect(Xa, v > 0 ? yb - v/BSC*hb : yb,
+                 Math.max(Xb - Xa, 0.6), Math.abs(v)/BSC*hb);
     }
+    // Hai thua so, ve mo, cung thang do, de thay duong dam dung la tich.
+    g.globalAlpha = 0.40;
+    duongCong(s.sNhieu, yb, BSC, MAG, 1.2, hb);
+    duongCong(s.sMuon, yb, BSC, PUR, 1.2, hb);
+    g.globalAlpha = 1;
     duongT(yb);
-    duongCong(s.tichC, yb, 2.2, INK, 1.4, hb);
-    nhan(yb - 30, TEAL, 'area above: ' + s.tren.toFixed(4));
-    nhan(yb + 34, MAG, 'area below: ' + s.duoi.toFixed(4));
+    duongCong(s.tichC, yb, BSC, INK, 1.6, hb);
+    nhan(yb - hb - 10, INK, 'the product, drawn bold');
+    nhan(yb - 26, MAG, 'one factor: the neighbour');
+    nhan(yb - 8, PUR, 'the other: the cosine at the');
+    nhan(yb + 8, PUR, 'frequency being read');
+    nhan(yb + 32, TEAL, 'area above: ' + s.tren.toFixed(4));
+    nhan(yb + 50, MAG, 'area below: ' + s.duoi.toFixed(4));
+    // Phep tach, viet thang len hinh: day la LY DO duong tich co hinh dang
+    // ay, va truoc day no chi nam trong doan van duoi cung cua trang.
+    g.textAlign = 'left'; g.fillStyle = INK;
+    g.font = 'bold 13px Calibri, sans-serif';
+    g.fillText('a wave at ' + Math.abs(s.chuKyHieu).toFixed(2) +
+               ' cycles plus a wave at ' + s.chuKyTong.toFixed(2) +
+               ' cycles, because cos a × cos b = ½ cos(a−b) '
+               + '+ ½ cos(a+b)', x0, yb + hb + 26);
+    g.font = '13px Calibri, sans-serif';
 
     // ---- c: tong chay -----------------------------------------------
-    tieuDe(324, 'c · the running total, which is what the receiver returns');
-    var yc = 452, hc = 100, CMAX = 1.25;
+    tieuDe(346, 'c · the running total, which is what the receiver returns');
+    var yc = 474, hc = 100, CMAX = 1.25;
     // luoi
     g.strokeStyle = LINE; g.lineWidth = 1;
     g.textAlign = 'right'; g.fillStyle = MUT;
@@ -543,8 +582,8 @@ University of Engineering and Technology, Vietnam National University<br>
     g.stroke(); g.setLineDash([]);
 
     // ---- d: ro ri theo do lech --------------------------------------
-    tieuDe(610, 'd · leakage against how far off the grid the neighbour sits');
-    var yd = 676, hd = 52, xd0 = x0, xd1 = x1;
+    tieuDe(632, 'd · leakage against how far off the grid the neighbour sits');
+    var yd = 698, hd = 52, xd0 = x0, xd1 = x1;
     // Thang doc chuan theo DINH cua chinh duong cong nay, khong dat cung.
     // Dat cung 1,0 thi voi n lon duong cong gan nhu nam bet tren truc va
     // khong doc duoc gi, va do dung la dieu xay ra o ban soi dau tien.
