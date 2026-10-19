@@ -124,6 +124,88 @@ cancels itself.</p>
 
 <canvas id="cv2" width="1280" height="748"></canvas>
 
+<h2>Section 3: the window is what does the work, not the spacing</h2>
+<p class="sub">A natural objection to section 2, and the right one to raise. A modulated signal is
+not periodic, so it is not one frequency: it occupies a <b>band</b> around its carrier, and the
+carrier is only one component of it. Send it and you send that whole set of components. So even
+if the component at the exact grid frequency is clean, surely the rest of the band still overlaps
+the neighbours and still gets contaminated.</p>
+<p class="sub">Every clause of that is true except the conclusion, and this section shows where it
+parts company with OFDM. <b>Within one OFDM symbol a subcarrier is not modulated at all.</b> Its
+amplitude and phase are held constant for the whole symbol, and the modulation happens only
+<i>between</i> symbols. So over the receiver's window a subcarrier is a pure tone, described
+completely by one complex number, and there is no band to reassemble. The band in the objection
+is real, but it only exists relative to an observation longer than one symbol. <b>Panel f below
+is that band</b>, measured over four symbols, and it does overlap the neighbours exactly as the
+objection says.</p>
+<p class="sub">Then drag <b>Slip the window</b>. Panel f does not move, because nothing about the
+transmitted signal changes. The constellation in panel g collapses anyway. <b>The spacing is not
+what separates the subcarriers. The window is.</b></p>
+
+<div class="dk">
+  <div class="hang">
+    <div>
+      <label class="t">Subcarriers <b><span id="lwn">16</span></b></label>
+      <input type="range" id="wn" min="0" max="3" step="1" value="1">
+    </div>
+    <div>
+      <label class="t">Slip the window by <b><span id="lws">0</span>%</b> of a symbol</label>
+      <input type="range" id="ws" min="0" max="100" step="2" value="0">
+    </div>
+    <div>
+      <label class="t">Window length <b><span id="lwl">1</span></b> symbol</label>
+      <input type="range" id="wl" min="1" max="3" step="1" value="1">
+    </div>
+  </div>
+  <div style="margin-top:10px">
+    <span class="nut" data-wn="1" data-ws="0" data-wl="1">Cut exactly on the symbol</span>
+    <span class="nut" data-wn="1" data-ws="6" data-wl="1">Slip by a twentieth</span>
+    <span class="nut" data-wn="1" data-ws="26" data-wl="1">Slip by a quarter</span>
+    <span class="nut" data-wn="1" data-ws="0" data-wl="3">Three whole symbols, still aligned</span>
+  </div>
+</div>
+
+<div style="margin:0 0 14px">
+  <span class="chip" id="w0">Window covers <b>0</b></span>
+  <span class="chip" id="w1">Symbols read correctly <b>0</b></span>
+  <span class="chip" id="w2">Worst error <b>0</b></span>
+  <span class="chip" id="w3">Panel f is <b>unchanged</b></span>
+</div>
+
+<canvas id="cv3" width="1280" height="700"></canvas>
+
+<h2>What section 3 settles</h2>
+<ul>
+  <li><b>The objection is right about the spectrum.</b> Panel f measures one subcarrier over four
+      consecutive symbols with different data in each, which is what a long observation sees. It
+      is not a line. It is a band that reaches well past its neighbours' centre frequencies, just
+      as the objection says.</li>
+  <li><b>The receiver never takes that long observation.</b> It resets every symbol. Over one
+      symbol the same subcarrier is a constant-amplitude tone, so the composite is exactly N lines
+      on the grid with nothing between them, which is the fact session 2 part 3 established about
+      any signal that repeats with period T.</li>
+  <li><b>Length is not the problem; alignment is.</b> Press <b>Three whole symbols, still
+      aligned</b>. The window is three times longer, and the reading is still exact, because every
+      subcarrier is still a constant-amplitude tone throughout it. Then slip that same window by a
+      twentieth of a symbol and it fails. What breaks orthogonality is not how much you look at,
+      but whether a subcarrier's amplitude <b>changes</b> while you are looking.</li>
+  <li><b>So the whole-number-of-cycles rule has a second half.</b> Section 2 asked that the
+      product complete a whole number of cycles in the window. That requires the window to be a
+      whole number of symbol periods <i>and</i> to start where a symbol starts. Miss either and
+      the condition fails.</li>
+  <li><b>Push the slider all the way and it comes good again.</b> At a hundred per cent the
+      window has moved by a whole symbol, so it is aligned once more, this time with the next
+      symbol, and the reading is exact again. Near the ends it is nearly exact for the same
+      reason. So the damage is not a function of how far you have moved but of <b>how far you are
+      from the nearest boundary</b>, which is the same statement as the one above in different
+      words.</li>
+  <li><b>This is exactly what the cyclic prefix is for.</b> With echoes in the room, the tail of
+      the previous symbol arrives during this one, so what sits inside the receiver's window is a
+      signal whose amplitude jumps partway through, which is the failure this section demonstrates
+      with the slider. The guard interval exists to give the receiver a window in which no such
+      jump occurs.</li>
+</ul>
+
 <h2>The one sentence to take away</h2>
 <p class="sub">Two subcarriers are orthogonal over a symbol when <b>their product completes a whole
 number of cycles inside that symbol</b>, because a sine wave swept over a whole number of cycles
@@ -649,6 +731,288 @@ University of Engineering and Technology, Vietnam National University<br>
     });
   capNhat();
   window.moPhongTrucGiao = tinh;
+})();
+</script>
+
+<script>
+/* Muc 3: cua so moi la thu lam nen tinh truc giao, khong phai khoang cach.
+   Mai hoi 2026-10-19: mot tin hieu dieu che khong tuan hoan nen chiem ca
+   mot DAI quanh song mang, vay neu chi thanh phan tai dung tan so luoi la
+   sach con ca phan dai con lai van chong len hang xom thi sao.
+
+   Premise ay dung het, tru ket luan. Trong PHAM VI MOT ky tu OFDM, song
+   mang con khong he bi dieu che: bien do va pha giu nguyen ca ky tu, dieu
+   che chi xay ra GIUA cac ky tu. Nen tren cua so may thu no la mot hinh
+   sin thuan tuy, mot so phuc la mo ta tron ven, khong co dai nao de dung
+   lai. Cai dai trong cau hoi co that, nhung no chi ton tai voi mot quan
+   sat DAI HON mot ky tu, ma may thu thi reset moi ky tu.
+
+   Bo sinh so xac dinh, viet y het o JS va Python, de hai ban dung CHUNG
+   mot bo du lieu. Khong dung Math.random: hai ben se ra hai bo khac nhau
+   va cong doi chieu thanh vo nghia. */
+(function(){
+  var E = function(id){ return document.getElementById(id); };
+  var sl = {n:E('wn'), s:E('ws'), l:E('wl')};
+  var cv = E('cv3'), g = cv.getContext('2d');
+  var INK='#1A1F36', MUT='#5A6272', LINE='#E4E8EF', TEAL='#2A9D8F',
+      MAG='#D81E5B', ACC='#FF6B35', PUR='#6C5CE7';
+  var NSC = [8,16,32,64];
+  var MMAU = 256;          // mau tren mot ky tu
+  var KSYM = 4;            // so ky tu lien tiep dung de dung dang song
+  var SOI = 5;             // song mang duoc soi o khung f
+
+  // xorshift 32 bit, chay y het o Python nho phep che 0xFFFFFFFF
+  function nguon(hat){
+    var x = hat >>> 0;
+    return function(){
+      x ^= (x << 13); x >>>= 0;
+      x ^= (x >>> 17); x >>>= 0;
+      x ^= (x << 5);  x >>>= 0;
+      return x;
+    };
+  }
+  function duLieu(N){                       // QPSK, bien do 1
+    var r = nguon(20261019), X = [], s, i, v;
+    for (s = 0; s < KSYM; s++){
+      X.push([]);
+      for (i = 0; i < N; i++){
+        v = r();
+        X[s].push([(v & 1) ? 0.70710678 : -0.70710678,
+                   (v & 2) ? 0.70710678 : -0.70710678]);
+      }
+    }
+    return X;
+  }
+
+  var _nho = {};
+  function dangSong(N){                      // tong KSYM ky tu lien tiep
+    if (_nho.N === N) return _nho;
+    var X = duLieu(N), L = KSYM*MMAU;
+    var re = new Float64Array(L), im = new Float64Array(L), s, i, j, ph, c, sn;
+    for (s = 0; s < KSYM; s++)
+      for (j = 0; j < MMAU; j++){
+        var u = j/MMAU;
+        for (i = 0; i < N; i++){
+          ph = 2*Math.PI*i*u; c = Math.cos(ph); sn = Math.sin(ph);
+          re[s*MMAU + j] += X[s][i][0]*c - X[s][i][1]*sn;
+          im[s*MMAU + j] += X[s][i][0]*sn + X[s][i][1]*c;
+        }
+      }
+    // Pho cua RIENG song mang SOI do tren ca KSYM ky tu. Khung nay KHONG
+    // phu thuoc vi tri cua so, nen tinh mot lan roi nho lai.
+    var NF = 361, pho = new Float64Array(NF), f, k, ar, ai, cs, ss, p2;
+    for (k = 0; k < NF; k++){
+      f = SOI - 3 + 6*k/(NF - 1);
+      ar = 0; ai = 0;
+      for (s = 0; s < KSYM; s++)
+        for (j = 0; j < MMAU; j++){
+          p2 = 2*Math.PI*(SOI*(j/MMAU) - f*(s + j/MMAU));
+          cs = Math.cos(p2); ss = Math.sin(p2);
+          ar += X[s][SOI][0]*cs - X[s][SOI][1]*ss;
+          ai += X[s][SOI][0]*ss + X[s][SOI][1]*cs;
+        }
+      pho[k] = Math.sqrt(ar*ar + ai*ai)/(KSYM*MMAU);
+    }
+    var pmax = 0;
+    for (k = 0; k < NF; k++) pmax = Math.max(pmax, pho[k]);
+    _nho = {N:N, X:X, re:re, im:im, pho:pho, pmax:pmax, NF:NF};
+    return _nho;
+  }
+
+  function tinh(){
+    var N = NSC[+sl.n.value], dich = Math.round((+sl.s.value)/100*MMAU);
+    var dai = +sl.l.value;
+    var d = dangSong(N), L = dai*MMAU, i, j, ar, ai, ph, idx;
+    // May thu: tuong quan tren cua so bat dau tu `dich`, dai L mau.
+    var doc = [], sai = 0, dung = 0, xau = 0;
+    for (i = 0; i < N; i++){
+      ar = 0; ai = 0;
+      for (j = 0; j < L; j++){
+        idx = dich + j;
+        ph = -2*Math.PI*i*(idx/MMAU);
+        var c = Math.cos(ph), s2 = Math.sin(ph);
+        ar += d.re[idx]*c - d.im[idx]*s2;
+        ai += d.re[idx]*s2 + d.im[idx]*c;
+      }
+      ar /= L; ai /= L;
+      doc.push([ar, ai]);
+      // So voi dieu PHAI ra: cua so thang hang thi la trung binh cac ky tu
+      // no phu, lech hang thi khong co dap an dung nao, lay ky tu dau.
+      var mr = 0, mi = 0, sb = dich/MMAU, nb = 0;
+      for (var s3 = 0; s3 < KSYM; s3++)
+        if (s3 >= sb - 1e-9 && s3 < sb + dai - 1e-9){ mr += d.X[s3][i][0];
+                                                      mi += d.X[s3][i][1]; nb++; }
+      if (nb){ mr /= nb; mi /= nb; }
+      var e = Math.sqrt((ar - mr)*(ar - mr) + (ai - mi)*(ai - mi));
+      sai += e; xau = Math.max(xau, e);
+      if (e < 0.35) dung++;
+    }
+    return {N:N, dich:dich, dai:dai, d:d, doc:doc, dung:dung, xau:xau,
+            thangHang: dich % MMAU === 0};
+  }
+
+  function ve(s){
+    var W = cv.width, H = cv.height, i, j;
+    g.clearRect(0, 0, W, H);
+    var x0 = 80, x1 = W - 250;
+    g.font = '13px Calibri, sans-serif'; g.textBaseline = 'alphabetic';
+    function tieuDe(y, t){
+      g.fillStyle = INK; g.font = 'bold 14px Calibri, sans-serif';
+      g.textAlign = 'left'; g.fillText(t, x0 - 54, y);
+      g.font = '13px Calibri, sans-serif';
+    }
+    function nhan(y, mau, chu){
+      g.fillStyle = mau; g.textAlign = 'left';
+      g.font = 'bold 13px Calibri, sans-serif';
+      g.fillText(chu, x1 + 12, y); g.font = '13px Calibri, sans-serif';
+    }
+
+    // ---- e: dang song va cua so ---------------------------------------
+    tieuDe(26, 'e · the transmitted waveform, four symbols, and the '
+               + 'window the receiver uses');
+    var ye = 118, he = 56, L = KSYM*MMAU;
+    function ex(k){ return x0 + k/L*(x1 - x0); }
+    var bmax = 0;
+    for (j = 0; j < L; j++) bmax = Math.max(bmax, Math.abs(s.d.re[j]));
+    // o cua so
+    var wa = ex(s.dich), wb = ex(Math.min(s.dich + s.dai*MMAU, L));
+    g.fillStyle = s.thangHang ? 'rgba(42,157,143,0.16)'
+                              : 'rgba(216,30,91,0.16)';
+    g.fillRect(wa, ye - he - 6, wb - wa, 2*he + 12);
+    g.strokeStyle = s.thangHang ? TEAL : MAG; g.lineWidth = 2;
+    g.strokeRect(wa, ye - he - 6, wb - wa, 2*he + 12);
+    // bien ky tu
+    g.strokeStyle = LINE; g.lineWidth = 1; g.setLineDash([4,4]);
+    for (i = 0; i <= KSYM; i++){
+      g.beginPath(); g.moveTo(ex(i*MMAU), ye - he - 14);
+      g.lineTo(ex(i*MMAU), ye + he + 20); g.stroke();
+    }
+    g.setLineDash([]);
+    g.strokeStyle = PUR; g.lineWidth = 1.2; g.beginPath();
+    for (j = 0; j < L; j += 2){
+      var Y = ye - s.d.re[j]/bmax*he;
+      if (j === 0) g.moveTo(ex(j), Y); else g.lineTo(ex(j), Y);
+    }
+    g.stroke();
+    g.fillStyle = MUT; g.textAlign = 'center';
+    for (i = 0; i < KSYM; i++)
+      g.fillText('symbol ' + (i + 1), ex((i + 0.5)*MMAU), ye + he + 36);
+    nhan(ye - he + 4, PUR, 'the signal, every');
+    nhan(ye - he + 21, PUR, 'symbol different data');
+    nhan(ye + 6, s.thangHang ? TEAL : MAG,
+         s.thangHang ? 'window cuts on a boundary' : 'window cuts mid symbol');
+
+    // ---- f: pho cua MOT song mang, do tren ca bon ky tu ---------------
+    tieuDe(224, 'f · one subcarrier alone, measured over all four '
+                + 'symbols. This panel never moves.');
+    var yf = 368, hf = 104;
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x0, yf); g.lineTo(x1, yf); g.stroke();
+    function fxx(f){ return x0 + (f - (SOI - 3))/6*(x1 - x0); }
+    // vi tri cac song mang hang xom
+    g.textAlign = 'center';
+    for (i = SOI - 3; i <= SOI + 3; i++){
+      g.strokeStyle = i === SOI ? PUR : 'rgba(26,31,54,0.22)';
+      g.setLineDash(i === SOI ? [] : [3,3]);
+      g.lineWidth = i === SOI ? 1.6 : 1;
+      g.beginPath(); g.moveTo(fxx(i), yf - hf - 8); g.lineTo(fxx(i), yf + 6);
+      g.stroke(); g.setLineDash([]);
+      g.fillStyle = i === SOI ? PUR : MUT;
+      g.fillText(i === SOI ? 'its own' : ('no.' + i), fxx(i), yf + 22);
+    }
+    g.strokeStyle = MAG; g.lineWidth = 2; g.beginPath();
+    for (i = 0; i < s.d.NF; i++){
+      var X2 = x0 + i/(s.d.NF - 1)*(x1 - x0);
+      var Y2 = yf - s.d.pho[i]/s.d.pmax*hf;
+      if (i === 0) g.moveTo(X2, Y2); else g.lineTo(X2, Y2);
+    }
+    g.stroke();
+    g.textAlign = 'left'; g.fillStyle = MUT;
+    g.fillText('over four symbols the data changes, so this one subcarrier '
+               + 'is not a line but a band, and it reaches past its '
+               + 'neighbours', x0, yf + 42);
+    nhan(yf - hf + 6, MAG, 'subcarrier ' + SOI + ' on its own');
+    nhan(yf - hf + 23, MUT, 'dashed lines: where the');
+    nhan(yf - hf + 40, MUT, 'neighbours sit');
+
+    // ---- g: chom sao doc duoc -----------------------------------------
+    tieuDe(452, 'g · what the receiver reads out of that window');
+    // Thang do phai du rong cho ca cac diem bi day ra xa: sai lon nhat do
+    // duoc len toi 2,8 so voi ky hieu bang 1,0. Ban dau khung chi rong
+    // 1,25 nen mot loat cham ROI RA NGOAI khung, va nhin vao thi tuong
+    // trang ve sai chu khong phai tin hieu hong. Cat gon nhung cham van
+    // vuot de khong co gi nam ngoai o.
+    var cx = x0 + 120, cy = 560, R = 88, RNG = 2.8;
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    g.strokeRect(cx - R, cy - R, 2*R, 2*R);
+    g.beginPath(); g.moveTo(cx - R, cy); g.lineTo(cx + R, cy);
+    g.moveTo(cx, cy - R); g.lineTo(cx, cy + R); g.stroke();
+    g.save();
+    g.beginPath(); g.rect(cx - R, cy - R, 2*R, 2*R); g.clip();
+    var A = 0.70710678;
+    for (i = 0; i < 4; i++){
+      var px = cx + (i & 1 ? A : -A)/RNG*R, py = cy - (i & 2 ? A : -A)/RNG*R;
+      g.strokeStyle = TEAL; g.lineWidth = 1.6;
+      g.beginPath(); g.arc(px, py, 7, 0, 7); g.stroke();
+    }
+    for (i = 0; i < s.N; i++){
+      var qx = cx + s.doc[i][0]/RNG*R, qy = cy - s.doc[i][1]/RNG*R;
+      g.fillStyle = s.thangHang ? 'rgba(42,157,143,0.85)'
+                                : 'rgba(216,30,91,0.75)';
+      g.beginPath(); g.arc(qx, qy, 3.2, 0, 7); g.fill();
+    }
+    g.restore();
+    g.fillStyle = MUT; g.textAlign = 'center';
+    g.fillText('open circles: what was sent.  dots: what was read.',
+               cx, cy + R + 20);
+    g.fillText('frame spans ±' + RNG.toFixed(1) + ', symbols have size 1',
+               cx, cy + R + 37);
+    g.textAlign = 'left';
+    g.fillStyle = s.thangHang ? TEAL : MAG;
+    g.font = 'bold 15px Calibri, sans-serif';
+    g.fillText(s.dung + ' of ' + s.N + ' subcarriers read correctly',
+               cx + R + 48, cy - 16);
+    g.font = '13px Calibri, sans-serif';
+    g.fillStyle = INK;
+    g.fillText('worst error ' + s.xau.toFixed(3) +
+               ', against a symbol of size 1.000', cx + R + 48, cy + 8);
+    g.fillStyle = MUT;
+    g.fillText(s.thangHang
+      ? 'the window holds whole symbols, so every subcarrier is a steady '
+        + 'tone inside it'
+      : 'the window straddles a boundary, so amplitudes jump inside it and '
+        + 'nothing is a steady tone', cx + R + 48, cy + 32);
+  }
+
+  function capNhat(){
+    var s = tinh();
+    E('lwn').textContent = s.N;
+    E('lws').textContent = sl.s.value;
+    E('lwl').textContent = s.dai;
+    E('w0').innerHTML = 'Window covers <b>' + s.dai + ' symbol' +
+      (s.dai > 1 ? 's' : '') + ', starting ' + (s.dich/MMAU*100).toFixed(0) +
+      '% in</b>';
+    E('w1').className = 'chip ' + (s.dung === s.N ? 'tot' : 'xau');
+    E('w1').innerHTML = 'Symbols read correctly <b>' + s.dung + ' of ' +
+      s.N + '</b>';
+    E('w2').className = 'chip ' + (s.xau < 1e-6 ? 'tot' : 'xau');
+    E('w2').innerHTML = 'Worst error <b>' + s.xau.toFixed(3) + '</b>';
+    E('w3').innerHTML = 'Panel f is <b>unchanged</b>';
+    ve(s);
+  }
+  ['n','s','l'].forEach(function(x){
+    sl[x].addEventListener('input', capNhat); });
+  Array.prototype.forEach.call(document.querySelectorAll('.nut[data-wn]'),
+    function(b){
+      b.addEventListener('click', function(){
+        sl.n.value = b.dataset.wn;
+        sl.s.value = b.dataset.ws;
+        sl.l.value = b.dataset.wl;
+        capNhat();
+      });
+    });
+  capNhat();
+  window.moPhongCuaSo = tinh;
 })();
 </script>
 </body>
