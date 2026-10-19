@@ -82,7 +82,7 @@ table.bg td:nth-child(n+2),table.bg th:nth-child(n+2){text-align:right}
     <div>
       <label class="t">Path length difference <b><span id="mld">1.8</span> m</b>,
         so notches every <b><span id="mlsp">167</span> MHz</b></label>
-      <input type="range" id="md" min="3" max="60" step="1" value="18">
+      <input type="range" id="md" min="3" max="300" step="1" value="18">
     </div>
     <div>
       <label class="t" style="margin-bottom:6px">Rebuild the received waveform from
@@ -98,6 +98,7 @@ table.bg td:nth-child(n+2),table.bg th:nth-child(n+2){text-align:right}
     <span class="nut" data-m="1" data-n="1" data-b="6" data-c="5040" data-d="18">Selective: widen it to 160 MHz</span>
     <span class="nut" data-m="2" data-n="1" data-b="6" data-c="5040" data-d="18">Selective, and 64-QAM to boot</span>
     <span class="nut" data-m="1" data-n="1" data-b="5" data-c="5180" data-d="35">Same 80 MHz, every symbol misread</span>
+    <span class="nut" data-m="1" data-n="1" data-b="3" data-c="5245" data-d="200">An office room: 20 MHz spans a notch</span>
   </div>
 </div>
 
@@ -192,6 +193,31 @@ is defined relative to the bandwidth of the signal rather than as a property of 
       the room fixed and step up through them: 3.13 dB, 6.73 dB, 21.74 dB, 25.57 dB. The capacity
       you are buying comes with a channel that is more selective at every step, and session 4 is
       about what to do with that.</li>
+  <li><b>How big a room do these path lengths describe.</b> The slider is in metres of extra path,
+      and it is worth converting once, because the numbers the measurement literature quotes are
+      in nanoseconds. Light covers 300 metres in a microsecond, so an extra metre is 3.3 ns of
+      extra delay. The default, <b>1.8 m</b>, is the single bounce Steenkiste works through, and it
+      is 6 ns. <b>20 m</b> of extra path is 67 ns. Molisch reports that indoor office environments
+      typically show delay spreads between 10 and 100 ns without line of sight, and that indoor
+      residential rooms sit lower, around 5 to 10 ns. So the default on this page is a residential
+      room, and an office is several times more dispersive than that. Press <b>An office room</b>
+      to put the slider where the measurements are.</li>
+  <li><b>Why this matters for 20 MHz in particular.</b> Notches repeat every c / ΔL, so at 20 m
+      they come every <b>15 MHz</b>, which is closer together than a 20 MHz channel is wide. Once
+      that happens the band cannot avoid a notch, wherever you put the carrier: sweep the carrier
+      slider from one end to the other and the variation stays at <b>25.58 dB</b> the whole way,
+      and at least four of the eight symbols are misread at every position. Compare that with the
+      default room, where the same 20 MHz signal is read perfectly at most carrier positions and
+      only occasionally falls foul of a notch. That is the real argument against one wide carrier:
+      not that it always fails, but that whether it fails is decided by where the notches happen to
+      land, and the transmitter does not control the room.</li>
+  <li><b>What two paths cannot show you.</b> This page keeps the room at one direct path and one
+      echo, so the curve is an exact cosine and the notches are evenly spaced. A real room has many
+      echoes at many delays, and its curve is irregular: dips of different depths at uneven
+      spacings. The periodic version is kept here because it is the one you can reason about, and
+      because it makes the origin of the spacing visible. Nothing in the argument above depends on
+      the regularity, only on the spacing being comparable to the signal bandwidth, which is a
+      property of the delay spread rather than of the number of paths.</li>
 </ul>
 
 <h2>Panels 2 to 7: the same channel, now with a real signal through it</h2>
