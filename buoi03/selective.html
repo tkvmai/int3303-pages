@@ -91,10 +91,8 @@ table.bg td:nth-child(n+2),table.bg th:nth-child(n+2){text-align:right}
     </div>
   </div>
   <div style="margin-top:10px">
-    <span class="nut" data-m="1" data-n="1" data-b="0" data-c="5040" data-d="18">Flat: a 1 MHz signal</span>
+    <span class="nut" data-m="1" data-n="1" data-b="1" data-c="5040" data-d="18">Flat: a 5 MHz signal</span>
     <span class="nut" data-m="1" data-n="1" data-b="5" data-c="5040" data-d="18">The textbook example: 80 MHz</span>
-    <span class="nut" data-m="1" data-n="1" data-b="0" data-c="5083" data-d="18">Flat but deep in a notch</span>
-    <span class="nut" data-m="1" data-n="1" data-b="0" data-c="5167" data-d="18">Flat and on a peak</span>
     <span class="nut" data-m="1" data-n="1" data-b="6" data-c="5040" data-d="18">Selective: widen it to 160 MHz</span>
     <span class="nut" data-m="2" data-n="1" data-b="6" data-c="5040" data-d="18">Selective, and 64-QAM to boot</span>
     <span class="nut" data-m="1" data-n="1" data-b="5" data-c="5180" data-d="35">Same 80 MHz, every symbol misread</span>
@@ -142,24 +140,16 @@ session 3 part 2 rather than of this page. With the echo at 0.9 of the direct ra
 from about +5.6 dB where the two add to &minus;20 dB where they nearly cancel.</p>
 
 <h2>The one experiment to run</h2>
-<p class="sub">Press <b>Flat: a 1 MHz signal</b>, then <b>Selective: widen it to 160 MHz</b>.
+<p class="sub">Press <b>Flat: a 5 MHz signal</b>, then <b>Selective: widen it to 160 MHz</b>.
 Nothing about the room changes between those two: same two paths, same path length difference,
 same notches in the same places. Only the width of the signal changes. The gain across the signal
-goes from <b>0.15 dB</b> to <b>25.57 dB</b>, the verdict flips, and in the last panel the
+goes from <b>0.77 dB</b> to <b>25.57 dB</b>, the verdict flips, and in the last panel the
 constellation goes from every symbol read correctly to <b>three of eight read as the wrong
 symbol</b>. That is the whole of Stallings' point in one slider, and it is why the term selective
 is defined relative to the bandwidth of the signal rather than as a property of the channel.</p>
 
 <h2>Things worth noticing</h2>
 <ul>
-  <li><b>Flat does not mean harmless.</b> Press <b>Flat but deep in a notch</b>. The verdict is
-      flat, because the whole of that narrow signal moves together: the gain varies by only
-      0.37 dB across it, and every symbol is still read correctly. But the common gain has fallen
-      to <b>0.10</b>, which is twenty decibels down, and the link is in serious trouble. Then press
-      <b>Flat and on a peak</b>: same width, same room, and the gain is <b>1.90</b>, the two copies
-      adding perfectly. Flat and selective answer the question <i>is the band treated unevenly</i>,
-      not the question <i>is the signal any good</i>. The cure for the notch is power; the cure for
-      selectivity is not.</li>
   <li><b>Width alone does not decide the outcome either.</b> <b>The textbook example: 80 MHz</b>
       and <b>Same 80 MHz, every symbol misread</b> are the same width, and they even vary by
       similar amounts, 21.74 dB against 25.58 dB. Yet the first reads <b>every symbol
@@ -299,10 +289,8 @@ over the line is already a wrong symbol. Above 1.00 means at least one symbol wa
 <p class="sub">Walk the presets from left to right and watch that one number.</p>
 <table class="bg">
   <tr><th>preset</th><th>width</th><th>gain varies</th><th>worst symbol</th><th>misread</th></tr>
-  <tr><td>Flat: a 1 MHz signal</td><td>1 MHz</td><td>0.15 dB</td><td>0.01</td><td>0 of 8</td></tr>
+  <tr><td>Flat: a 5 MHz signal</td><td>5 MHz</td><td>0.77 dB</td><td>0.05</td><td>0 of 8</td></tr>
   <tr><td>The textbook example: 80 MHz</td><td>80 MHz</td><td>21.74 dB</td><td>0.85</td><td>0 of 8</td></tr>
-  <tr><td>Flat but deep in a notch</td><td>1 MHz</td><td>0.37 dB</td><td>0.17</td><td>0 of 8</td></tr>
-  <tr><td>Flat and on a peak</td><td>1 MHz</td><td>0.00 dB</td><td>0.01</td><td>0 of 8</td></tr>
   <tr><td>Selective: widen it to 160 MHz</td><td>160 MHz</td><td>25.57 dB</td><td>2.09</td><td>3 of 8</td></tr>
   <tr><td>Selective, and 64-QAM to boot</td><td>160 MHz</td><td>25.57 dB</td><td>3.47</td><td>7 of 8</td></tr>
   <tr><td>Same 80 MHz, every symbol misread</td><td>80 MHz</td><td>25.58 dB</td><td>4.48</td><td>8 of 8</td></tr>
@@ -378,7 +366,19 @@ warning against reading bandwidth alone as the answer.</p>
     // thien se chi do phan nhin thay duoc, tuc do nham mot thu khac.
     // khong ep song mang nua: cua so da du rong, va ep thi bang 1 se noi
     // ve mot tin hieu khac voi cac bang duoi
-    var N = 1600, f = new Float64Array(N), h = new Float64Array(N), i;
+    // So diem ve phai theo CHU KY cua dap ung, khong dat cung. Mai bao
+    // 2026-10-22 hinh preset phong van phong "trong co ve sai". Do ra:
+    // voi hai tia, MOI cho trung phai sau DUNG BANG NHAU, o day la -20,00
+    // dB. Nhung o dL = 20 m co 40 cho trung tren cua so 600 MHz, ma luoi
+    // 1600 diem chi cho 0,375 MHz moi diem, nen cac day ve ra sau tu
+    // -18,16 toi -20,00 dB, lech nhau 1,84 dB giua nhung cho le ra phai
+    // giong het. Mat nhin thay ngay la co gi do sai, va dung la sai that,
+    // sai o PHEP VE chu khong o mo hinh: doi chieu voi ban Python van
+    // khop toi 1e-12. Nay lay 300 diem cho moi chu ky, chenh con 0,04 dB.
+    var chuky = C0/dl;
+    var N = Math.min(24000, Math.max(1600,
+                     Math.round(300*(FB - FA)/chuky)));
+    var f = new Float64Array(N), h = new Float64Array(N), i;
     for (i = 0; i < N; i++){
       f[i] = FA + (FB - FA)*i/(N - 1);
       h[i] = dapUng(f[i], dl, ntia);
