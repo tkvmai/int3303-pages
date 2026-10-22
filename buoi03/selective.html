@@ -165,11 +165,20 @@ is defined relative to the bandwidth of the signal rather than as a property of 
       respect to the structure of the particular channel it is sitting in, which is exactly why
       Stallings defines the term relative to the signal bandwidth and refuses to attach a number
       to it.</li>
-  <li><b>Where the notch spacing comes from.</b> Two paths differing by ΔL put a whole extra
-      wavelength into the longer path every time the frequency rises by c / ΔL, so the pattern
-      repeats with that period. A long echo means a small period, which is why pushing the path
-      length difference up crowds the notches together and makes even a narrow signal look
-      selective. The chip above reports what fraction of one such period your signal covers.</li>
+  <li><b>Where the notch spacing comes from, and how far that rule goes.</b> This page runs on
+      two paths, and two paths are the one case with an exact answer: differing by ΔL, they put a
+      whole extra wavelength into the longer path every time the frequency rises by c / ΔL, so the
+      curve repeats with that period. Treat it as a property of the two-path model rather than as
+      a law about channels. The response of two paths is a single exponential and single
+      exponentials are periodic; three or more paths give a sum of exponentials with unrelated
+      delays, and that sum is periodic only if every delay happens to be a whole multiple of one
+      common delay, which no real room obliges. Measured over 50 to 550 MHz, adding two more
+      reflections to the same room moves the dips from a uniform 200 MHz apart and a uniform
+      20.0 dB deep to 51 to 169 MHz apart and 2.8 to 25.5 dB deep. What survives into real rooms
+      is the scale and not the pattern: a longer echo makes the ripple finer, which is why pushing
+      the path length difference up crowds the notches together and makes even a narrow signal
+      look selective. The chip above reports what fraction of one such period your signal covers,
+      and that fraction is meaningful here only because this page holds the room at two paths.</li>
   <li><b>The verdict needs a number, and neither textbook gives one.</b> This page calls the
       channel selective when the gain varies by more than <b>3 dB</b> across the signal. That
       three is a convention of this page and nothing more. Stallings states the test in words only:
@@ -192,8 +201,10 @@ is defined relative to the bandwidth of the signal rather than as a property of 
       residential rooms sit lower, around 5 to 10 ns. So the default on this page is a residential
       room, and an office is several times more dispersive than that. Press <b>An office room</b>
       to put the slider where the measurements are.</li>
-  <li><b>Why this matters for 20 MHz in particular.</b> Notches repeat every c / ΔL, so at 20 m
-      they come every <b>15 MHz</b>, which is closer together than a 20 MHz channel is wide. Once
+  <li><b>Why this matters for 20 MHz in particular.</b> With these two paths the notches come
+      every c / ΔL, so at 20 m that is every <b>15 MHz</b>, which is closer together than a
+      20 MHz channel is wide. A real room with the same spread puts them at uneven intervals of
+      roughly that size, which changes where they land but not the conclusion below. Once
       that happens the band cannot avoid a notch, wherever you put the carrier: sweep the carrier
       slider from one end to the other and the variation stays at <b>25.58 dB</b> the whole way,
       and at least four of the eight symbols are misread at every position. Compare that with the
