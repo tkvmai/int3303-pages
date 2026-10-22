@@ -91,12 +91,12 @@ table.bg td:nth-child(n+2),table.bg th:nth-child(n+2){text-align:right}
     </div>
   </div>
   <div style="margin-top:10px">
-    <span class="nut" data-m="1" data-n="1" data-b="1" data-c="5040" data-d="18">Flat: a 5 MHz signal</span>
-    <span class="nut" data-m="1" data-n="1" data-b="5" data-c="5040" data-d="18">The textbook example: 80 MHz</span>
-    <span class="nut" data-m="1" data-n="1" data-b="6" data-c="5040" data-d="18">Selective: widen it to 160 MHz</span>
-    <span class="nut" data-m="2" data-n="1" data-b="6" data-c="5040" data-d="18">Selective, and 64-QAM to boot</span>
-    <span class="nut" data-m="1" data-n="1" data-b="5" data-c="5180" data-d="35">Same 80 MHz, every symbol misread</span>
-    <span class="nut" data-m="1" data-n="1" data-b="3" data-c="5245" data-d="200">An office room: 20 MHz spans a notch</span>
+    <span class="nut" data-m="1" data-n="1" data-b="1" data-c="5040" data-d="18" data-k="2">Flat: a 5 MHz signal</span>
+    <span class="nut" data-m="1" data-n="1" data-b="5" data-c="5040" data-d="18" data-k="2">The textbook example: 80 MHz</span>
+    <span class="nut" data-m="1" data-n="1" data-b="6" data-c="5040" data-d="18" data-k="2">Selective: widen it to 160 MHz</span>
+    <span class="nut" data-m="2" data-n="1" data-b="6" data-c="5040" data-d="18" data-k="2">Selective, and 64-QAM to boot</span>
+    <span class="nut" data-m="1" data-n="1" data-b="5" data-c="5180" data-d="35" data-k="2">Same 80 MHz, every symbol misread</span>
+    <span class="nut" data-m="1" data-n="1" data-b="3" data-c="5245" data-d="200" data-k="4">An office room: 20 MHz spans a notch</span>
   </div>
 </div>
 
@@ -165,13 +165,14 @@ is defined relative to the bandwidth of the signal rather than as a property of 
       respect to the structure of the particular channel it is sitting in, which is exactly why
       Stallings defines the term relative to the signal bandwidth and refuses to attach a number
       to it.</li>
-  <li><b>Where the notch spacing comes from.</b> With the two paths this page uses, differing by
-      ΔL, a whole extra wavelength goes into the longer path every time the frequency rises by
-      c / ΔL, so the notches sit that far apart. A long echo means a small spacing, which is why
-      pushing the path length difference up crowds the notches together and makes even a narrow
-      signal look selective. The chip above reports what fraction of one such spacing your signal
-      covers. A room with more reflections gives a ragged curve rather than an even one, but the
-      scale stays the same, and the conclusions on this page do not depend on the evenness.</li>
+  <li><b>Where the notch spacing comes from.</b> With two paths differing by ΔL, which is what
+      every preset here uses except the office one, a whole extra wavelength goes into the longer
+      path every time the frequency rises by c / ΔL, so the notches sit that far apart and are all
+      the same depth. A long echo means a small spacing, which is why pushing the path length
+      difference up crowds the notches together and makes even a narrow signal look selective.
+      The chip above reports what fraction of one such spacing your signal covers. Add reflections
+      and the curve goes ragged, dips at uneven spacings and different depths, but the scale of
+      the ripple is still set the same way.</li>
   <li><b>The verdict needs a number, and neither textbook gives one.</b> This page calls the
       channel selective when the gain varies by more than <b>3 dB</b> across the signal. That
       three is a convention of this page and nothing more. Stallings states the test in words only:
@@ -193,24 +194,19 @@ is defined relative to the bandwidth of the signal rather than as a property of 
       typically show delay spreads between 10 and 100 ns without line of sight, and that indoor
       residential rooms sit lower, around 5 to 10 ns. So the default on this page is a residential
       room, and an office is several times more dispersive than that. Press <b>An office room</b>
-      to put the slider where the measurements are.</li>
-  <li><b>Why this matters for 20 MHz in particular.</b> With these two paths the notches come
-      every c / ΔL, so at 20 m that is every <b>15 MHz</b>, which is closer together than a
-      20 MHz channel is wide. Once
-      that happens the band cannot avoid a notch, wherever you put the carrier: sweep the carrier
-      slider from one end to the other and the variation stays at <b>25.58 dB</b> the whole way,
-      and at least four of the eight symbols are misread at every position. Compare that with the
-      default room, where the same 20 MHz signal is read perfectly at most carrier positions and
-      only occasionally falls foul of a notch. That is the real argument against one wide carrier:
-      not that it always fails, but that whether it fails is decided by where the notches happen to
-      land, and the transmitter does not control the room.</li>
-  <li><b>What two paths cannot show you.</b> This page keeps the room at one direct path and one
-      echo, so the curve is an exact cosine and the notches are evenly spaced. A real room has many
-      echoes at many delays, and its curve is irregular: dips of different depths at uneven
-      spacings. The periodic version is kept here because it is the one you can reason about, and
-      because it makes the origin of the spacing visible. Nothing in the argument above depends on
-      the regularity, only on the spacing being comparable to the signal bandwidth, which is a
-      property of the delay spread rather than of the number of paths.</li>
+      to put the slider where the measurements are. That preset also switches the room to
+      <b>four paths</b>, arriving at 0, 67, 112 and 187 ns, for a delay spread of <b>57 ns</b>:
+      a room this dispersive is not one long echo, it is several reflections, and modelling it
+      with a single echo would draw an even comb that no measurement ever looks like.</li>
+  <li><b>Why this matters for 20 MHz in particular.</b> In the office room the dips come every
+      few megahertz, closer together than a 20 MHz channel is wide, so the band cannot avoid one
+      wherever you put the carrier. Sweep the carrier slider from one end to the other: the gain
+      across the signal varies by anywhere from <b>7.3</b> to <b>34.8 dB</b> depending on where
+      you stop, and <b>at least four of the eight symbols are misread at every position</b>.
+      Compare that with the default room, where the same 20 MHz signal is read perfectly at most
+      carrier positions and only occasionally falls foul of a notch. That is the real argument
+      against one wide carrier: not that it always fails, but that whether it fails is decided by
+      where the dips happen to land, and the transmitter does not control the room.</li>
 </ul>
 
 <h2>Panels 2 to 7: the same channel, now with a real signal through it</h2>
@@ -352,12 +348,38 @@ warning against reading bandwidth alone as the answer.</p>
   }
   window.dapUng = dapUng;                           // de cong doi chieu goi duoc
 
+  // Dap ung PHUC va bien do lon nhat, de NUA DUOI cua trang dung chung dung
+  // mot kenh voi nua tren thay vi tu viet lai cong thuc hai tia.
+  window.kenhPhuc = function(f, dl, ntia){
+    var re = 1, im = 0;
+    for (var i = 0; i < ntia - 1; i++){
+      var p = -2*Math.PI*f*dl*TIA_R[i]/C0;
+      re += TIA_A[i]*Math.cos(p);
+      im += TIA_A[i]*Math.sin(p);
+    }
+    return {re:re, im:im};
+  };
+  window.kenhMax = function(ntia){
+    var m = 1;
+    for (var i = 0; i < ntia - 1; i++) m += TIA_A[i];
+    return m;                                       // ntia = 2 cho dung 1,9
+  };
+
   var E = function(id){ return document.getElementById(id); };
   // Khoi nay va khoi phia duoi dung CHUNG mot bo num. Mai chot 2026-10-18:
   // gop hai phan thanh mot mach, vi tach ra thi sinh vien khong noi duoc
   // "fading phang trong nhu the nay" voi "no lam hong ky tu nhu the kia".
   var sl = {b:E('mb'), c:E('mc'), d:E('md')};
-  var NTIA = 2;   // co dinh hai tia: mot tia truc tiep va mot tieng vong
+  // So tia cua can phong, do PRESET dat, khong phai hang so nua.
+  // Mai 2026-10-22: "toi van thay khi click vao office room 20 MHz mot dong
+  // notch deu nhau". Dung, va cai sai nam o MO HINH chu khong o phep ve:
+  // voi hai tia thi moi cho trung BAT BUOC phai sau bang nhau va cach deu
+  // nhau, do la tinh chat cua mot hang mu duy nhat, khong co cach ve nao
+  // lam khac di duoc. Mot phong van phong khong phai la mot tieng vong dai
+  // 20 m, no la nhieu phan xa, nen preset ay nay dung bon tia.
+  var NTIA = 2;
+  window.soTia = function(){ return NTIA; };
+  window.datSoTia = function(k){ NTIA = k; };       // cho cong doi chieu
   var cv = E('cv2'), g = cv.getContext('2d');
 
   function tinh(){
@@ -508,7 +530,7 @@ warning against reading bandwidth alone as the answer.</p>
   Array.prototype.forEach.call(document.querySelectorAll('.nut[data-b]'), function(n){
     n.addEventListener('click', function(){
       sl.b.value = n.dataset.b; sl.c.value = n.dataset.c;
-      sl.d.value = n.dataset.d;
+      sl.d.value = n.dataset.d; NTIA = +n.dataset.k;
       chay();
     });
   });
@@ -536,7 +558,6 @@ warning against reading bandwidth alone as the answer.</p>
    Ban Python doc lap nam o mohinh_dieuche.py, doichieu.py so tung so. */
 (function(){
   var C0 = 3.0e8;
-  var A_VONG = 0.9;
   var MMAU = 32, BETA = 0.35;
   var MODS = [4, 16, 64], TENMOD = ['QPSK', '16-QAM', '64-QAM'];
   // Num dung chung cua ca trang la BE RONG BANG TAN, theo day be rong kenh
@@ -610,7 +631,8 @@ warning against reading bandwidth alone as the answer.</p>
 
   function tinh(){
     var M = MODS[+sl.m.value], Rs = tocDo(+sl.b.value), nsym = NSYMS[+sl.n.value];
-    var fc = (+sl.c.value)*1e6, dl = (+sl.d.value)/10, tau = dl/C0;
+    var fc = (+sl.c.value)*1e6, dl = (+sl.d.value)/10;
+    var ntia = window.soTia();        // cung can phong voi nua tren
     var sym = kyTu(M, nsym);
     var Ts = 1/Rs, L = nsym*MMAU, dt = Ts/MMAU, i, k, n, r;
 
@@ -640,9 +662,8 @@ warning against reading bandwidth alone as the answer.</p>
     var Hr = new Float64Array(L), Hi = new Float64Array(L);
     var Yr = new Float64Array(L), Yi = new Float64Array(L);
     for (k = 0; k < L; k++){
-      var phh = -2*Math.PI*(fc + fk[k])*tau;
-      Hr[k] = 1 + A_VONG*Math.cos(phh);
-      Hi[k] = A_VONG*Math.sin(phh);
+      var Hc = window.kenhPhuc(fc + fk[k], dl, ntia);
+      Hr[k] = Hc.re; Hi[k] = Hc.im;
       Yr[k] = Xr[k]*Hr[k] - Xi[k]*Hi[k];
       Yi[k] = Xr[k]*Hi[k] + Xi[k]*Hr[k];
     }
@@ -685,7 +706,7 @@ warning against reading bandwidth alone as the answer.</p>
       thutu.push({k:k, m:Math.sqrt(Yr[k]*Yr[k] + Yi[k]*Yi[k])});
     thutu.sort(function(a, b){ return b.m - a.m; });
 
-    return {M:M, Rs:Rs, nsym:nsym, fc:fc, dl:dl, Ts:Ts, L:L, dt:dt,
+    return {M:M, Rs:Rs, nsym:nsym, fc:fc, dl:dl, ntia:ntia, Ts:Ts, L:L, dt:dt,
             W:(1+BETA)*Rs/2, sym:sym, bang:bangChomSao(M),
             sre:sre, sim:sim, Xr:Xr, Xi:Xi, fk:fk, Hr:Hr, Hi:Hi, Yr:Yr, Yi:Yi,
             thutu:thutu, khoangVach:1/(nsym*Ts),
@@ -733,11 +754,11 @@ warning against reading bandwidth alone as the answer.</p>
     // 37,0 MHz trong khi mep bang o 40,0 MHz), nen no bo sot dung cho he so
     // cuc doan nhat: 17,75 dB thay vi 21,74 dB. Con so in ra khi ay khong
     // khop voi duong cong nguoi doc dang nhin. Cong kiem bat duoc 2026-10-18.
-    var lo = 1e9, hi = -1e9, k, tau_b = s.dl/C0;
+    var lo = 1e9, hi = -1e9, k;
     for (k = 0; k <= 2000; k++){
-      var fb = s.fc - s.W + 2*s.W*k/2000, ph_b = 2*Math.PI*fb*tau_b;
-      var hrb = 1 + A_VONG*Math.cos(ph_b), hib = -A_VONG*Math.sin(ph_b);
-      var dB = 20*Math.log10(Math.sqrt(hrb*hrb + hib*hib));
+      var fb = s.fc - s.W + 2*s.W*k/2000;
+      var Hb = window.kenhPhuc(fb, s.dl, s.ntia);
+      var dB = 20*Math.log10(Math.sqrt(Hb.re*Hb.re + Hb.im*Hb.im));
       if (dB < lo) lo = dB; if (dB > hi) hi = dB;
     }
     s.dmin = dmin; s.bienDuPhong = bdp;
@@ -966,9 +987,8 @@ warning against reading bandwidth alone as the answer.</p>
     g.beginPath();
     for (i = 0; i <= 400; i++){
       var f4 = -ZW + 2*ZW*i/400;
-      var p4 = -2*Math.PI*(s.fc + f4)*(s.dl/C0);
-      var hr4 = 1 + A_VONG*Math.cos(p4), hi4 = A_VONG*Math.sin(p4);
-      var m4 = Math.sqrt(hr4*hr4 + hi4*hi4)/1.9;
+      var H4 = window.kenhPhuc(s.fc + f4, s.dl, s.ntia);
+      var m4 = Math.sqrt(H4.re*H4.re + H4.im*H4.im)/window.kenhMax(s.ntia);
       var yy = c1 - m4*(c1-c0)*0.92;
       if (i === 0) g.moveTo(zx(f4), yy); else g.lineTo(zx(f4), yy);
     }
