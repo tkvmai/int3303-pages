@@ -194,18 +194,21 @@ footer{padding:20px 26px;border-top:1px solid var(--line);color:var(--mut);
   </a>
 
   <a class="card" href="buoi04/single-carrier-versus-ofdm.html">
-    <b>Một sóng mang hay bốn, qua cùng một căn phòng</b>
-    <span>Cùng mười sáu bit ấy gửi hai lần qua đúng một căn phòng, một lần bằng một sóng mang
-    nhanh, một lần chia cho bốn sóng mang con chậm hơn. Năm bước: chuỗi bit thành tám ký tự
-    QPSK, tám ký tự nối tiếp 50 ns mỗi ký tự, rồi chia thành bốn luồng con nên mỗi ký tự
-    <b>dài ra bốn lần thành 200 ns</b>, rồi đáp ứng của phòng trên cả dải 20 MHz với vị trí của
-    bốn sóng mang con đánh dấu trên đó, rồi chòm sao hai bên. Phòng chỉ có một tiếng vọng
-    <b>0,9 lần, trễ 50 ns</b>, tức đúng một ký tự của sóng mang đơn, nên mỗi ký tự rơi chồng lên
-    ký tự trước. Kết quả: một sóng mang <b>đọc sai 2 trong 8</b> ký tự dù đã được sửa một hệ số
-    phức, OFDM <b>đọc đúng cả 8</b> và các điểm rơi trúng ngay chòm sao. Trang nói thẳng hai điều
-    OFDM <b>không</b> làm được: chỗ trũng vẫn còn đó, sóng mang con thứ ba chỉ còn 0,10 lần nên
-    nhiễu trên nó bị nhân mười, và tiền tố vòng khiến OFDM tốn 500 ns thay vì 400 ns cho cùng
-    tám ký tự. Có nút đổi chuỗi bit để thấy khối ví dụ không phải khối được chọn.</span>
+    <b>Một sóng mang hay tám, qua cùng một căn phòng</b>
+    <span>Cùng ba mươi hai bit ấy gửi hai lần qua đúng một căn phòng, một lần bằng một sóng
+    mang nhanh, một lần chia cho tám sóng mang con chậm hơn. Năm bước: chuỗi bit thành mười sáu
+    ký tự QPSK, mười sáu ký tự nối tiếp 50 ns mỗi ký tự, rồi hai khối tám sóng mang con nên mỗi
+    ký tự <b>dài ra tám lần thành 400 ns</b>, rồi đáp ứng của phòng trên cả dải 20 MHz với
+    <b>khối phổ của sóng mang đơn phủ kín cả dải</b> đặt cạnh tám chấm của các sóng mang con,
+    rồi chòm sao hai bên. Một khối mang <b>đúng một ký tự trên mỗi sóng mang con</b>, nên đổi
+    điều chế thì chỉ số bit đầu vào đổi: 16-QAM cần 64 bit cho cùng hai khối ấy. Phòng chỉ có
+    một tiếng vọng <b>0,9 lần, trễ 50 ns</b>, tức đúng một ký tự của sóng mang đơn, nên mỗi ký
+    tự rơi chồng lên ký tự trước. Kết quả: một sóng mang <b>đọc sai 3 trong 16</b> ký tự dù đã
+    được sửa một hệ số phức, OFDM <b>đọc đúng cả 16</b> và các điểm rơi trúng ngay chòm sao.
+    Trang nói thẳng những điều OFDM <b>không</b> làm được: chỗ trũng vẫn còn đó, sóng mang con
+    thứ năm chỉ còn 0,10 lần nên nhiễu trên nó bị nhân mười, và tiền tố vòng khiến OFDM tốn
+    900 ns thay vì 800 ns cho cùng mười sáu ký tự. Có nút đổi chuỗi bit để thấy khối ví dụ không
+    phải khối được chọn.</span>
   </a>
 
   <h2>Bài thực hành</h2>

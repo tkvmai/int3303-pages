@@ -56,7 +56,7 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
   <div style="margin-bottom:8px">
     <span class="nut dang" data-b="1">1 · the bits</span>
     <span class="nut" data-b="2">2 · one carrier</span>
-    <span class="nut" data-b="3">3 · four subcarriers</span>
+    <span class="nut" data-b="3">3 · eight subcarriers</span>
     <span class="nut" data-b="4">4 · the room</span>
     <span class="nut" data-b="5">5 · what the receiver reads</span>
   </div>
@@ -67,7 +67,7 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
   <div id="so" style="margin-top:10px"></div>
 </div>
 
-<canvas id="cv" width="1280" height="1330"></canvas>
+<canvas id="cv" width="1280" height="1500"></canvas>
 
 <h2>What to look at</h2>
 <ul>
@@ -77,41 +77,50 @@ footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-
       large room. Nothing else is in the model: no noise, no movement, no second room.</li>
   <li><b>The single carrier runs at 20 Msym/s, so a symbol lasts 50 ns.</b> The echo is therefore
       exactly one symbol late, and every symbol arrives on top of the one before it. That is
-      inter-symbol interference, and panel 2 shows it as a time picture rather than as a phrase.</li>
-  <li><b>Four subcarriers, so each symbol lasts four times as long.</b> 200 ns instead of 50 ns,
-      carrying the same eight symbols, because four of them are in the air at once. The echo is
-      still 50 ns, so it now covers a quarter of a symbol instead of all of it. Panel 3 draws the
-      two timelines on the same scale so the stretch is measured, not asserted.</li>
-  <li><b>The cyclic prefix is what makes the quarter harmless rather than merely smaller, and it
-      is not free.</b> Each OFDM block is sent with its own last sample repeated in front of it,
-      50 ns of it here. The echo lands in that copy and not in the data, and the arithmetic that
-      follows is exact rather than approximate. The price is time: the two OFDM blocks occupy
-      <b>500 ns</b> against the single carrier's <b>400 ns</b> for the same eight symbols, so
-      OFDM is <b>25% slower</b> here, not equal. Count it on the two timelines in panels 2 and 3.
-      Real systems pay a smaller share because they use many more subcarriers for the same
-      prefix: WiFi spends 0.8 µs of prefix on a 4 µs symbol, which is 20%. Remove the prefix
-      altogether and OFDM loses the clean result below, which is why no real system does.</li>
+      inter-symbol interference, and panel 2 shows it as a time picture rather than as a phrase.
+      It is also the same statement as the curve in panel 4: a channel that adds 0.9 of the
+      previous sample in time is a channel whose response is 1 + 0.9 e<sup>&minus;j2&pi;fT</sup>
+      in frequency. One room, two pictures. The pink block in panel 4 is this single carrier
+      lying across the whole of it.</li>
+  <li><b>One block is eight symbols on eight subcarriers, and that is the point.</b> A block
+      carries exactly one constellation symbol per subcarrier, so 32 bits of QPSK make 16
+      symbols and need two blocks of eight. Each subcarrier symbol lasts 400 ns instead of
+      50 ns, because eight of them are in the air at once. Panel 3 draws both timelines on the
+      same scale so the stretch is measured, not asserted. Change the modulation and only the
+      bit count changes: 16-QAM would take 64 bits to fill the same two blocks.</li>
+  <li><b>The cyclic prefix does two jobs, and it is not free.</b> Each block is sent with its own
+      last sample repeated in front of it, 50 ns of it here. The first job is the one the picture
+      shows: the echo of the previous block lands in that copy rather than in the data, so blocks
+      do not smear into each other. The second job is the one that makes the result below exact
+      rather than merely better: repeating the tail turns the channel's ordinary convolution into
+      a circular one over the block, which is what makes each received subcarrier equal to its
+      own gain times its own symbol with no leakage between subcarriers. Divide by that gain and
+      the symbol comes back exactly. The price is time: the two blocks occupy <b>900 ns</b>
+      against the single carrier's <b>800 ns</b> for the same 16 symbols, so OFDM is <b>12.5%
+      slower</b> here, not equal. Real systems pay a smaller share because they put many more
+      subcarriers behind one prefix: WiFi spends 0.8 µs on a 4 µs symbol, which is 20%.</li>
   <li><b>Panel 4 is the whole reason the two chains differ.</b> The room's response across the
-      20 MHz band has one deep notch in it. The single carrier occupies the whole band, so it
-      meets the notch and everything either side of it at once, and there is no single number the
-      receiver can multiply by to undo that. OFDM meets the same curve, but each subcarrier meets
-      only one point of it, so for each subcarrier there IS a single number, and the receiver
-      applies four of them.</li>
+      20 MHz band has one deep notch in it. The pink block is the single carrier: it occupies the
+      whole band, so it meets gains from 0.10&times; to 1.90&times; at the same moment, and there
+      is no single number the receiver can multiply by to undo that. The dots are the eight
+      subcarriers on the same curve. Each one meets a single gain, so for each one a single
+      number IS enough, and the receiver applies eight different ones.</li>
   <li><b>Panel 5 is the result, and the honest statement of it is narrow.</b> The single carrier
       block has symbols read as the wrong symbol; the OFDM block has none, and its symbols land
       exactly on their constellation points rather than merely close to them. What OFDM removed
       is the interference between symbols. It did not remove the notch.</li>
-  <li><b>Which is why subcarrier 3 deserves a sentence.</b> The four subcarriers meet gains of
-      1.90, 1.35, 0.10 and 1.35. Dividing by 0.10 recovers the symbol exactly here because this
-      page has no noise in it, but it also multiplies whatever noise is present by ten. So the
-      honest reading is that OFDM turned one unfixable problem into one weak subcarrier out of
-      four, and the next step in the lecture, a code spread across all the subcarriers, is what
-      deals with the weak one.</li>
+  <li><b>Which is why subcarrier 5 deserves a sentence.</b> The eight subcarriers meet gains of
+      1.90, 1.76, 1.35, 0.73, 0.10, 0.73, 1.35 and 1.76. Dividing by 0.10 recovers that symbol
+      exactly here because this page has no noise in it, but it also multiplies whatever noise
+      is present by ten, and subcarriers 4 and 6 at 0.73 are down as well. So the honest reading
+      is that OFDM turned one unfixable problem into one bad subcarrier and two weak ones out of
+      eight, and the next step in the lecture, a code spread across all the subcarriers, is what
+      deals with those.</li>
   <li><b>This block of bits is not special.</b> Press <b>Try another sixteen bits</b> and watch
       the single carrier count move while the OFDM count stays at zero. Over 4000 random blocks
-      through this same room the single carrier reads on average <b>0.68</b> of its 8 symbols
-      wrongly and <b>53%</b> of blocks contain at least one error, so a block with two errors is
-      an ordinary one rather than a chosen one.</li>
+      through this same room the single carrier reads on average <b>1.86</b> of its 16 symbols
+      wrongly and <b>74%</b> of blocks contain at least one error, so a block with three errors
+      is an ordinary one rather than a chosen one.</li>
 </ul>
 
 <footer>
@@ -145,14 +154,19 @@ University of Engineering and Technology, Vietnam National University<br>
       MUT='#5A6272', LINE='#E4E8EF', FADE='#DDE2EA', GREY='#C9D0DB';
 
   // ---- Mo hinh. Moi con so tren trang deu tu day ra. ----------------------
-  var N = 4;                       // so song mang con
+  // Mai chot 2026-10-23: mot khoi OFDM mang DUNG mot ky tu tren moi song
+  // mang con, nen muon noi "N ky tu song song thay vi N ky tu noi tiep" thi
+  // so song mang con phai bang so ky tu trong mot khoi. Ban dau trang dung
+  // N = 4 va chia 8 ky tu thanh hai khoi: hop le, nhung lam mo chinh cau ay.
+  var N = 8;                       // so song mang con, bang so ky tu mot khoi
   var CP = 1;                      // tien to vong, tinh bang mau
   var A_VONG = 0.9;                // bien do tieng vong, dung nhu cac trang khac
   var TS_NS = 50;                  // mot ky tu cua song mang don, ns
   var C0 = 3.0e8;
   var DL_M = TS_NS*1e-9*C0;                  // 15 m duong di them
-  var NSYM = 8;                    // 16 bit, QPSK, 8 ky tu
-  var BIT_VD = [0,1,0,0,1,0,0,0,1,0,1,0,0,1,1,1];
+  var NSYM = 16;                   // 32 bit, QPSK, 16 ky tu, hai khoi
+  var BIT_VD = [1,1,0,0,0,1,1,1,1,1,0,0,0,1,1,0,
+                0,1,0,0,0,0,1,0,0,0,1,1,1,1,0,1];
 
   var R2 = Math.SQRT1_2;
   // Gray: 00 -> (+,+), 01 -> (+,-), 11 -> (-,-), 10 -> (-,+)
@@ -295,33 +309,35 @@ University of Engineering and Technology, Vietnam National University<br>
   function tieu(t, y){ chu(t, X0, y, INK, 17, 'left', true); }
 
   function veBits(s, y){
-    tieu('1 · sixteen bits, paired into eight QPSK symbols', y);
+    tieu('1 · ' + s.bits.length + ' bits, paired into ' + NSYM
+         + ' QPSK symbols', y);
     var n = s.bits.length, w = (X1 - X0)/n, i;
     for (i = 0; i < n; i++){
       var x = X0 + i*w;
-      hop(x, y + 16, w - 3, 26, i % 2 ? '#F2F4F8' : '#fff', LINE);
-      chu(String(s.bits[i]), x + (w-3)/2, y + 34, INK, 14, 'center', true);
+      hop(x, y + 16, w - 2, 24, i % 2 ? '#F2F4F8' : '#fff', LINE);
+      chu(String(s.bits[i]), x + (w-2)/2, y + 33, INK, 12.5, 'center', true);
     }
     for (i = 0; i < NSYM; i++){
-      var xa = X0 + 2*i*w, xb = xa + 2*w - 3;
-      duong(xa, y + 50, xb, y + 50, MUT, 1);
-      chu('s' + (i+1), (xa+xb)/2, y + 66, MUT, 12.5, 'center');
+      var xa = X0 + 2*i*w, xb = xa + 2*w - 2;
+      duong(xa, y + 48, xb, y + 48, MUT, 1);
+      chu('s' + (i+1), (xa+xb)/2, y + 63, MUT, 11.5, 'center');
       var p = s.S[i];
-      chu('(' + (p[0] > 0 ? '+' : '−') + ', ' + (p[1] > 0 ? '+' : '−') + ')',
-          (xa+xb)/2, y + 82, TEAL, 12.5, 'center', true);
+      chu('(' + (p[0] > 0 ? '+' : '−') + ',' + (p[1] > 0 ? '+' : '−') + ')',
+          (xa+xb)/2, y + 78, TEAL, 11.5, 'center', true);
     }
     chu('Gray mapping: 00 is (+, +), 01 is (+, −), 11 is (−, −), '
         + '10 is (−, +). Two bits per symbol.',
-        X0, y + 104, MUT, 13.5);
+        X0, y + 100, MUT, 13.5);
   }
 
   function veMotSongMang(s, y){
-    tieu('2 · one carrier: eight symbols in a row, ' + TS_NS + ' ns each', y);
+    tieu('2 · one carrier: ' + NSYM + ' symbols in a row, ' + TS_NS
+         + ' ns each', y);
     var w = (X1 - X0)/NSYM, i;
     for (i = 0; i < NSYM; i++){
       var x = X0 + i*w;
       hop(x, y + 18, w - 3, 34, '#E8F5F2', TEAL);
-      chu('s' + (i+1), x + (w-3)/2, y + 40, TEAL, 14, 'center', true);
+      chu('s' + (i+1), x + (w-3)/2, y + 40, TEAL, 12.5, 'center', true);
     }
     duong(X0, y + 66, X1, y + 66, INK, 1.2);
     for (i = 0; i <= NSYM; i++){
@@ -329,56 +345,63 @@ University of Engineering and Technology, Vietnam National University<br>
       duong(xt, y + 66, xt, y + 72, INK, 1);
       // Nhan cuoi cung mang ca don vi. Dat chu "ns" rieng o mep phai thi no
       // cham vao nhan 400, do duoc tren ban render 2026-10-23.
-      chu(i === NSYM ? (i*TS_NS + ' ns') : String(i*TS_NS),
-          xt, y + 88, MUT, 12, i === NSYM ? 'right' : 'center');
+      // 16 o thi in HET nhan se cham nhau, nen in cach quang.
+      if (i === NSYM) chu(i*TS_NS + ' ns', xt, y + 88, MUT, 12, 'right');
+      else if (i % 2 === 0) chu(String(i*TS_NS), xt, y + 88, MUT, 12, 'center');
     }
     // Tieng vong lech sang phai DUNG mot o. Tieng vong cua ky tu cuoi roi ra
     // NGOAI khoi nen khong ve, va noi ra thay vi de no tran qua mep phai.
     for (i = 0; i < NSYM - 1; i++){
       var xe = X0 + (i+1)*w;
       hop(xe, y + 100, w - 3, 26, 'rgba(216,30,91,0.12)', MAG);
-      chu('s' + (i+1), xe + (w-3)/2, y + 118, MAG, 12.5, 'center', true);
+      chu('s' + (i+1), xe + (w-3)/2, y + 118, MAG, 11.5, 'center', true);
     }
-    chu('the echo, 0.9 as strong, ' + TS_NS + ' ns late. The echo of s8 falls after the block.',
-        X0, y + 146, MAG, 13.5, 'left', true);
-    chu('Every slot now holds two symbols at once: its own, and 0.9 of the one before it. '
-        + 'That overlap is the whole of the damage.', X0, y + 166, MUT, 13.5);
+    chu('the echo, ' + A_VONG + ' as strong, ' + TS_NS + ' ns late. The echo of s' + NSYM
+        + ' falls after the block.', X0, y + 146, MAG, 13.5, 'left', true);
+    chu('Every slot now holds two symbols at once: its own, and ' + A_VONG
+        + ' of the one before it. That overlap is the whole of the damage.',
+        X0, y + 166, MUT, 13.5);
   }
 
   function veOfdm(s, y){
-    tieu('3 · four subcarriers: the same eight symbols, each lasting four times as long', y);
+    tieu('3 · ' + N + ' subcarriers: the same ' + NSYM + ' symbols, each lasting '
+         + N + ' times as long', y);
     var Wt = X1 - X0;
     var tong = 2*(N + CP);                         // 10 mau, ke ca tien to vong
     var wm = Wt/tong;                              // be ngang mot mau
     var k, b, i;
     for (b = 0; b < 2; b++){
       var x0b = X0 + b*(N + CP)*wm;
-      hop(x0b, y + 18, wm - 2, 4*26 + 6, '#FFF1EB', ACC);
-      chu('CP', x0b + (wm-2)/2, y + 18 + (4*26+6)/2 + 4, ACC, 11.5, 'center', true);
+      hop(x0b, y + 18, wm - 2, N*20 + 6, '#FFF1EB', ACC);
+      chu('CP', x0b + (wm-2)/2, y + 18 + (N*20+6)/2 + 4, ACC, 11.5, 'center', true);
       for (k = 0; k < N; k++){
-        var xk = x0b + wm, yk = y + 18 + k*26;
-        hop(xk, yk, N*wm - 3, 24, '#E8F5F2', TEAL);
+        var xk = x0b + wm, yk = y + 18 + k*20;
+        hop(xk, yk, N*wm - 3, 18, '#E8F5F2', TEAL);
         var idx = b*N + k;
-        chu('s' + (idx+1) + '  on subcarrier ' + (k+1), xk + 8, yk + 17, TEAL, 13, 'left', true);
+        chu('s' + (idx+1) + ' on subcarrier ' + (k+1), xk + 7, yk + 13.5, TEAL, 11.5,
+            'left', true);
       }
+      chu('block ' + (b+1), x0b + wm + (N*wm)/2, y + 12, MUT, 12, 'center');
     }
-    duong(X0, y + 142, X1, y + 142, INK, 1.2);
+    var yax = y + 18 + N*20 + 16;
+    duong(X0, yax, X1, yax, INK, 1.2);
     for (i = 0; i <= tong; i++){
       var xt = X0 + i*wm;
-      duong(xt, y + 142, xt, y + 148, INK, 1);
-      if (i === tong) chu(i*TS_NS + ' ns', xt, y + 164, MUT, 12, 'right');
-      else if (i % 2 === 0) chu(String(i*TS_NS), xt, y + 164, MUT, 12, 'center');
+      duong(xt, yax, xt, yax + 6, INK, 1);
+      if (i === tong) chu(i*TS_NS + ' ns', xt, yax + 22, MUT, 12, 'right');
+      else if (i % 3 === 0) chu(String(i*TS_NS), xt, yax + 22, MUT, 12, 'center');
     }
-    chu('Four subcarriers carry four symbols at the same moment, so one subcarrier symbol lasts '
-        + (N*TS_NS) + ' ns, not ' + TS_NS + ' ns.', X0, y + 188, MUT, 13.5);
-    chu('The ' + TS_NS + ' ns echo covers a quarter of a subcarrier symbol, and the cyclic '
-        + 'prefix in front of each block is where it lands.', X0, y + 208, MUT, 13.5);
+    chu('One block carries ' + N + ' symbols at the same moment, one on each subcarrier, so a '
+        + 'subcarrier symbol lasts ' + (N*TS_NS) + ' ns, not ' + TS_NS + ' ns. '
+        + (NSYM/N) + ' blocks carry all ' + NSYM + '.', X0, yax + 44, MUT, 13.5);
+    chu('The ' + TS_NS + ' ns echo covers one ' + N + 'th of a subcarrier symbol, and the '
+        + 'cyclic prefix in front of each block is where it lands.', X0, yax + 64, MUT, 13.5);
     // Con so nay TINH RA, va no la cai gia phai tra. Ban dau trang viet hai
     // ben mat cung mot thoi gian, dieu ay sai vi tien to vong ton them.
     chu('The prefix costs time: ' + (tong*TS_NS) + ' ns here against '
         + (NSYM*TS_NS) + ' ns for the single carrier, '
-        + (100*(tong - NSYM)/NSYM).toFixed(0) + '% more for the same eight symbols.',
-        X0, y + 228, ACC, 13.5, 'left', true);
+        + (100*(tong - NSYM)/NSYM).toFixed(1) + '% more for the same ' + NSYM + ' symbols.',
+        X0, yax + 84, ACC, 13.5, 'left', true);
   }
 
   function veKenh(s, y){
@@ -401,6 +424,18 @@ University of Engineering and Technology, Vietnam National University<br>
       if (i === 0) g.moveTo(fx(u), fy(dB)); else g.lineTo(fx(u), fy(dB));
     }
     g.stroke();
+    // Khoi pho cua SONG MANG DON, phu ca dai. Mai bat 2026-10-23: truoc day
+    // trang ve ISI o mien thoi gian va ve dap ung o mien tan so nhung khong
+    // bao gio dat tin hieu mot song mang len duong cong, nen anh huong cua
+    // fading chon loc len no chi duoc noi GIAN TIEP qua chuyen cac ky tu de
+    // len nhau. Hai dieu ay la mot: y[n] = x[n] + a x[n-1] chinh la
+    // H(f) = 1 + a e^(-j2 pi f Ts), mot cap Fourier. Nay ve ca hai.
+    g.fillStyle = 'rgba(216,30,91,0.10)';
+    g.fillRect(X0, yt, X1 - X0, yb - yt);
+    g.strokeStyle = MAG; g.lineWidth = 1.4; g.setLineDash([5, 4]);
+    g.strokeRect(X0, yt, X1 - X0, yb - yt); g.setLineDash([]);
+    chu('the single carrier occupies ALL of this, so it meets the notch and the peaks together',
+        (X0 + X1)/2, yt + 18, MAG, 13, 'center', true);
     for (var k = 0; k < N; k++){
       var hk = s.of.H[k], m = Math.sqrt(hk[0]*hk[0] + hk[1]*hk[1]);
       var dBk = 20*Math.log10(m), xk = fx(k/N), mau = m < 0.5 ? MAG : TEAL;
@@ -409,15 +444,24 @@ University of Engineering and Technology, Vietnam National University<br>
       // Nhan dat DUOI truc hoanh. Ban dau chung nam canh cham tren duong
       // cong, va o ban render chu "subcarrier 1" de len nhan truc tung con
       // "subcarrier 3" nam de len chinh duong cong. Duoi truc thi trong.
+      // Tam nhan cho 8 song mang con: chi so o mot dong, do loi o dong duoi.
+      // Ghi ca chu "subcarrier" tam lan thi cac nhan cham nhau, da do.
       var canh = k === 0 ? 'left' : (k === N - 1 ? 'right' : 'center');
-      chu('subcarrier ' + (k+1), xk, yb + 20, mau, 12.5, canh, true);
-      chu(m.toFixed(2) + '×, ' + dBk.toFixed(1) + ' dB', xk, yb + 36, mau, 12.5, canh);
+      chu(String(k+1), xk, yb + 18, mau, 12.5, canh, true);
+      chu(m.toFixed(2) + '×', xk, yb + 34, mau, 12, canh);
     }
-    chu('0 to 20 MHz, the width of one WiFi channel', X0, yb + 58, MUT, 12.5);
-    chu('The single carrier fills this whole axis at once, so it meets every point of the curve '
-        + 'together and no one number undoes that.', X0, yb + 80, MUT, 13.5);
-    chu('Each subcarrier meets ONE point, so for each of them one number is enough, and the '
-        + 'receiver uses four different ones.', X0, yb + 100, MUT, 13.5);
+    chu('subcarrier number, and the gain it meets. 0 to 20 MHz, the width of one WiFi channel.',
+        X0, yb + 56, MUT, 12.5);
+    chu('Subcarrier ' + (N/2 + 1) + ' sits in the notch at '
+        + Math.sqrt(s.of.H[N/2][0]*s.of.H[N/2][0] + s.of.H[N/2][1]*s.of.H[N/2][1]).toFixed(2)
+        + '×, which is '
+        + (20*Math.log10(Math.sqrt(s.of.H[N/2][0]*s.of.H[N/2][0]
+            + s.of.H[N/2][1]*s.of.H[N/2][1]))).toFixed(1) + ' dB.',
+        X0, yb + 76, MAG, 13.5, 'left', true);
+    chu('No single number undoes the pink block, because the block covers gains from '
+        + '0.10× to 1.90× at once.', X0, yb + 96, MUT, 13.5);
+    chu('Each subcarrier meets ONE gain, so for each of them one number IS enough, and the '
+        + 'receiver applies ' + N + ' different ones.', X0, yb + 116, MUT, 13.5);
   }
 
   function veChom(s, x0, yc, S, thu, ten, mau, soSai){
@@ -471,8 +515,8 @@ University of Engineering and Technology, Vietnam National University<br>
     var s = trangThai, y = 34;
     veBits(s, y);                      y += 150;
     if (buoc >= 2){ veMotSongMang(s, y); } y += 206;
-    if (buoc >= 3){ veOfdm(s, y); }        y += 246;
-    if (buoc >= 4){ veKenh(s, y); }        y += 330;
+    if (buoc >= 3){ veOfdm(s, y); }        y += 302;
+    if (buoc >= 4){ veKenh(s, y); }        y += 346;
     if (buoc >= 5){ veThu(s, y); }
   }
 
