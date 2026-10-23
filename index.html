@@ -193,6 +193,21 @@ footer{padding:20px 26px;border-top:1px solid var(--line);color:var(--mut);
     điều kiện <b>chính xác</b> chứ không có biên an toàn. <b>Mục 3</b> trả lời câu hỏi khó nhất: một tín hiệu điều chế chiếm cả một dải chứ đâu phải một tần số, vậy phần dải còn lại vẫn chồng lên hàng xóm thì sao. Câu trả lời là trong phạm vi <b>một ký tự</b> sóng mang con không hề bị điều chế, nên nó là một hình sin thuần tuý và không có dải nào để dựng lại. Có thanh trượt dịch cửa sổ máy thu: phổ đứng yên mà chòm sao sụp đổ, cho thấy <b>cửa sổ mới là thứ tạo ra tính trực giao, không phải khoảng cách tần số</b>.</span>
   </a>
 
+  <a class="card" href="buoi04/single-carrier-versus-ofdm.html">
+    <b>Một sóng mang hay bốn, qua cùng một căn phòng</b>
+    <span>Cùng mười sáu bit ấy gửi hai lần qua đúng một căn phòng, một lần bằng một sóng mang
+    nhanh, một lần chia cho bốn sóng mang con chậm hơn. Năm bước: chuỗi bit thành tám ký tự
+    QPSK, tám ký tự nối tiếp 50 ns mỗi ký tự, rồi chia thành bốn luồng con nên mỗi ký tự
+    <b>dài ra bốn lần thành 200 ns</b>, rồi đáp ứng của phòng trên cả dải 20 MHz với vị trí của
+    bốn sóng mang con đánh dấu trên đó, rồi chòm sao hai bên. Phòng chỉ có một tiếng vọng
+    <b>0,9 lần, trễ 50 ns</b>, tức đúng một ký tự của sóng mang đơn, nên mỗi ký tự rơi chồng lên
+    ký tự trước. Kết quả: một sóng mang <b>đọc sai 2 trong 8</b> ký tự dù đã được sửa một hệ số
+    phức, OFDM <b>đọc đúng cả 8</b> và các điểm rơi trúng ngay chòm sao. Trang nói thẳng hai điều
+    OFDM <b>không</b> làm được: chỗ trũng vẫn còn đó, sóng mang con thứ ba chỉ còn 0,10 lần nên
+    nhiễu trên nó bị nhân mười, và tiền tố vòng khiến OFDM tốn 500 ns thay vì 400 ns cho cùng
+    tám ký tự. Có nút đổi chuỗi bit để thấy khối ví dụ không phải khối được chọn.</span>
+  </a>
+
   <h2>Bài thực hành</h2>
 
   <a class="card" href="lab/index.html">

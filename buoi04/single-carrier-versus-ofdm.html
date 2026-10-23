@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · One carrier or four, through the same room</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;
+      --mut:#5A6272;--line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE;max-width:920px;line-height:1.5}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.55}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+.dk{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:0 0 16px;background:var(--tint)}
+.hang{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px 24px}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 11px;
+  font-size:13px;color:var(--mut);background:#fff;margin:0 6px 6px 0}
+.chip b{color:var(--ink)}
+.chip.xau b{color:var(--mag)}
+.chip.tot b{color:var(--teal)}
+h2{font-family:Cambria,Georgia,serif;font-size:19px;margin:24px 0 8px;padding-bottom:6px;
+   border-bottom:1px solid var(--line)}
+ul{margin:8px 0 0;padding-left:20px;font-size:14.5px;color:var(--mut);line-height:1.65}
+ul b{color:var(--ink)}
+.nut{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:8px;
+  padding:6px 12px;font-size:13.5px;color:var(--ink);cursor:pointer;margin:0 6px 6px 0}
+.nut:hover{border-color:var(--acc)}
+.nut.dang{border-color:var(--acc);background:#FFF1EB}
+code{background:var(--tint);padding:1px 5px;border-radius:4px;font-size:13.5px}
+a.veml{display:inline-block;margin:14px 26px 0;font-size:13.5px;color:#5A6272;
+  text-decoration:none;border-bottom:1px solid #E4E8EF}
+a.veml:hover{color:#FF6B35}
+footer{padding:18px 26px;border-top:1px solid var(--line);color:var(--mut);font-size:13.5px;line-height:1.6}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · SESSION 4 · PART 2</div>
+  <h1>One carrier or four, through the same room</h1>
+  <p>The same sixteen bits are sent twice through the same room: once as one fast stream on a
+  single carrier, and once split across four slower subcarriers. Nothing about the room changes
+  between the two runs. Step through and watch where the two chains part company, which is not
+  at the transmitter and not in the air, but at the moment the receiver has to decide what each
+  symbol was.</p>
+</header>
+<a class="veml" href="../index.html">Back to the INT3303 simulation index</a>
+
+<main>
+
+<div class="dk">
+  <div style="margin-bottom:8px">
+    <span class="nut dang" data-b="1">1 · the bits</span>
+    <span class="nut" data-b="2">2 · one carrier</span>
+    <span class="nut" data-b="3">3 · four subcarriers</span>
+    <span class="nut" data-b="4">4 · the room</span>
+    <span class="nut" data-b="5">5 · what the receiver reads</span>
+  </div>
+  <div>
+    <span class="nut" id="moi">Try another sixteen bits</span>
+    <span class="nut" id="vedau">Back to the worked example</span>
+  </div>
+  <div id="so" style="margin-top:10px"></div>
+</div>
+
+<canvas id="cv" width="1280" height="1330"></canvas>
+
+<h2>What to look at</h2>
+<ul>
+  <li><b>The room is one echo, and it is the same room in both runs.</b> A direct copy, and a
+      second copy <b>0.9</b> as strong arriving <b>50 ns</b> later, which is 15 m of extra path.
+      That is the echo amplitude every other page in this course uses, and 15 m is an ordinary
+      large room. Nothing else is in the model: no noise, no movement, no second room.</li>
+  <li><b>The single carrier runs at 20 Msym/s, so a symbol lasts 50 ns.</b> The echo is therefore
+      exactly one symbol late, and every symbol arrives on top of the one before it. That is
+      inter-symbol interference, and panel 2 shows it as a time picture rather than as a phrase.</li>
+  <li><b>Four subcarriers, so each symbol lasts four times as long.</b> 200 ns instead of 50 ns,
+      carrying the same eight symbols, because four of them are in the air at once. The echo is
+      still 50 ns, so it now covers a quarter of a symbol instead of all of it. Panel 3 draws the
+      two timelines on the same scale so the stretch is measured, not asserted.</li>
+  <li><b>The cyclic prefix is what makes the quarter harmless rather than merely smaller, and it
+      is not free.</b> Each OFDM block is sent with its own last sample repeated in front of it,
+      50 ns of it here. The echo lands in that copy and not in the data, and the arithmetic that
+      follows is exact rather than approximate. The price is time: the two OFDM blocks occupy
+      <b>500 ns</b> against the single carrier's <b>400 ns</b> for the same eight symbols, so
+      OFDM is <b>25% slower</b> here, not equal. Count it on the two timelines in panels 2 and 3.
+      Real systems pay a smaller share because they use many more subcarriers for the same
+      prefix: WiFi spends 0.8 µs of prefix on a 4 µs symbol, which is 20%. Remove the prefix
+      altogether and OFDM loses the clean result below, which is why no real system does.</li>
+  <li><b>Panel 4 is the whole reason the two chains differ.</b> The room's response across the
+      20 MHz band has one deep notch in it. The single carrier occupies the whole band, so it
+      meets the notch and everything either side of it at once, and there is no single number the
+      receiver can multiply by to undo that. OFDM meets the same curve, but each subcarrier meets
+      only one point of it, so for each subcarrier there IS a single number, and the receiver
+      applies four of them.</li>
+  <li><b>Panel 5 is the result, and the honest statement of it is narrow.</b> The single carrier
+      block has symbols read as the wrong symbol; the OFDM block has none, and its symbols land
+      exactly on their constellation points rather than merely close to them. What OFDM removed
+      is the interference between symbols. It did not remove the notch.</li>
+  <li><b>Which is why subcarrier 3 deserves a sentence.</b> The four subcarriers meet gains of
+      1.90, 1.35, 0.10 and 1.35. Dividing by 0.10 recovers the symbol exactly here because this
+      page has no noise in it, but it also multiplies whatever noise is present by ten. So the
+      honest reading is that OFDM turned one unfixable problem into one weak subcarrier out of
+      four, and the next step in the lecture, a code spread across all the subcarriers, is what
+      deals with the weak one.</li>
+  <li><b>This block of bits is not special.</b> Press <b>Try another sixteen bits</b> and watch
+      the single carrier count move while the OFDM count stays at zero. Over 4000 random blocks
+      through this same room the single carrier reads on average <b>0.68</b> of its 8 symbols
+      wrongly and <b>53%</b> of blocks contain at least one error, so a block with two errors is
+      an ordinary one rather than a chosen one.</li>
+</ul>
+
+<footer>
+  Sources. That OFDM transmits over a large number of narrow subcarriers instead of one wide
+  carrier, and that this lengthens the symbol, is Steenkiste, <i>Introduction to Wireless
+  Networking and Its Impact on Applications</i>, 2nd edition, section 3.6.1; that the resulting
+  advantages are that selective fading affects only some subcarriers and that the longer symbol
+  reduces inter-symbol interference is Stallings, <i>Wireless Communications and Networks</i>,
+  2nd edition, page 338. The serial to parallel split of one stream at R bits per second into N
+  substreams at R over N is Stallings figure 11.11 on the same page. The cyclic prefix, and the
+  rule that it must be longer than the delay spread of the channel, is Stallings page 339. The
+  two tap room, with an echo 0.9 as strong as the direct copy, is the same model this course uses
+  on its multipath and selective fading pages, so the curve in panel 4 is the curve the class has
+  already met. The model on this page is exact arithmetic on complex numbers and carries no
+  noise; the build chain recomputes every number here in Python and compares the two point by
+  point.
+</footer>
+
+</main>
+
+<div data-tacgia="1" style="margin:28px 0 0;padding:16px 26px;border-top:1px solid #E4E8EF;background:#F7F9FC;font-family:Calibri,Segoe UI,system-ui,sans-serif;font-size:13.5px;line-height:1.7;color:#5A6272">
+<b style="color:#1A1F36">Dr Mai Tran</b><br>
+Faculty of Information Technology<br>
+University of Engineering and Technology, Vietnam National University<br>
+<a href="mailto:mai.tran@vnu.edu.vn" style="color:#5A6272">mai.tran@vnu.edu.vn</a>
+</div>
+
+<script>
+(function(){
+  var INK='#1A1F36', ACC='#FF6B35', TEAL='#2A9D8F', PUR='#6C5CE7', MAG='#D81E5B',
+      MUT='#5A6272', LINE='#E4E8EF', FADE='#DDE2EA', GREY='#C9D0DB';
+
+  // ---- Mo hinh. Moi con so tren trang deu tu day ra. ----------------------
+  var N = 4;                       // so song mang con
+  var CP = 1;                      // tien to vong, tinh bang mau
+  var A_VONG = 0.9;                // bien do tieng vong, dung nhu cac trang khac
+  var TS_NS = 50;                  // mot ky tu cua song mang don, ns
+  var C0 = 3.0e8;
+  var DL_M = TS_NS*1e-9*C0;                  // 15 m duong di them
+  var NSYM = 8;                    // 16 bit, QPSK, 8 ky tu
+  var BIT_VD = [0,1,0,0,1,0,0,0,1,0,1,0,0,1,1,1];
+
+  var R2 = Math.SQRT1_2;
+  // Gray: 00 -> (+,+), 01 -> (+,-), 11 -> (-,-), 10 -> (-,+)
+  function anhXa(b0, b1){
+    if (b0 === 0 && b1 === 0) return [ R2,  R2];
+    if (b0 === 0 && b1 === 1) return [ R2, -R2];
+    if (b0 === 1 && b1 === 1) return [-R2, -R2];
+    return [-R2, R2];
+  }
+  function kyTu(bits){
+    var s = [];
+    for (var i = 0; i < bits.length; i += 2) s.push(anhXa(bits[i], bits[i+1]));
+    return s;
+  }
+  function quyet(z){
+    return [z[0] >= 0 ? R2 : -R2, z[1] >= 0 ? R2 : -R2];
+  }
+  function sai(a, b){ return Math.abs(a[0]-b[0]) > 1e-9 || Math.abs(a[1]-b[1]) > 1e-9; }
+  function khoang(a, b){
+    var dx = a[0]-b[0], dy = a[1]-b[1];
+    return Math.sqrt(dx*dx + dy*dy);
+  }
+
+  // Dap ung cua kenh hai tia tai tan so chuan hoa u, tinh bang chu ky lay mau.
+  function kenh(u){
+    var p = -2*Math.PI*u;
+    return [1 + A_VONG*Math.cos(p), A_VONG*Math.sin(p)];
+  }
+
+  function motSongMang(S){
+    // y[n] = x[n] + a x[n-1]. Tieng vong tre dung MOT ky tu.
+    var y = [], n;
+    for (n = 0; n < S.length; n++){
+      var tr = n > 0 ? S[n-1] : [0, 0];
+      y.push([S[n][0] + A_VONG*tr[0], S[n][1] + A_VONG*tr[1]]);
+    }
+    // May thu duoc phep sua DUY NHAT mot he so phuc, dung luat binh phuong
+    // nho nhat, giong cac trang truoc cua khoa.
+    var gr = 0, gi = 0, nl = 0;
+    for (n = 0; n < S.length; n++){
+      gr += S[n][0]*y[n][0] + S[n][1]*y[n][1];
+      gi += S[n][0]*y[n][1] - S[n][1]*y[n][0];
+      nl += S[n][0]*S[n][0] + S[n][1]*S[n][1];
+    }
+    gr /= nl; gi /= nl;
+    var g2 = gr*gr + gi*gi, thu = [], d = [], soSai = 0, leMax = 0;
+    for (n = 0; n < S.length; n++){
+      var zr = (y[n][0]*gr + y[n][1]*gi)/g2;
+      var zi = (y[n][1]*gr - y[n][0]*gi)/g2;
+      thu.push([zr, zi]);
+      d.push(quyet([zr, zi]));
+      if (sai(d[n], S[n])) soSai++;
+      leMax = Math.max(leMax, khoang(thu[n], S[n]));
+    }
+    return {y:y, thu:thu, quyet:d, soSai:soSai, leMax:leMax, g:[gr, gi]};
+  }
+
+  function dftH(){
+    // H[k] cua kenh hai tia tren luoi N diem: 1 + a e^(-j2 pi k / N).
+    var H = [], k;
+    for (k = 0; k < N; k++) H.push(kenh(k/N));
+    return H;
+  }
+
+  function ofdm(S){
+    var H = dftH(), thu = [], d = [], soSai = 0, leMax = 0, b, k, n;
+    var khoi = [];
+    for (b = 0; b*N < S.length; b++){
+      var X = S.slice(b*N, (b+1)*N);
+      // x[n] = sum_k X[k] e^(+j2 pi k n / N), tuc IDFT khong chia N
+      var x = [];
+      for (n = 0; n < N; n++){
+        var xr = 0, xi = 0;
+        for (k = 0; k < N; k++){
+          var p = 2*Math.PI*k*n/N, c = Math.cos(p), s = Math.sin(p);
+          xr += X[k][0]*c - X[k][1]*s;
+          xi += X[k][0]*s + X[k][1]*c;
+        }
+        x.push([xr, xi]);
+      }
+      // Gan tien to vong, cho qua kenh, roi cat tien to di.
+      var t = x.slice(N - CP).concat(x);
+      var r = [];
+      for (n = 0; n < t.length; n++){
+        var tr = n > 0 ? t[n-1] : [0, 0];
+        r.push([t[n][0] + A_VONG*tr[0], t[n][1] + A_VONG*tr[1]]);
+      }
+      r = r.slice(CP);
+      // DFT chia N, roi chia cho H[k]: mot he so cho MOI song mang con.
+      for (k = 0; k < N; k++){
+        var Yr = 0, Yi = 0;
+        for (n = 0; n < N; n++){
+          var q = -2*Math.PI*k*n/N, cq = Math.cos(q), sq = Math.sin(q);
+          Yr += r[n][0]*cq - r[n][1]*sq;
+          Yi += r[n][0]*sq + r[n][1]*cq;
+        }
+        Yr /= N; Yi /= N;
+        var h2 = H[k][0]*H[k][0] + H[k][1]*H[k][1];
+        var zr = (Yr*H[k][0] + Yi*H[k][1])/h2;
+        var zi = (Yi*H[k][0] - Yr*H[k][1])/h2;
+        var i2 = b*N + k;
+        thu[i2] = [zr, zi];
+        d[i2] = quyet([zr, zi]);
+        if (sai(d[i2], S[i2])) soSai++;
+        leMax = Math.max(leMax, khoang(thu[i2], S[i2]));
+      }
+      khoi.push({X:X, x:x, t:t, r:r});
+    }
+    return {H:H, thu:thu, quyet:d, soSai:soSai, leMax:leMax, khoi:khoi};
+  }
+
+  function tinh(bits){
+    var S = kyTu(bits);
+    return {bits:bits, S:S, sc:motSongMang(S), of:ofdm(S)};
+  }
+  window.moPhongSoSanh = tinh;      // de cong doi chieu goi duoc
+
+  // ---- Ve ----------------------------------------------------------------
+  var cv = document.getElementById('cv'), g = cv.getContext('2d');
+  var W = cv.width, X0 = 70, X1 = W - 70;
+
+  function chu(t, x, y, mau, cs, canh, dam){
+    g.fillStyle = mau || INK;
+    g.font = (dam ? '600 ' : '') + (cs || 14) + 'px Calibri,Segoe UI,sans-serif';
+    g.textAlign = canh || 'left';
+    g.textBaseline = 'alphabetic';
+    g.fillText(t, x, y);
+  }
+  function duong(x0, y0, x1, y1, mau, w, dut){
+    g.strokeStyle = mau; g.lineWidth = w || 1;
+    if (dut) g.setLineDash(dut); else g.setLineDash([]);
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke();
+    g.setLineDash([]);
+  }
+  function hop(x, y, w, h, nen, vien){
+    if (nen){ g.fillStyle = nen; g.fillRect(x, y, w, h); }
+    if (vien){ g.strokeStyle = vien; g.lineWidth = 1.2; g.setLineDash([]);
+               g.strokeRect(x, y, w, h); }
+  }
+  function tieu(t, y){ chu(t, X0, y, INK, 17, 'left', true); }
+
+  function veBits(s, y){
+    tieu('1 · sixteen bits, paired into eight QPSK symbols', y);
+    var n = s.bits.length, w = (X1 - X0)/n, i;
+    for (i = 0; i < n; i++){
+      var x = X0 + i*w;
+      hop(x, y + 16, w - 3, 26, i % 2 ? '#F2F4F8' : '#fff', LINE);
+      chu(String(s.bits[i]), x + (w-3)/2, y + 34, INK, 14, 'center', true);
+    }
+    for (i = 0; i < NSYM; i++){
+      var xa = X0 + 2*i*w, xb = xa + 2*w - 3;
+      duong(xa, y + 50, xb, y + 50, MUT, 1);
+      chu('s' + (i+1), (xa+xb)/2, y + 66, MUT, 12.5, 'center');
+      var p = s.S[i];
+      chu('(' + (p[0] > 0 ? '+' : '−') + ', ' + (p[1] > 0 ? '+' : '−') + ')',
+          (xa+xb)/2, y + 82, TEAL, 12.5, 'center', true);
+    }
+    chu('Gray mapping: 00 is (+, +), 01 is (+, −), 11 is (−, −), '
+        + '10 is (−, +). Two bits per symbol.',
+        X0, y + 104, MUT, 13.5);
+  }
+
+  function veMotSongMang(s, y){
+    tieu('2 · one carrier: eight symbols in a row, ' + TS_NS + ' ns each', y);
+    var w = (X1 - X0)/NSYM, i;
+    for (i = 0; i < NSYM; i++){
+      var x = X0 + i*w;
+      hop(x, y + 18, w - 3, 34, '#E8F5F2', TEAL);
+      chu('s' + (i+1), x + (w-3)/2, y + 40, TEAL, 14, 'center', true);
+    }
+    duong(X0, y + 66, X1, y + 66, INK, 1.2);
+    for (i = 0; i <= NSYM; i++){
+      var xt = X0 + i*w;
+      duong(xt, y + 66, xt, y + 72, INK, 1);
+      // Nhan cuoi cung mang ca don vi. Dat chu "ns" rieng o mep phai thi no
+      // cham vao nhan 400, do duoc tren ban render 2026-10-23.
+      chu(i === NSYM ? (i*TS_NS + ' ns') : String(i*TS_NS),
+          xt, y + 88, MUT, 12, i === NSYM ? 'right' : 'center');
+    }
+    // Tieng vong lech sang phai DUNG mot o. Tieng vong cua ky tu cuoi roi ra
+    // NGOAI khoi nen khong ve, va noi ra thay vi de no tran qua mep phai.
+    for (i = 0; i < NSYM - 1; i++){
+      var xe = X0 + (i+1)*w;
+      hop(xe, y + 100, w - 3, 26, 'rgba(216,30,91,0.12)', MAG);
+      chu('s' + (i+1), xe + (w-3)/2, y + 118, MAG, 12.5, 'center', true);
+    }
+    chu('the echo, 0.9 as strong, ' + TS_NS + ' ns late. The echo of s8 falls after the block.',
+        X0, y + 146, MAG, 13.5, 'left', true);
+    chu('Every slot now holds two symbols at once: its own, and 0.9 of the one before it. '
+        + 'That overlap is the whole of the damage.', X0, y + 166, MUT, 13.5);
+  }
+
+  function veOfdm(s, y){
+    tieu('3 · four subcarriers: the same eight symbols, each lasting four times as long', y);
+    var Wt = X1 - X0;
+    var tong = 2*(N + CP);                         // 10 mau, ke ca tien to vong
+    var wm = Wt/tong;                              // be ngang mot mau
+    var k, b, i;
+    for (b = 0; b < 2; b++){
+      var x0b = X0 + b*(N + CP)*wm;
+      hop(x0b, y + 18, wm - 2, 4*26 + 6, '#FFF1EB', ACC);
+      chu('CP', x0b + (wm-2)/2, y + 18 + (4*26+6)/2 + 4, ACC, 11.5, 'center', true);
+      for (k = 0; k < N; k++){
+        var xk = x0b + wm, yk = y + 18 + k*26;
+        hop(xk, yk, N*wm - 3, 24, '#E8F5F2', TEAL);
+        var idx = b*N + k;
+        chu('s' + (idx+1) + '  on subcarrier ' + (k+1), xk + 8, yk + 17, TEAL, 13, 'left', true);
+      }
+    }
+    duong(X0, y + 142, X1, y + 142, INK, 1.2);
+    for (i = 0; i <= tong; i++){
+      var xt = X0 + i*wm;
+      duong(xt, y + 142, xt, y + 148, INK, 1);
+      if (i === tong) chu(i*TS_NS + ' ns', xt, y + 164, MUT, 12, 'right');
+      else if (i % 2 === 0) chu(String(i*TS_NS), xt, y + 164, MUT, 12, 'center');
+    }
+    chu('Four subcarriers carry four symbols at the same moment, so one subcarrier symbol lasts '
+        + (N*TS_NS) + ' ns, not ' + TS_NS + ' ns.', X0, y + 188, MUT, 13.5);
+    chu('The ' + TS_NS + ' ns echo covers a quarter of a subcarrier symbol, and the cyclic '
+        + 'prefix in front of each block is where it lands.', X0, y + 208, MUT, 13.5);
+    // Con so nay TINH RA, va no la cai gia phai tra. Ban dau trang viet hai
+    // ben mat cung mot thoi gian, dieu ay sai vi tien to vong ton them.
+    chu('The prefix costs time: ' + (tong*TS_NS) + ' ns here against '
+        + (NSYM*TS_NS) + ' ns for the single carrier, '
+        + (100*(tong - NSYM)/NSYM).toFixed(0) + '% more for the same eight symbols.',
+        X0, y + 228, ACC, 13.5, 'left', true);
+  }
+
+  function veKenh(s, y){
+    tieu('4 · the room, seen across the 20 MHz band', y);
+    var yt = y + 30, yb = y + 190, i;
+    var lo = -24, hi = 8;
+    function fy(d){ return yb - (Math.max(lo, Math.min(hi, d)) - lo)/(hi - lo)*(yb - yt); }
+    function fx(u){ return X0 + u*(X1 - X0); }
+    duong(X0, yb, X1, yb, INK, 1.2);
+    duong(X0, yt, X0, yb, INK, 1.2);
+    for (i = 0; i >= -20; i -= 10){
+      duong(X0 - 5, fy(i), X0, fy(i), INK, 1);
+      chu(String(i), X0 - 9, fy(i) + 4, MUT, 12, 'right');
+    }
+    chu('channel gain, dB', X0 - 4, yt - 8, MUT, 12.5);
+    g.strokeStyle = INK; g.lineWidth = 2; g.setLineDash([]); g.beginPath();
+    for (i = 0; i <= 600; i++){
+      var u = i/600, h = kenh(u);
+      var dB = 20*Math.log10(Math.sqrt(h[0]*h[0] + h[1]*h[1]) + 1e-12);
+      if (i === 0) g.moveTo(fx(u), fy(dB)); else g.lineTo(fx(u), fy(dB));
+    }
+    g.stroke();
+    for (var k = 0; k < N; k++){
+      var hk = s.of.H[k], m = Math.sqrt(hk[0]*hk[0] + hk[1]*hk[1]);
+      var dBk = 20*Math.log10(m), xk = fx(k/N), mau = m < 0.5 ? MAG : TEAL;
+      duong(xk, yb, xk, fy(dBk), mau, 2.4);
+      g.fillStyle = mau; g.beginPath(); g.arc(xk, fy(dBk), 5, 0, 7); g.fill();
+      // Nhan dat DUOI truc hoanh. Ban dau chung nam canh cham tren duong
+      // cong, va o ban render chu "subcarrier 1" de len nhan truc tung con
+      // "subcarrier 3" nam de len chinh duong cong. Duoi truc thi trong.
+      var canh = k === 0 ? 'left' : (k === N - 1 ? 'right' : 'center');
+      chu('subcarrier ' + (k+1), xk, yb + 20, mau, 12.5, canh, true);
+      chu(m.toFixed(2) + '×, ' + dBk.toFixed(1) + ' dB', xk, yb + 36, mau, 12.5, canh);
+    }
+    chu('0 to 20 MHz, the width of one WiFi channel', X0, yb + 58, MUT, 12.5);
+    chu('The single carrier fills this whole axis at once, so it meets every point of the curve '
+        + 'together and no one number undoes that.', X0, yb + 80, MUT, 13.5);
+    chu('Each subcarrier meets ONE point, so for each of them one number is enough, and the '
+        + 'receiver uses four different ones.', X0, yb + 100, MUT, 13.5);
+  }
+
+  function veChom(s, x0, yc, S, thu, ten, mau, soSai){
+    var R = 1.75, Scz = 240;
+    var cx = function(v){ return x0 + Scz/2 + v/R*Scz/2; };
+    var cy = function(v){ return yc + Scz/2 - v/R*Scz/2; };
+    hop(x0, yc, Scz, Scz, '#fff', LINE);
+    duong(x0, cy(0), x0 + Scz, cy(0), FADE, 1);
+    duong(cx(0), yc, cx(0), yc + Scz, FADE, 1);
+    var i;
+    for (i = 0; i < 4; i++){
+      var pr = (i < 2 ? R2 : -R2), pi = (i % 2 ? R2 : -R2);
+      g.strokeStyle = GREY; g.lineWidth = 1.2; g.beginPath();
+      g.arc(cx(pr), cy(pi), 6, 0, 7); g.stroke();
+    }
+    for (i = 0; i < S.length; i++){
+      var dung = !sai(quyet(thu[i]), S[i]);
+      g.strokeStyle = dung ? 'rgba(42,157,143,0.45)' : 'rgba(216,30,91,0.55)';
+      g.lineWidth = 1.4; g.beginPath();
+      g.moveTo(cx(S[i][0]), cy(S[i][1])); g.lineTo(cx(thu[i][0]), cy(thu[i][1])); g.stroke();
+      // Cham ve NHO hon vong tron goc (ban kinh 6), de truong hop OFDM cham
+      // nam gon trong vong va nguoi xem doc duoc "dung ngay diem goc" chu
+      // khong phai "vong tron bi che mat".
+      g.fillStyle = dung ? TEAL : MAG; g.beginPath();
+      g.arc(cx(thu[i][0]), cy(thu[i][1]), 4, 0, 7); g.fill();
+    }
+    chu(ten, x0 + Scz/2, yc - 10, mau, 15, 'center', true);
+    chu(soSai + ' of ' + S.length + ' symbols read as the wrong symbol',
+        x0 + Scz/2, yc + Scz + 20, soSai ? MAG : TEAL, 13.5, 'center', true);
+  }
+
+  function veThu(s, y){
+    tieu('5 · what the receiver reads, after it has done everything it is allowed to do', y);
+    chu('Open circles are the four QPSK points. Each line runs from where a symbol was sent to '
+        + 'where it arrived.', X0, y + 22, MUT, 13.5);
+    veChom(s, X0 + 60, y + 60, s.S, s.sc.thu, 'one carrier, one gain correction', MAG,
+           s.sc.soSai);
+    veChom(s, X0 + 460, y + 60, s.S, s.of.thu, 'OFDM, one gain per subcarrier', TEAL,
+           s.of.soSai);
+    chu('worst symbol ' + s.sc.leMax.toFixed(3) + ' from where it was sent',
+        X0 + 60 + 120, y + 60 + 240 + 40, MUT, 13, 'center');
+    chu('worst symbol ' + s.of.leMax.toExponential(1) + ' from where it was sent',
+        X0 + 460 + 120, y + 60 + 240 + 40, MUT, 13, 'center');
+  }
+
+  // ---- Dieu khien --------------------------------------------------------
+  var buoc = 1, bits = BIT_VD.slice(), trangThai = tinh(bits);
+
+  function veHet(){
+    g.clearRect(0, 0, cv.width, cv.height);
+    var s = trangThai, y = 34;
+    veBits(s, y);                      y += 150;
+    if (buoc >= 2){ veMotSongMang(s, y); } y += 206;
+    if (buoc >= 3){ veOfdm(s, y); }        y += 246;
+    if (buoc >= 4){ veKenh(s, y); }        y += 330;
+    if (buoc >= 5){ veThu(s, y); }
+  }
+
+  function veSo(){
+    var s = trangThai, h = [];
+    h.push('<span class="chip">bits <b>' + s.bits.join('') + '</b></span>');
+    h.push('<span class="chip">echo <b>' + A_VONG + '× at ' + TS_NS
+           + ' ns</b>, which is <b>' + DL_M.toFixed(0) + ' m</b></span>');
+    h.push('<span class="chip">one carrier <b>' + TS_NS + ' ns</b> per symbol</span>');
+    h.push('<span class="chip">OFDM <b>' + (N*TS_NS) + ' ns</b> per symbol, '
+           + '<b>' + N + '</b> at once</span>');
+    h.push('<span class="chip ' + (s.sc.soSai ? 'xau' : 'tot') + '">one carrier reads <b>'
+           + s.sc.soSai + ' of ' + NSYM + '</b> wrongly</span>');
+    h.push('<span class="chip ' + (s.of.soSai ? 'xau' : 'tot') + '">OFDM reads <b>'
+           + s.of.soSai + ' of ' + NSYM + '</b> wrongly</span>');
+    document.getElementById('so').innerHTML = h.join('');
+  }
+
+  function capNhat(){ trangThai = tinh(bits); veSo(); veHet(); }
+
+  Array.prototype.forEach.call(document.querySelectorAll('.nut[data-b]'), function(n){
+    n.addEventListener('click', function(){
+      buoc = +n.dataset.b;
+      Array.prototype.forEach.call(document.querySelectorAll('.nut[data-b]'), function(m){
+        m.className = 'nut' + (+m.dataset.b === buoc ? ' dang' : '');
+      });
+      veHet();
+    });
+  });
+  document.getElementById('moi').addEventListener('click', function(){
+    bits = [];
+    for (var i = 0; i < 16; i++) bits.push(Math.random() < 0.5 ? 0 : 1);
+    buoc = 5;
+    Array.prototype.forEach.call(document.querySelectorAll('.nut[data-b]'), function(m){
+      m.className = 'nut' + (+m.dataset.b === 5 ? ' dang' : '');
+    });
+    capNhat();
+  });
+  document.getElementById('vedau').addEventListener('click', function(){
+    bits = BIT_VD.slice(); capNhat();
+  });
+  capNhat();
+})();
+</script>
+</body>
+</html>
