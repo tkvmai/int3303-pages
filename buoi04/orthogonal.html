@@ -85,10 +85,14 @@ guard actually buys and costs.</p>
 <h2>Section 2: why the overlap does not interfere</h2>
 <p class="sub">The receiver reads one subcarrier by <b>multiplying the arriving waveform by that
 subcarrier's own frequency and adding up the result over exactly one symbol</b>. That is the whole
-operation, and orthogonality is a statement about what it returns. Watch the running total at the
-bottom: the interfering neighbour contributes something at every single instant, sometimes a lot,
-and the total still arrives at <b>zero</b> at the end of the symbol. Nothing is filtered out. It
-cancels itself.</p>
+operation, and orthogonality is a statement about what it returns. The quickest way to read the
+panels is to compare two of them. Panel <b>c</b> is that multiply done with the wanted subcarrier
+itself, and it is <b>never negative</b>: a wave times itself is a square. Panel <b>b</b> is the
+same multiply done with a neighbour, and it spends exactly as long above the line as below.
+Panel <b>d</b> turns that into the only question that matters, which is whether two bars are the
+same length. They are, so the neighbour weighs nothing, and the reason is one sentence: the
+neighbour's product completes a <b>whole number</b> of ups and downs inside the window, and a
+whole number of ups and downs weighs nothing. Nothing is filtered out. It cancels itself.</p>
 
 <div class="dk">
   <div class="hang">
@@ -122,7 +126,7 @@ cancels itself.</p>
   <span class="chip" id="o4">Leakage <b>0%</b> of a wanted carrier</span>
 </div>
 
-<canvas id="cv2" width="1280" height="748"></canvas>
+<canvas id="cv2" width="1280" height="890"></canvas>
 
 <h2>Section 3: the window is what does the work, not the spacing</h2>
 <p class="sub">A natural objection to section 2, and the right one to raise. A modulated signal is
@@ -496,6 +500,12 @@ University of Engineering and Technology, Vietnam National University<br>
         conC = new Float64Array(NMAU), conS = new Float64Array(NMAU),
         conM = new Float64Array(NMAU);
     var i, dt = 1/(NMAU - 1), ac = 0, as = 0, am = 0, tren = 0, duoi = 0;
+    // Dien tich tren va duoi cua CA NHANH SIN. Thieu no thi can can o hang d
+    // chi ke mot nua cau chuyen: o lech dung nua khoang, nhanh cosin can
+    // bang hoan hao trong khi toan bo nang luong ro sang nhanh sin, va hang
+    // d se ket luan "doc ra 0" ngay tai truong hop hong nang nhat. Chinh
+    // trang nay da canh bao dieu do o dau khoi ma hang d van mac lai.
+    var trenS = 0, duoiS = 0;
     for (i = 0; i < NMAU; i++){
       t[i] = i*dt;
       sMuon[i]  = Math.cos(2*Math.PI*M_DOC*t[i]);
@@ -510,12 +520,16 @@ University of Engineering and Technology, Vietnam National University<br>
         am += (tichMuon[i] + tichMuon[i - 1])/2*dt;
         var tb = (tichC[i] + tichC[i - 1])/2*dt;
         if (tb > 0) tren += tb; else duoi += -tb;
+        var tbS = (tichS[i] + tichS[i - 1])/2*dt;
+        if (tbS > 0) trenS += tbS; else duoiS += -tbS;
       }
       conC[i] = ac; conS[i] = as; conM[i] = am;
     }
     return {n:n, d:d, phi:phi, fN:fN, t:t, sMuon:sMuon, sNhieu:sNhieu,
-            tichC:tichC, tichS:tichS, conC:conC, conS:conS, conM:conM,
+            tichC:tichC, tichS:tichS, tichMuon:tichMuon,
+            conC:conC, conS:conS, conM:conM,
             I:ac, Q:as, muon:am, tren:tren, duoi:duoi,
+            trenS:trenS, duoiS:duoiS,
             roRi:Math.sqrt(ac*ac + as*as),
             chuKyHieu:n + d, chuKyTong:2*M_DOC + n + d};
   }
@@ -617,55 +631,101 @@ University of Engineering and Technology, Vietnam National University<br>
     g.font = '13px Calibri, sans-serif';
 
     // ---- c: tong chay -----------------------------------------------
-    tieuDe(346, 'c · the running total, which is what the receiver returns');
-    var yc = 474, hc = 100, CMAX = 1.25;
-    // luoi
-    g.strokeStyle = LINE; g.lineWidth = 1;
-    g.textAlign = 'right'; g.fillStyle = MUT;
-    for (var v2 = -1; v2 <= 1; v2 += 0.5){
-      var Y2 = yc - v2/CMAX*hc;
-      g.beginPath(); g.moveTo(x0, Y2); g.lineTo(x1, Y2); g.stroke();
-      g.fillText(v2.toFixed(1), x0 - 8, Y2 + 4);
-    }
-    duongCong(s.conM, yc, CMAX, PUR, 1.8, hc);
-    duongCong(s.conC, yc, CMAX, MAG, 2.2, hc);
-    duongCong(s.conS, yc, CMAX, ACC, 1.5, hc);
-    // cham ket thuc
-    function cham(val, mau){
-      g.fillStyle = mau; g.beginPath();
-      g.arc(x1, yc - val/CMAX*hc, 4.5, 0, 7); g.fill();
-    }
-    cham(s.muon, PUR); cham(s.I, MAG); cham(s.Q, ACC);
-    // Ba nhan nay deu dat theo gia tri cuoi, ma hai gia tri cua ke nhieu
-    // thuong cung gan khong, nen chung DE LEN NHAU. Day nhau ra toi thieu
-    // 17 diem theo chieu doc, giu nguyen thu tu tren duoi.
-    var nh = [{y:yc - s.muon/CMAX*hc, c:PUR,
-               t:'wanted carrier: ' + s.muon.toFixed(4)},
-              {y:yc - s.I/CMAX*hc, c:MAG,
-               t:'neighbour, cosine: ' + s.I.toFixed(4)},
-              {y:yc - s.Q/CMAX*hc, c:ACC,
-               t:'neighbour, sine: ' + s.Q.toFixed(4)}];
-    nh.sort(function(a, b){ return a.y - b.y; });
-    for (i = 1; i < nh.length; i++)
-      if (nh[i].y - nh[i - 1].y < 17) nh[i].y = nh[i - 1].y + 17;
-    for (i = 0; i < nh.length; i++){
-      // gach noi tu cham toi nhan, de biet nhan nao cua duong nao
-      g.strokeStyle = nh[i].c; g.lineWidth = 1;
-      g.beginPath(); g.moveTo(x1 + 5, nh[i].y - 4);
-      g.lineTo(x1 + 8, nh[i].y - 4); g.stroke();
-      nhan(nh[i].y, nh[i].c, nh[i].t);
-    }
+    // ---- c: CUNG PHEP NHAN AY, nhung voi CHINH song mang can doc ------
+    //
+    // Hang nay thay cho hang "tong chay" cu. Mai 2026-10-23: "em da lam 1
+    // animation nhu vay roi nhung van rat kho hieu". Dung, va cho kho hieu
+    // la mot tich phan: no bat nguoi xem theo doi mot dai luong CONG DON
+    // chay qua thoi gian, roi tin rang no ve dung khong o cuoi.
+    //
+    // Cai thieu khong phai do chinh xac ma la MOT VAT DOI CHUNG. Khong co
+    // gi de so thi "can bang" chang noi len dieu gi. Nen hang nay ve dung
+    // phep nhan ay voi chinh song mang can doc: tich ay KHONG BAO GIO am.
+    // Mot mau duy nhat. Doi lai, tich voi hang xom co tren va duoi bang
+    // het nhau. Khac biet ay mat nguoi doc duoc trong mot giay, khong can
+    // theo doi gi chay qua thoi gian ca.
+    tieuDe(346, 'c \u00b7 the same multiply, but with the wanted subcarrier '
+           + 'itself: never negative');
+    var yc = 418, hc = 62;
+    duongT(yc);
+    (function(){
+      var i2, X, Y;
+      g.fillStyle = 'rgba(42,157,143,0.30)';
+      g.beginPath(); g.moveTo(tx(0), yc);
+      for (i2 = 0; i2 < NMAU; i2++)
+        g.lineTo(tx(s.t[i2]), yc - s.tichMuon[i2]/2.1*hc);
+      g.lineTo(tx(1), yc); g.closePath(); g.fill();
+      g.strokeStyle = TEAL; g.lineWidth = 2; g.beginPath();
+      for (i2 = 0; i2 < NMAU; i2++){
+        X = tx(s.t[i2]); Y = yc - s.tichMuon[i2]/2.1*hc;
+        if (i2 === 0) g.moveTo(X, Y); else g.lineTo(X, Y);
+      }
+      g.stroke();
+    })();
+    nhan(yc - 46, TEAL, 'all of it is above the line');
     g.textAlign = 'left'; g.fillStyle = MUT;
-    g.fillText('one symbol, from here', x0, yc + hc + 32);
-    g.textAlign = 'right';
-    g.fillText('to exactly here', x1, yc + hc + 32);
-    g.strokeStyle = INK; g.lineWidth = 1.4; g.setLineDash([5,3]);
-    g.beginPath(); g.moveTo(x1, yc - hc - 16); g.lineTo(x1, yc + hc + 16);
-    g.stroke(); g.setLineDash([]);
+    g.fillText('a wave times itself is a square, and a square is never '
+               + 'negative, so nothing cancels', x0, yc + 30);
 
-    // ---- d: ro ri theo do lech --------------------------------------
-    tieuDe(632, 'd · leakage against how far off the grid the neighbour sits');
-    var yd = 698, hd = 52, xd0 = x0, xd1 = x1;
+    // ---- d: can can dien tich -----------------------------------------
+    //
+    // Phep tich phan viet lai thanh mot cau hoi ve DO DAI: hai thanh nay
+    // co dai bang nhau khong. Khong con dai luong nao chay qua thoi gian.
+    tieuDe(468, 'd \u00b7 the balance: area above the line against area below');
+    // DMAX phai chua het thanh dai nhat. Tich cua song mang can doc voi
+    // chinh no tich phan ra 1,00 tren quy uoc nhan hai cua trang nay, nen
+    // 0,62 se lam thanh ay tran ra ngoai khung.
+    var yd0 = 526, xm = (x0 + x1)/2, DMAX = 1.05, dai = (x1 - x0)/2 - 150;
+    function thanh(y, tren, duoi, ten, mauT, mauD, ketLuan, mauK){
+      g.strokeStyle = LINE; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(xm, y - 20); g.lineTo(xm, y + 20); g.stroke();
+      g.fillStyle = mauD;
+      g.fillRect(xm - duoi/DMAX*dai, y - 11, duoi/DMAX*dai, 22);
+      g.fillStyle = mauT;
+      g.fillRect(xm, y - 11, tren/DMAX*dai, 22);
+      g.textAlign = 'right'; g.fillStyle = MUT;
+      g.font = '13px Calibri,Segoe UI,sans-serif';
+      g.fillText(ten, x0 - 10, y + 5);
+      g.textAlign = 'left'; g.fillStyle = mauT;
+      g.fillText(tren.toFixed(3) + ' above', xm + tren/DMAX*dai + 8, y + 5);
+      g.textAlign = 'right'; g.fillStyle = mauD;
+      g.fillText(duoi.toFixed(3) + ' below', xm - duoi/DMAX*dai - 8, y + 5);
+      g.textAlign = 'left'; g.fillStyle = mauK;
+      g.font = '600 13.5px Calibri,Segoe UI,sans-serif';
+      g.fillText(ketLuan, x1 + 14, y + 5);
+    }
+    thanh(yd0, s.muon, 0, 'wanted', TEAL, TEAL,
+          'nothing cancels it: ' + s.muon.toFixed(3), TEAL);
+    var deu = Math.abs(s.tren - s.duoi) < 5e-4;
+    var deuS = Math.abs(s.trenS - s.duoiS) < 5e-4;
+    thanh(yd0 + 46, s.tren, s.duoi, 'cosine side', MAG, MAG,
+          deu ? 'equal, reads 0.000' : 'unequal by ' + (s.tren - s.duoi).toFixed(3),
+          deu ? TEAL : MAG);
+    thanh(yd0 + 92, s.trenS, s.duoiS, 'sine side', ACC, ACC,
+          deuS ? 'equal, reads 0.000' : 'unequal by ' + (s.trenS - s.duoiS).toFixed(3),
+          deuS ? TEAL : MAG);
+    g.font = '13px Calibri,Segoe UI,sans-serif';
+    g.textAlign = 'left'; g.fillStyle = MUT;
+    g.fillText('What the receiver returns is the difference between the two '
+               + 'bars, so the only question is whether they are the same '
+               + 'length.', x0, yd0 + 132);
+    g.fillText('Both of the neighbour rows count, because a real receiver '
+               + 'multiplies by a cosine and by a sine and keeps both answers.',
+               x0, yd0 + 150);
+    g.fillStyle = (deu && deuS) ? TEAL : MAG;
+    g.font = '600 13.5px Calibri,Segoe UI,sans-serif';
+    g.fillText((deu && deuS)
+        ? 'Both pairs match, so the neighbour contributes nothing: its product '
+          + 'completes a whole number of ups and downs, and a whole number of '
+          + 'ups and downs weighs nothing.'
+        : 'At least one pair does not match, so the neighbour leaks '
+          + (s.roRi/1*100).toFixed(2) + '% of a wanted carrier. Note that the '
+          + 'cosine row alone can look balanced while the sine row is not.',
+        x0, yd0 + 172);
+
+
+    tieuDe(724, 'e · leakage against how far off the grid the neighbour sits');
+    var yd = 790, hd = 52, xd0 = x0, xd1 = x1;
     // Thang doc chuan theo DINH cua chinh duong cong nay, khong dat cung.
     // Dat cung 1,0 thi voi n lon duong cong gan nhu nam bet tren truc va
     // khong doc duoc gi, va do dung la dieu xay ra o ban soi dau tien.
