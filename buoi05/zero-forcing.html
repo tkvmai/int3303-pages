@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · A MIMO link end to end, with zero forcing</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;
+      --mut:#5A6272;--line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE;max-width:960px;line-height:1.5}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.55}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+.dk{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:16px 0;background:var(--tint)}
+.hang{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px 26px}
+label.t{display:block;font-size:13.5px;color:var(--mut);margin:0 0 3px}
+label.t b{color:var(--ink);font-size:14.5px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.buoc{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;align-items:center}
+.nut{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 15px;
+  font-family:inherit;font-size:13.5px;color:var(--mut);cursor:pointer}
+.nut:hover{border-color:var(--acc);color:var(--ink)}
+.nut.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+.so{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:14px 0 0}
+.o{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+.o .n{font-size:11.5px;letter-spacing:1.3px;text-transform:uppercase;color:var(--mut);font-weight:700}
+.o .v{font-size:21px;font-weight:700;margin-top:2px}
+h2{font-family:Cambria,Georgia,serif;font-size:20px;margin:26px 0 8px}
+.ghi{border-left:3px solid var(--acc);padding:2px 0 2px 14px;margin:14px 0;color:var(--mut);
+  font-size:14.5px;line-height:1.6}
+.ghi b{color:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0 0}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--tint);font-weight:700}
+code{font-family:Consolas,monospace;font-size:13.5px}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · SESSION 5</div>
+  <h1>A MIMO link end to end, with zero forcing</h1>
+  <p>Three transmit antennas, three receive antennas, three QPSK streams at once. Follow one
+     symbol from the three constellations it starts on, through the room, through the inverse
+     of H, to the three constellations it ends on. Then make the room harder and watch where
+     it breaks.</p>
+</header>
+<main>
+
+<p class="sub">The three streams carry <b>the same three symbols the whole time</b>, 00, 11 and 10, so the only thing changing from one frame to the next is the noise. The middle row is the one students find surprising: <b>no receive antenna sees a
+QPSK constellation</b>. Each one hears a mixture of all three streams, so its points land
+anywhere. The grid only comes back in the bottom row, after the receiver multiplies by
+H<sup>&#8722;1</sup>.</p>
+
+<div class="buoc">
+  <button class="nut on" id="chay">running</button>
+  <button class="nut" id="motcai">one more draw</button>
+  <button class="nut" id="xoa">clear the trails</button>
+  <button class="nut" id="phong">new room</button>
+  <span style="font-size:13.5px;color:var(--mut);margin-left:6px">trails keep the last 300 draws</span>
+</div>
+
+<div class="dk">
+  <div class="hang">
+    <div>
+      <label class="t">noise at the antennas: <b><span id="vSnr">20</span> dB</b></label>
+      <input type="range" id="snr" min="4" max="34" step="1" value="20">
+    </div>
+    <div>
+      <label class="t">how alike two paths are: <b><span id="vAlike">0%</span></b></label>
+      <input type="range" id="alike" min="0" max="97" step="1" value="0">
+    </div>
+  </div>
+</div>
+
+<canvas id="c" width="1060" height="760"></canvas>
+
+<div class="so">
+  <div class="o"><div class="n">Condition number of H</div><div class="v" id="vCond">—</div></div>
+  <div class="o"><div class="n">SNR at the antennas</div><div class="v" id="vSa">—</div></div>
+  <div class="o"><div class="n">Worst stream after H&#8315;&#185;</div><div class="v" id="vSw">—</div></div>
+  <div class="o"><div class="n">Draws</div><div class="v" id="vN">0</div></div>
+  <div class="o"><div class="n">Symbol errors</div><div class="v" id="vE">0</div></div>
+</div>
+
+<div class="ghi" id="loi"></div>
+
+<h2>What each row is</h2>
+
+<table>
+  <tr><th>Row</th><th>What is drawn</th><th>What to notice</th></tr>
+  <tr><td><b>sent</b></td><td>the QPSK symbol each of the three streams is carrying</td>
+      <td>three fixed points, 00, 11 and 10, held there for the whole run</td></tr>
+  <tr><td><b>at the antennas</b></td>
+      <td>what each receive antenna actually measures, r = H i + n</td>
+      <td>not a constellation at all: each antenna hears all three streams added together</td></tr>
+  <tr><td><b>after H<sup>&#8722;1</sup></b></td>
+      <td>the three streams pulled apart again, &#238; = i + &#238;&#770;</td>
+      <td>the grid is back, but every point sits a little off it, and that offset is the noise
+          after H<sup>&#8722;1</sup></td></tr>
+</table>
+
+<h2>Things worth trying</h2>
+
+<p class="sub">Leave the noise at 20 dB and push <b>how alike two paths are</b> up slowly. The
+middle row barely changes: the antennas are receiving just as strong a signal as before. The
+bottom row falls apart. Nothing happened in the room to the signal strength; what happened is
+that H became hard to invert, and the receiver did the inverting.</p>
+
+<p class="sub">Now put the slider back to 0 and lower the noise slider instead. Both rows get
+worse together, which is the ordinary behaviour students expect. The point of the first
+experiment is that the ill-conditioned case does <b>not</b> behave that way.</p>
+
+<p class="sub">Watch the two SNR numbers. The first is what the antennas see and the slider
+sets it directly. The second is what is left on the worst stream after H<sup>&#8722;1</sup>.
+With a good room the two are close; with two nearly identical paths the second collapses while
+the first does not move.</p>
+
+<script>
+(function(){
+  var C = document.getElementById('c'), g = C.getContext('2d');
+  var W = C.width, H = C.height;
+  var INK='#1A1F36', MUT='#5A6272', ACC='#FF6B35', TEAL='#2A9D8F',
+      MAG='#D81E5B', PUR='#6C5CE7', LINE='#E4E8EF';
+  var MAU = [TEAL, PUR, ACC];               // mot mau cho moi luong
+
+  // ---- so phuc ------------------------------------------------------
+  function cm(a,b){ return {re:a.re*b.re-a.im*b.im, im:a.re*b.im+a.im*b.re}; }
+  function ca(a,b){ return {re:a.re+b.re, im:a.im+b.im}; }
+  function cs(a,b){ return {re:a.re-b.re, im:a.im-b.im}; }
+  function cd(a,b){ var d=b.re*b.re+b.im*b.im;
+    return {re:(a.re*b.re+a.im*b.im)/d, im:(a.im*b.re-a.re*b.im)/d}; }
+  function ab(a){ return Math.hypot(a.re,a.im); }
+  function Z(re,im){ return {re:re, im:im||0}; }
+
+  // Nghich dao ma tran phuc 3x3 bang khu Gauss co chon truc. Viet tay
+  // vi khong co thu vien, va vi sinh vien co the doc duoc doan nay.
+  function nghichdao(M){
+    var n = M.length, A = [], I = [];
+    for (var i=0;i<n;i++){
+      A.push(M[i].map(function(z){ return {re:z.re, im:z.im}; }));
+      I.push(M[i].map(function(_,j){ return Z(i===j?1:0,0); }));
+    }
+    for (var k=0;k<n;k++){
+      var p=k;
+      for (var q=k+1;q<n;q++) if (ab(A[q][k])>ab(A[p][k])) p=q;
+      var t=A[k];A[k]=A[p];A[p]=t; t=I[k];I[k]=I[p];I[p]=t;
+      var pv=A[k][k];
+      if (ab(pv) < 1e-12) return null;
+      for (var j=0;j<n;j++){ A[k][j]=cd(A[k][j],pv); I[k][j]=cd(I[k][j],pv); }
+      for (var r2=0;r2<n;r2++){
+        if (r2===k) continue;
+        var f=A[r2][k];
+        if (ab(f)<1e-18) continue;
+        for (var j2=0;j2<n;j2++){
+          A[r2][j2]=cs(A[r2][j2],cm(f,A[k][j2]));
+          I[r2][j2]=cs(I[r2][j2],cm(f,I[k][j2]));
+        }
+      }
+    }
+    return I;
+  }
+  function nhan(M,v){
+    return M.map(function(row){
+      var s=Z(0,0);
+      for (var j=0;j<v.length;j++) s=ca(s,cm(row[j],v[j]));
+      return s;
+    });
+  }
+  // So dieu kien uoc luong bang luy thua: can cua ty so tri rieng lon
+  // nhat tren nho nhat cua H^H H, lay qua ||H|| va ||H^-1||.
+  function chuan(M){
+    var s=0;
+    for (var i=0;i<M.length;i++) for (var j=0;j<M.length;j++)
+      s += M[i][j].re*M[i][j].re + M[i][j].im*M[i][j].im;
+    return Math.sqrt(s);
+  }
+
+  // ---- kenh ---------------------------------------------------------
+  var QPSK = [{b:'00', z:Z( 0.7071, 0.7071)}, {b:'01', z:Z(-0.7071, 0.7071)},
+              {b:'11', z:Z(-0.7071,-0.7071)}, {b:'10', z:Z( 0.7071,-0.7071)}];
+  var S = { H0:null, H:null, Hi:null, cond:1, sig:0.1, alike:0,
+            chay:true, n:0, loi:0, vet:[[],[],[]], vetR:[[],[],[]],
+            i:null, r:null, ih:null, qd:null };
+
+  function phongMoi(){
+    S.H0 = [];
+    for (var i=0;i<3;i++){
+      var row=[];
+      for (var j=0;j<3;j++)
+        row.push(Z((Math.random()*2-1)*0.9, (Math.random()*2-1)*0.9));
+      S.H0.push(row);
+    }
+    dungH();
+  }
+  // Keo HANG 2 ve phia HANG 1: hai duong cang giong nhau thi H cang kho
+  // nghich dao, dung cai ma slide noi.
+  function dungH(){
+    var t = S.alike;
+    S.H = S.H0.map(function(row){ return row.map(function(z){ return {re:z.re,im:z.im}; }); });
+    for (var j=0;j<3;j++){
+      S.H[1][j] = ca({re:S.H0[0][j].re*t, im:S.H0[0][j].im*t},
+                     {re:S.H0[1][j].re*(1-t), im:S.H0[1][j].im*(1-t)});
+    }
+    S.Hi = nghichdao(S.H);
+    S.cond = S.Hi ? chuan(S.H)*chuan(S.Hi)/3 : Infinity;
+  }
+
+  function gauss(){
+    var u=0,v=0;
+    while(u===0) u=Math.random();
+    v=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  }
+
+  // Mai chot 2026-11-09: ba luong mang BA SYMBOL CO DINH, khong doi
+  // moi khung hinh. Nhu vay chi con nhieu thay doi, va dam may hien ra
+  // quanh mot diem co dinh, de nhin hon han.
+  var GUI = ['00', '11', '10'];
+  function motSymbol(){
+    var i=[], qb=[];
+    for (var k=0;k<3;k++){
+      var p = QPSK.filter(function(q){ return q.b === GUI[k]; })[0];
+      i.push(p.z); qb.push(p.b);
+    }
+    var Hi_ = nhan(S.H, i);
+    var r = Hi_.map(function(z){
+      return ca(z, Z(gauss()*S.sig/Math.SQRT2, gauss()*S.sig/Math.SQRT2));
+    });
+    var ih = S.Hi ? nhan(S.Hi, r) : [Z(0,0),Z(0,0),Z(0,0)];
+    var qd = ih.map(function(z){
+      var best=QPSK[0], bd=1e9;
+      QPSK.forEach(function(p){ var d=ab(cs(z,p.z)); if(d<bd){bd=d;best=p;} });
+      return best;
+    });
+    S.i=i; S.r=r; S.ih=ih; S.qd=qd; S.n++;
+    for (var k2=0;k2<3;k2++){
+      if (qd[k2].b !== qb[k2]) { S.loi++; break; }
+    }
+    for (var k3=0;k3<3;k3++){
+      S.vet[k3].push(ih[k3]); if (S.vet[k3].length>300) S.vet[k3].shift();
+      S.vetR[k3].push(r[k3]); if (S.vetR[k3].length>300) S.vetR[k3].shift();
+    }
+  }
+
+  // ---- ve -----------------------------------------------------------
+  function khung(cx, cy, R, tieu, mau, luoi){
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(cx-R-10, cy); g.lineTo(cx+R+10, cy); g.stroke();
+    g.beginPath(); g.moveTo(cx, cy-R-10); g.lineTo(cx, cy+R+10); g.stroke();
+    if (luoi){
+      g.setLineDash([3,3]); g.strokeStyle='#EDEFF4';
+      g.beginPath(); g.arc(cx, cy, R*0.70, 0, 7); g.stroke();
+      g.setLineDash([]);
+      QPSK.forEach(function(p){
+        g.strokeStyle=MUT; g.lineWidth=1.4;
+        g.beginPath();
+        g.arc(cx+p.z.re*0.70*R, cy-p.z.im*0.70*R, 6, 0, 7); g.stroke();
+      });
+    }
+    g.fillStyle = mau; g.font='bold 13px Calibri';
+    g.textAlign='center'; g.textBaseline='alphabetic';
+    g.fillText(tieu, cx, cy-R-20);
+  }
+  // Hang giua ve o ti le khac: r la tong ba luong nen do lon cua no
+  // co the toi gan 3, ve o ti le 0,70 thi cham bay ra ngoai khung.
+  var SC_R = 0.34;
+  function cham(cx, cy, R, z, mau, rad, alpha, sc){
+    g.globalAlpha = alpha===undefined?1:alpha;
+    g.fillStyle = mau;
+    g.beginPath();
+    g.arc(cx+z.re*(sc||0.70)*R, cy-z.im*(sc||0.70)*R, rad, 0, 7);
+    g.fill(); g.globalAlpha=1;
+  }
+
+  function ve(){
+    g.clearRect(0,0,W,H);
+    g.fillStyle='#FBFCFE'; g.fillRect(0,0,W,H);
+    var R = 94, CX=[220, 530, 840], CY=[152, 398, 644];
+    // Nhan hang: ke mot vach ngang tach ba dai, roi dat nhan ngay duoi
+    // vach. De nhan lo lung giua hai hang thi khong ro no thuoc hang
+    // nao, da thay o ban render dau tien.
+    var hang = ['sent:  three QPSK symbols',
+                'at the antennas:  r = H i + n',
+                'after H⁻¹:  î = i + n̂'];
+    for (var row=0; row<3; row++){
+      var yt = CY[row] - R - 56;
+      if (row > 0){
+        g.strokeStyle = LINE; g.lineWidth = 1;
+        g.beginPath(); g.moveTo(14, yt); g.lineTo(W-14, yt); g.stroke();
+      }
+      g.fillStyle = INK; g.font='bold 15px Calibri';
+      g.textAlign='left'; g.fillText(hang[row], 18, yt + 20);
+    }
+    for (var k=0;k<3;k++){
+      // hang 1: symbol gui
+      khung(CX[k], CY[0], R, 'stream '+(k+1)+':  '+GUI[k], MAU[k], true);
+      if (S.i){
+        cham(CX[k], CY[0], R, S.i[k], MAU[k], 8);
+        g.fillStyle = MAU[k]; g.font='bold 12px Consolas';
+        g.textAlign='center';
+        g.fillText(GUI[k], CX[k]+S.i[k].re*1.16*R,
+                   CY[0]-S.i[k].im*1.16*R+4);
+      }
+      // hang 2: cai ang-ten do duoc
+      khung(CX[k], CY[1], R, 'antenna '+(k+1), MUT, false);
+      S.vetR[k].forEach(function(z){
+        cham(CX[k], CY[1], R, z, MUT, 1.5, 0.22, SC_R); });
+      if (S.r) cham(CX[k], CY[1], R, S.r[k], MAG, 6, 1, SC_R);
+      // hang 3: sau khi nhan H^-1
+      khung(CX[k], CY[2], R, 'stream '+(k+1)+' recovered', MAU[k], true);
+      S.vet[k].forEach(function(z){ cham(CX[k], CY[2], R, z, MAU[k], 1.5, 0.22); });
+      if (S.ih){
+        cham(CX[k], CY[2], R, S.ih[k], MAU[k], 6);
+        var q = S.qd[k].z;
+        g.strokeStyle = MAG; g.lineWidth = 1.6;
+        g.beginPath();
+        g.moveTo(CX[k]+S.ih[k].re*0.70*R, CY[2]-S.ih[k].im*0.70*R);
+        g.lineTo(CX[k]+q.re*0.70*R, CY[2]-q.im*0.70*R);
+        g.stroke();
+        g.fillStyle = MAG; g.font='bold 12px Consolas';
+        g.textAlign='center';
+        g.fillText(S.qd[k].b, CX[k]+q.re*1.15*R, CY[2]-q.im*1.15*R+4);
+      }
+    }
+    g.fillStyle = MUT; g.font='12.5px Calibri'; g.textAlign='left';
+    g.fillText('faint dots are the last 300 draws of the noise', 18, H-12);
+  }
+
+  function so(){
+    var sa = 20*Math.log10(1/S.sig);
+    document.getElementById('vCond').textContent =
+      isFinite(S.cond) ? S.cond.toFixed(1) : '∞';
+    document.getElementById('vSa').textContent = sa.toFixed(0)+' dB';
+    // SNR con lai tren luong te nhat: tin hieu 1, nhieu = ||hang cua H^-1||*sig
+    var xau = 0;
+    if (S.Hi) for (var k=0;k<3;k++){
+      var s2=0;
+      for (var j=0;j<3;j++) s2 += S.Hi[k][j].re*S.Hi[k][j].re + S.Hi[k][j].im*S.Hi[k][j].im;
+      xau = Math.max(xau, Math.sqrt(s2));
+    }
+    var sw = 20*Math.log10(1/(xau*S.sig));
+    document.getElementById('vSw').textContent = sw.toFixed(0)+' dB';
+    document.getElementById('vN').textContent = S.n;
+    document.getElementById('vE').textContent = S.loi;
+    var L = document.getElementById('loi'), mat = sa - sw;
+    if (mat < 8){
+      L.style.borderLeftColor = TEAL;
+      L.innerHTML = '<b>Undoing H costs almost nothing here.</b> The worst stream keeps ' +
+        sw.toFixed(0) + ' dB out of the ' + sa.toFixed(0) + ' dB the antennas had. ' +
+        'The three recovered clouds are tight and every decision is clear.';
+    } else if (mat < 18){
+      L.style.borderLeftColor = ACC;
+      L.innerHTML = '<b>Undoing H is starting to cost.</b> ' + mat.toFixed(0) +
+        ' dB has gone, all of it inside the receiver: the antennas still have ' +
+        sa.toFixed(0) + ' dB. Look at how much wider the bottom clouds are than the ' +
+        'middle ones.';
+    } else {
+      L.style.borderLeftColor = MAG;
+      L.innerHTML = '<b>H⁻¹ is eating the signal.</b> ' + mat.toFixed(0) +
+        ' dB lost between the antennas and the streams, and the bottom clouds are wide ' +
+        'enough to cross into the wrong quadrant. Nothing got weaker on the way in; ' +
+        'the loss is the price of inverting a channel whose paths are nearly the same.';
+    }
+  }
+
+  var lan = 0;
+  function khung_ve(){
+    if (S.chay && (++lan % 3 === 0)) motSymbol();
+    ve(); so();
+    requestAnimationFrame(khung_ve);
+  }
+
+  document.getElementById('chay').addEventListener('click', function(){
+    S.chay = !S.chay;
+    this.classList.toggle('on', S.chay);
+    this.textContent = S.chay ? 'running' : 'paused';
+  });
+  document.getElementById('motcai').addEventListener('click', function(){
+    S.chay=false;
+    var b=document.getElementById('chay');
+    b.classList.remove('on'); b.textContent='paused';
+    motSymbol();
+  });
+  document.getElementById('xoa').addEventListener('click', function(){
+    S.vet=[[],[],[]]; S.vetR=[[],[],[]]; S.n=0; S.loi=0;
+  });
+  document.getElementById('phong').addEventListener('click', function(){
+    phongMoi(); S.vet=[[],[],[]]; S.vetR=[[],[],[]]; S.n=0; S.loi=0;
+  });
+  document.getElementById('snr').addEventListener('input', function(){
+    document.getElementById('vSnr').textContent = this.value;
+    S.sig = Math.pow(10, -this.value/20);
+    S.vet=[[],[],[]]; S.vetR=[[],[],[]]; S.n=0; S.loi=0;
+  });
+  document.getElementById('alike').addEventListener('input', function(){
+    document.getElementById('vAlike').textContent = this.value + '%';
+    S.alike = this.value/100; dungH();
+    S.vet=[[],[],[]]; S.vetR=[[],[],[]]; S.n=0; S.loi=0;
+  });
+
+  S.sig = Math.pow(10, -20/20);
+  phongMoi(); motSymbol();
+  requestAnimationFrame(khung_ve);
+})();
+</script>
+
+<div data-tacgia="1" style="margin:28px 0 0;padding:16px 26px;border-top:1px solid #E4E8EF;background:#F7F9FC;font-family:Calibri,Segoe UI,system-ui,sans-serif;font-size:13.5px;line-height:1.7;color:#5A6272">
+<b style="color:#1A1F36">Dr Mai Tran</b><br>
+Faculty of Information Technology<br>
+University of Engineering and Technology, Vietnam National University<br>
+<a href="mailto:mai.tran@vnu.edu.vn" style="color:#5A6272">mai.tran@vnu.edu.vn</a>
+</div>
+</main>
+</body>
+</html>

@@ -211,6 +211,47 @@ footer{padding:20px 26px;border-top:1px solid var(--line);color:var(--mut);
     phải khối được chọn.</span>
   </a>
 
+  <h2>Buổi 5: MIMO</h2>
+
+  <a class="card" href="buoi05/channel-and-noise.html">
+    <b>Kênh làm gì, và nhiễu làm gì</b>
+    <span>Slide 22 liệt kê mọi thứ xảy ra với tín hiệu khi băng qua một căn phòng. Hai trong số
+    đó cùng làm ký tự dịch chỗ trên chòm sao, nhưng <b>dịch theo hai kiểu khác hẳn nhau</b>, nên
+    trang này bám theo <b>đúng một ký tự</b> và cho bật từng thứ một. Bật kênh C: ký tự bị xoay
+    và đổi độ dài, có vòng tròn xám đánh dấu chỗ lẽ ra nó rơi và cung tím đo góc đã xoay. Cứ để
+    chạy tiếp thì mũi tên <b>đứng im tuyệt đối</b>: kênh làm đúng một việc ấy với mọi ký tự đi
+    qua. Bật nhiễu: ký tự rơi một chỗ khác ở <b>từng lần gửi</b>, để lại vệt của sáu mươi lần
+    gần nhất, dù căn phòng không đổi chút nào. Hai ô số bên dưới tách riêng hai phần: phần do
+    kênh thì giữ nguyên, phần do nhiễu thì đổi mỗi lần. Có thêm núm cho căn phòng thay đổi để
+    thấy ngay cả phần của kênh cũng trôi. Trang ghi rõ hai điều <b>cố ý không</b> đụng tới: máy
+    thu xử lý ra sao là chuyện khác, và hiệu ứng Doppler là cơ chế riêng.</span>
+  </a>
+
+  <a class="card" href="buoi05/scattering.html">
+    <b>Bốn hệ số kênh giống nhau đến mức nào</b>
+    <span>Một kênh hai nhân hai là bốn con số h11, h12, h21, h22. Bốn con số ấy khác nhau
+    nhiều hay ít là do <b>căn phòng quyết định, không phải cái radio</b>. Trang vẽ bốn hệ số
+    thành bốn mũi tên, dài là độ lợi, góc là pha, rồi cho thêm dần vật tán xạ. Phòng chỉ có
+    đường truyền thẳng thì bốn mũi tên <b>dài bằng nhau tới chữ số cuối</b>, và bốn góc còn bị
+    khoá với nhau: góc h22 luôn bằng góc h12 cộng góc h21 trừ góc h11. Bốn số phức trên màn
+    hình nhưng thật ra chỉ có hai cái được chọn tự do. Hai kiểu giống nhau ấy vỡ theo hai nhịp
+    khác hẳn: <b>độ dài vỡ ngay từ vật tán xạ đầu tiên</b>, còn <b>khoá pha thì dai hơn nhiều</b>,
+    một vật thì gần một nửa số phòng vẫn còn gần như khoá. Có nút xáo lại phòng để thấy đây là
+    chuyện thống kê chứ không phải một ví dụ may mắn.</span>
+  </a>
+
+  <a class="card" href="buoi05/zero-forcing.html">
+    <b>Một tuyến MIMO từ đầu đến cuối, với zero forcing</b>
+    <span>Ba ăng-ten phát, ba ăng-ten thu, ba luồng QPSK cùng lúc. Ba luồng mang
+    <b>đúng ba symbol cố định</b> 00, 11, 10 suốt cả phiên, nên thứ duy nhất thay đổi giữa
+    hai khung hình là nhiễu. Ba hàng chòm sao: gửi đi, <b>đo được ở từng ăng-ten thu</b>,
+    và sau khi nhân H⁻¹. Hàng giữa là chỗ sinh viên bất ngờ: <b>không ăng-ten nào
+    nhìn thấy một chòm sao QPSK cả</b>, vì mỗi cái nghe một hỗn hợp của cả ba luồng. Lưới
+    chỉ quay lại ở hàng dưới. Kéo thanh <b>how alike two paths are</b> lên: hàng giữa
+    gần như không đổi, SNR ở ăng-ten vẫn nguyên, nhưng hàng dưới nở tung ra và bit bắt
+    đầu sai. Toàn bộ chỗ mất mát ấy nằm trong máy thu, do phép nghịch đảo H.</span>
+  </a>
+
   <h2>Bài thực hành</h2>
 
   <a class="card" href="lab/index.html">

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · What the channel does, and what the noise does</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;
+      --mut:#5A6272;--line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE;max-width:940px;line-height:1.5}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.55}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+.dk{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:0 0 16px;background:var(--tint)}
+.hang{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px 24px}
+label.t{display:block;font-size:13.5px;color:var(--mut);margin:0 0 3px}
+label.t b{color:var(--ink);font-size:14.5px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.buoc{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.nut{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 15px;
+  font-family:inherit;font-size:13.5px;color:var(--mut);cursor:pointer}
+.nut:hover{border-color:var(--acc);color:var(--ink)}
+.nut.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+.so{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin:14px 0 0}
+.o{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+.o .n{font-size:11.5px;letter-spacing:1.3px;text-transform:uppercase;color:var(--mut);font-weight:700}
+.o .v{font-size:21px;font-weight:700;margin-top:2px}
+h2{font-family:Cambria,Georgia,serif;font-size:20px;margin:26px 0 8px}
+.ghi{border-left:3px solid var(--acc);padding:2px 0 2px 14px;margin:14px 0;color:var(--mut);
+  font-size:14.5px;line-height:1.6}
+.ghi b{color:var(--ink)}
+.ghi.sau{border-left-color:var(--mut)}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0 0}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--tint);font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · SESSION 5</div>
+  <h1>What the channel does, and what the noise does</h1>
+  <p>Slide 22 lists everything that happens to a signal on its way across a room. Two of those
+     things move a symbol on the constellation diagram, and they move it in two completely
+     different ways. Switch them on one at a time and watch one symbol.</p>
+</header>
+<main>
+
+<p class="sub">We follow <b>one single symbol</b>. The three faint rings are only the other values
+a QPSK symbol is allowed to take; exactly one value is being sent, over and over again. The left
+panel is what leaves the transmitter and the right panel is where that symbol lands at the
+receiving antenna.</p>
+
+<div class="buoc">
+  <span style="align-self:center;font-size:13.5px;color:var(--mut);margin-right:4px">the symbol being sent:</span>
+  <button class="nut on" data-sym="0">1 + j</button>
+  <button class="nut" data-sym="1">1 &minus; j</button>
+  <button class="nut" data-sym="2">&minus;1 + j</button>
+  <button class="nut" data-sym="3">&minus;1 &minus; j</button>
+</div>
+
+<div class="buoc">
+  <button class="nut on" id="b0">1 · nothing yet</button>
+  <button class="nut" id="b1">2 · add the channel C</button>
+  <button class="nut" id="b2">3 · add noise n</button>
+  <button class="nut" id="b3">4 · the room starts changing</button>
+  <button class="nut" id="br">reset</button>
+</div>
+
+<canvas id="cv" width="1160" height="430"></canvas>
+
+<div class="so">
+  <div class="o"><div class="n">sent</div>
+    <div class="v" id="vT" style="color:var(--teal)">1.00 &ang; 45&deg;</div></div>
+  <div class="o"><div class="n">landed at the antenna</div>
+    <div class="v" id="vR" style="color:var(--pur)">1.00 &ang; 45&deg;</div></div>
+  <div class="o"><div class="n">moved by the channel</div>
+    <div class="v" id="vC" style="color:var(--pur)">0.00</div></div>
+  <div class="o"><div class="n">moved by the noise</div>
+    <div class="v" id="vN" style="color:var(--mag)">0.00</div></div>
+</div>
+
+<div class="dk" style="margin-top:16px">
+  <div class="hang">
+    <div><label class="t">channel amplitude <b id="lA">1.00</b></label>
+      <input type="range" id="sA" min="0.15" max="1.30" step="0.01" value="1.00"></div>
+    <div><label class="t">channel phase <b id="lP">0&deg;</b></label>
+      <input type="range" id="sP" min="-180" max="180" step="1" value="0"></div>
+    <div><label class="t">signal to noise ratio <b id="lS">20 dB</b></label>
+      <input type="range" id="sS" min="3" max="34" step="1" value="20"></div>
+    <div><label class="t">how fast the room changes <b id="lM">0</b></label>
+      <input type="range" id="sM" min="0" max="10" step="1" value="0"></div>
+  </div>
+</div>
+
+<div class="ghi" id="noi"></div>
+
+<h2>Two effects, and the difference between them</h2>
+
+<table>
+  <tr><th style="width:17%"></th><th style="width:36%">What it does to the symbol</th>
+      <th>The thing to notice</th></tr>
+  <tr><td><b style="color:var(--pur)">Channel C</b></td>
+      <td>Turns it by a fixed angle and changes its length by a fixed factor.</td>
+      <td>It does <b>the same thing every time</b>. Keep the noise off and send the symbol a
+          thousand times: it lands in exactly the same wrong place a thousand times. The symbol
+          has moved, but nothing about it has become uncertain.</td></tr>
+  <tr><td><b style="color:var(--mag)">Noise n</b></td>
+      <td>Pushes it a little further, in a direction and by an amount that are drawn afresh on
+          every single transmission.</td>
+      <td>It does <b>something different every time</b>. That is why the trail of past
+          receptions is a cloud rather than a point, and why the landing place can no longer be
+          predicted even if you knew everything about the room.</td></tr>
+  <tr><td><b style="color:var(--teal)">The room changing</b></td>
+      <td>C itself drifts, so the fixed turn and the fixed length stop being fixed.</td>
+      <td>The symbol wanders even with the noise switched off. Whatever was true about the
+          channel a moment ago is slightly out of date.</td></tr>
+</table>
+
+<div class="ghi">
+<b>The distinction matters more than it looks.</b> One of these two is a property of the room and
+is the same for every symbol that crosses it. The other is drawn fresh for every symbol. Session 5
+turns on exactly this difference, so it is worth making students say which is which before moving
+on.
+</div>
+
+<div class="ghi sau">
+<b>Two things deliberately left out.</b> What the receiver then does about any of this is a
+separate question and is not shown here. And movement also shifts the frequency of the signal,
+which is the Doppler effect listed on slide 22; that is a different mechanism from the drift of C
+and it is not drawn on this page either.
+</div>
+
+<script>
+/* Mai chot 2026-11-06: trang nay chi de thay ANH HUONG cua kenh va cua
+   nhieu len tin hieu. Da BO khung "chia cho C" va moi thu lien quan toi
+   viec may thu giai ma: do la chuyen khac, va bo slide goc cung chua
+   day no cho truong hop mot ang-ten (slide 21 dat cau hoi roi bo lung,
+   slide 33 nhan voi h*, slide 47 moi dung H nghich dao).
+
+   Mai chot truoc do: bam theo MOT ky tu. Bon vong tron chi la bon gia
+   tri QPSK duoc phep nhan; mot cai trong so do duoc gui di lap lai. Co
+   nhieu thi moi lan gui lai roi mot cho khac, va chinh cai "moi lan mot
+   khac" ay moi la dieu phan biet nhieu voi kenh, nen phai gui lien tuc
+   va de lai vet. */
+(function(){
+  var cv = document.getElementById('cv'), g = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+  var INK='#1A1F36', MUT='#5A6272', LINE='#E4E8EF',
+      TEAL='#2A9D8F', PUR='#6C5CE7', MAG='#D81E5B';
+
+  var Q = [[1,1],[1,-1],[-1,1],[-1,-1]].map(function(p){
+    return [p[0]/Math.SQRT2, p[1]/Math.SQRT2]; });
+  var kyTu = 0;
+  var S = {C:false, Nz:false, Mob:false};
+  var sl = {A:document.getElementById('sA'), P:document.getElementById('sP'),
+            S:document.getElementById('sS'), M:document.getElementById('sM')};
+  var vet = [], pha = 0, bienTroi = 0, nhipGui = 0;
+  var cur = {r:[0,0], dC:0, dN:0};
+
+  function gauss(){
+    var u = Math.max(Math.random(), 1e-9), v = Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  }
+  function hien(x, y){
+    var a = Math.atan2(y, x)*180/Math.PI; if (a < 0) a += 360;
+    return Math.sqrt(x*x + y*y).toFixed(2) + ' ∠ ' + Math.round(a) + '°';
+  }
+  function veTruc(x0, y0, R, nhan, mc){
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    g.strokeRect(x0-R, y0-R, 2*R, 2*R);
+    g.beginPath(); g.moveTo(x0-R, y0); g.lineTo(x0+R, y0);
+    g.moveTo(x0, y0-R); g.lineTo(x0, y0+R); g.stroke();
+    g.fillStyle = mc; g.font = 'bold 16px Calibri,sans-serif';
+    g.textAlign = 'center'; g.fillText(nhan, x0, y0-R-14);
+    g.fillStyle = MUT; g.font = '11px Calibri,sans-serif';
+    g.fillText('I', x0+R-7, y0+15); g.fillText('Q', x0-13, y0-R+13);
+  }
+  function veVongKhac(x0, y0, sc){
+    g.strokeStyle = '#D5DAE3'; g.lineWidth = 1.1;
+    for (var k=0;k<4;k++){
+      if (k === kyTu) continue;
+      g.beginPath(); g.arc(x0 + Q[k][0]*sc, y0 - Q[k][1]*sc, 7, 0, 2*Math.PI); g.stroke();
+    }
+  }
+  function veMui(x0, y0, sc, px, py, mc){
+    g.strokeStyle = mc; g.lineWidth = 2.6;
+    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x0 + px*sc, y0 - py*sc); g.stroke();
+    g.fillStyle = mc;
+    g.beginPath(); g.arc(x0 + px*sc, y0 - py*sc, 7, 0, 2*Math.PI); g.fill();
+  }
+
+  function chay(moiGui){
+    var A = S.C ? parseFloat(sl.A.value) : 1;
+    var P = S.C ? parseFloat(sl.P.value)*Math.PI/180 : 0;
+    var sg = S.Nz ? Math.pow(10, -parseFloat(sl.S.value)/20) : 0;
+    var At = A*(1 + 0.45*bienTroi*Math.sin(pha));
+    var Pt = P + 0.9*bienTroi*Math.sin(pha*0.7 + 1.1);
+    var cr = At*Math.cos(Pt), ci = At*Math.sin(Pt);
+    var q = Q[kyTu];
+    var kr = q[0]*cr - q[1]*ci, ki = q[0]*ci + q[1]*cr;   // sau kenh, chua nhieu
+
+    if (moiGui || !S.Nz){
+      var nr = sg*gauss(), ni = sg*gauss();
+      cur.r = [kr + nr, ki + ni];
+      cur.dC = Math.sqrt((kr-q[0])*(kr-q[0]) + (ki-q[1])*(ki-q[1]));
+      cur.dN = Math.sqrt(nr*nr + ni*ni);
+      if (S.Nz){ vet.push([cur.r[0], cur.r[1]]); if (vet.length > 60) vet.shift(); }
+    }
+
+    g.clearRect(0,0,W,H);
+    var R = 168, y0 = 218, xs = [305, 855], sc = R*0.46;
+    veTruc(xs[0], y0, R, 'sent', TEAL);
+    veTruc(xs[1], y0, R, 'landed at the antenna', S.Nz ? MAG : PUR);
+    veVongKhac(xs[0], y0, sc); veVongKhac(xs[1], y0, sc);
+
+    veMui(xs[0], y0, sc, q[0], q[1], TEAL);
+
+    for (var v=0; v<vet.length; v++){
+      var al = 0.06 + 0.32*v/vet.length;
+      g.fillStyle = 'rgba(216,30,91,' + al.toFixed(3) + ')';
+      g.beginPath(); g.arc(xs[1]+vet[v][0]*sc, y0-vet[v][1]*sc, 3.2, 0, 2*Math.PI); g.fill();
+    }
+    // cho ky tu le ra neu kenh khong dong vao
+    g.strokeStyle = '#B9C1CE'; g.lineWidth = 1.2;
+    g.beginPath(); g.arc(xs[1]+q[0]*sc, y0-q[1]*sc, 8, 0, 2*Math.PI); g.stroke();
+    g.fillStyle = '#9AA3B2'; g.font = '11.5px Calibri,sans-serif'; g.textAlign = 'left';
+    g.fillText('where it would have landed', xs[1]+q[0]*sc+13, y0-q[1]*sc-5);
+    if (S.C){
+      g.strokeStyle = '#C9D0DB'; g.setLineDash([3,3]); g.lineWidth = 1;
+      g.beginPath(); g.moveTo(xs[1], y0); g.lineTo(xs[1]+q[0]*sc, y0-q[1]*sc); g.stroke();
+      g.setLineDash([]);
+      var g0 = Math.atan2(q[1], q[0]), g1 = Math.atan2(ki, kr);
+      g.strokeStyle = PUR; g.lineWidth = 1.8;
+      g.beginPath(); g.arc(xs[1], y0, sc*0.50, -g0, -g1, g1 > g0); g.stroke();
+    }
+    veMui(xs[1], y0, sc, cur.r[0], cur.r[1], S.Nz ? MAG : PUR);
+
+    document.getElementById('vT').innerHTML = hien(q[0], q[1]);
+    document.getElementById('vR').innerHTML = hien(cur.r[0], cur.r[1]);
+    document.getElementById('vC').textContent = cur.dC.toFixed(2);
+    document.getElementById('vN').textContent = cur.dN.toFixed(2);
+    document.getElementById('lA').textContent = parseFloat(sl.A.value).toFixed(2);
+    document.getElementById('lP').textContent = sl.P.value + '°';
+    document.getElementById('lS').textContent = sl.S.value + ' dB';
+    document.getElementById('lM').textContent = sl.M.value;
+
+    var t = '';
+    if (!S.C && !S.Nz) {
+      t = '<b>Nothing has happened to it yet.</b> The symbol lands exactly where it was sent.';
+    } else if (S.C && !S.Nz) {
+      t = '<b>The channel turned the symbol and changed its length.</b> The grey ring shows '
+        + 'where it would have landed and the purple arc shows how far it was turned. Now '
+        + 'leave it running and watch: the arrow does not move at all. The channel does the '
+        + 'same thing to every symbol it carries.';
+    } else if (!S.C && S.Nz) {
+      t = '<b>Now the symbol lands somewhere different on every single send.</b> The faded '
+        + 'dots are the last sixty arrivals. Nothing about the room changed between them; '
+        + 'the scatter is drawn fresh each time.';
+    } else {
+      t = '<b>Both at once.</b> The arrow sits in a new place because of the channel, and it '
+        + 'will not sit still because of the noise. The two readings underneath separate them: '
+        + 'one stays put as you leave it running, the other changes on every send.';
+    }
+    if (S.Mob && parseFloat(sl.M.value) > 0) {
+      t += ' <b style="color:#2A9D8F">The room is changing</b>, so even the channel part '
+         + 'refuses to hold still.';
+    }
+    document.getElementById('noi').innerHTML = t;
+  }
+
+  function khung(){
+    var mb = S.Mob ? parseFloat(sl.M.value) : 0;
+    bienTroi += (mb/10 - bienTroi)*0.08;
+    var dong = false;
+    if (bienTroi > 0.004) { pha += 0.012 + 0.003*mb; dong = true; }
+    if (S.Nz){ nhipGui++; if (nhipGui % 7 === 0){ chay(true); dong = false; } }
+    if (dong) chay(false);
+    requestAnimationFrame(khung);
+  }
+
+  function dat(c, n, m){
+    S.C = c; S.Nz = n; S.Mob = m;
+    document.getElementById('b0').classList.toggle('on', !c && !n && !m);
+    document.getElementById('b1').classList.toggle('on', c);
+    document.getElementById('b2').classList.toggle('on', n);
+    document.getElementById('b3').classList.toggle('on', m);
+    if (!n) vet = [];
+    if (!m) { sl.M.value = 0; bienTroi = 0; }
+    else if (parseFloat(sl.M.value) === 0) sl.M.value = 4;
+    chay(true);
+  }
+  document.getElementById('b0').onclick = function(){ dat(false,false,false); };
+  document.getElementById('b1').onclick = function(){ dat(true, S.Nz, S.Mob); };
+  document.getElementById('b2').onclick = function(){ dat(S.C, true, S.Mob); };
+  document.getElementById('b3').onclick = function(){ dat(true, S.Nz, true); };
+  document.getElementById('br').onclick = function(){
+    sl.A.value = 1; sl.P.value = 0; sl.S.value = 20; sl.M.value = 0;
+    dat(false,false,false);
+  };
+  Array.prototype.forEach.call(document.querySelectorAll('.nut[data-sym]'), function(b){
+    b.onclick = function(){
+      kyTu = +b.dataset.sym; vet = [];
+      Array.prototype.forEach.call(document.querySelectorAll('.nut[data-sym]'),
+        function(o){ o.classList.toggle('on', o === b); });
+      chay(true);
+    };
+  });
+  Object.keys(sl).forEach(function(k){
+    sl[k].addEventListener('input', function(){
+      if (k === 'A' || k === 'P') { S.C = true; document.getElementById('b1').classList.add('on'); }
+      if (k === 'S') { S.Nz = true; document.getElementById('b2').classList.add('on'); }
+      if (k === 'M') { S.Mob = parseFloat(sl.M.value) > 0;
+                       document.getElementById('b3').classList.toggle('on', S.Mob);
+                       if (S.Mob) { S.C = true; document.getElementById('b1').classList.add('on'); } }
+      document.getElementById('b0').classList.remove('on');
+      chay(true);
+    });
+  });
+  chay(true); requestAnimationFrame(khung);
+})();
+</script>
+
+<div data-tacgia="1" style="margin:28px 0 0;padding:16px 26px;border-top:1px solid #E4E8EF;background:#F7F9FC;font-family:Calibri,Segoe UI,system-ui,sans-serif;font-size:13.5px;line-height:1.7;color:#5A6272">
+<b style="color:#1A1F36">Dr Mai Tran</b><br>
+Faculty of Information Technology<br>
+University of Engineering and Technology, Vietnam National University<br>
+<a href="mailto:mai.tran@vnu.edu.vn" style="color:#5A6272">mai.tran@vnu.edu.vn</a>
+</div>
+</main>
+</body>
+</html>

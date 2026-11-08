@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · How alike are the four channel coefficients</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;
+      --mut:#5A6272;--line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE;max-width:940px;line-height:1.5}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.55}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+.dk{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:16px 0;background:var(--tint)}
+.doi{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;align-items:start}
+@media(max-width:860px){.doi{grid-template-columns:1fr}}
+.buoc{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.nut{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 15px;
+  font-family:inherit;font-size:13.5px;color:var(--mut);cursor:pointer}
+.nut:hover{border-color:var(--acc);color:var(--ink)}
+.nut.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+.so{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin:14px 0 0}
+.o{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+.o .n{font-size:11.5px;letter-spacing:1.3px;text-transform:uppercase;color:var(--mut);font-weight:700}
+.o .v{font-size:21px;font-weight:700;margin-top:2px}
+h2{font-family:Cambria,Georgia,serif;font-size:20px;margin:26px 0 8px}
+.ghi{border-left:3px solid var(--acc);padding:2px 0 2px 14px;margin:14px 0;color:var(--mut);
+  font-size:14.5px;line-height:1.6}
+.ghi b{color:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0 0}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--tint);font-weight:700}
+.mt{font-family:Consolas,monospace;font-size:14px;line-height:1.8;margin:0}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · SESSION 5</div>
+  <h1>How alike are the four channel coefficients</h1>
+  <p>A two by two channel is four numbers: h11, h12, h21 and h22. How different those four
+     numbers are from one another is decided by the room, not by the radio. Start with a room
+     that has nothing to scatter off and add scatterers one at a time.</p>
+</header>
+<main>
+
+<p class="sub">An empty room offers the signal <b>one direction</b> to travel in, the direct
+path. Every scatterer opens one more. The panel on the right draws the four coefficients as
+four arrows: <b>the length of an arrow is the gain of that path and its angle is the
+phase</b>. Watch how alike the four arrows are, and how that changes as the room fills up.</p>
+
+<div class="buoc">
+  <span style="align-self:center;font-size:13.5px;color:var(--mut);margin-right:4px">scatterers in the room:</span>
+  <button class="nut on" data-n="0">0 · line of sight only</button>
+  <button class="nut" data-n="1">1</button>
+  <button class="nut" data-n="2">2</button>
+  <button class="nut" data-n="4">4</button>
+  <button class="nut" data-n="8">8</button>
+  <button class="nut" id="moi" style="margin-left:10px">rearrange the room</button>
+</div>
+
+<div class="doi">
+  <canvas id="phong" width="760" height="380"></canvas>
+  <canvas id="ty" width="420" height="380"></canvas>
+</div>
+
+<div class="so">
+  <div class="o"><div class="n">Directions in the room</div><div class="v" id="vH">1</div></div>
+  <div class="o"><div class="n">Longest ÷ shortest gain</div><div class="v" id="vT">1.00</div></div>
+  <div class="o"><div class="n">Spread of the four gains</div><div class="v" id="vV">0%</div></div>
+  <div class="o"><div class="n">Phase relation is out by</div><div class="v" id="vK">0°</div></div>
+</div>
+
+<div class="dk"><div class="mt" id="mt"></div></div>
+
+<div class="ghi" id="loi"></div>
+
+<h2>Two kinds of sameness, and they break at different speeds</h2>
+
+<p class="sub">With one direction the four coefficients are about as alike as four numbers can
+be, and in two separate ways. <b>Every arrow is exactly the same length</b>, because a single
+path reaches all four antenna pairs with the same gain; the tiny antenna spacing changes when
+a copy arrives but not how strong it is. <b>And the four angles are locked together</b>: the
+angle of h22 is always the angle of h12 plus the angle of h21 minus the angle of h11. Four
+complex numbers are on the screen, but only two of them are being freely chosen.</p>
+
+<p class="sub">The two break apart on different timetables, which is the part worth showing
+the class. One scatterer destroys the equal lengths immediately, because the second path
+reaches the four antenna pairs with four different combined gains. The <b>phase lock</b> is
+much more stubborn: with a single scatterer the relation is still nearly intact in a large
+share of rooms, and it takes several scatterers before it reliably breaks.</p>
+
+<table>
+  <tr><th>Scatterers</th><th>Directions</th><th>All four gains still alike</th>
+      <th>Phase relation still nearly locked</th></tr>
+  <tr><td>0, line of sight only</td><td>1</td><td>always, exactly</td><td>always, exactly</td></tr>
+  <tr><td>1</td><td>2</td><td>6%</td><td>48%</td></tr>
+  <tr><td>2</td><td>3</td><td>2%</td><td>13%</td></tr>
+  <tr><td>4</td><td>5</td><td>2%</td><td>8%</td></tr>
+  <tr><td>8</td><td>9</td><td>2%</td><td>6%</td></tr>
+</table>
+
+<p class="sub" style="margin-top:10px">Measured by running this page's own model over 40000
+random rooms at each level. Alike means the longest gain is under 1.3 times the shortest;
+nearly locked means the phase relation holds to within 10 degrees. The slide quotes slightly
+different figures because it places the scattering directions a different way; the pattern,
+and the gap between the two columns, is the same.</p>
+
+<h2>Things worth trying</h2>
+
+<p class="sub">Set the room to <b>0</b> and press rearrange as many times as you like. The
+longest divided by the shortest stays at exactly 1.00 and the phase relation stays at exactly
+0 degrees. That is not luck. One direction makes H a single column multiplied by a single row,
+and such a matrix cannot have four independent entries however the room is arranged.</p>
+
+<p class="sub">Set it to <b>1</b> and rearrange a few times. The lengths separate at once, but
+keep an eye on the phase figure: it often stays small. Then set it to <b>8</b> and rearrange:
+both numbers now land somewhere unhelpful only rarely.</p>
+
+<p class="sub">Notice what does <b>not</b> change anything: the number of antennas. More
+antennas in a room with one direction produce more coefficients, all of them still the same
+length and still locked to each other. The variety has to come from the room.</p>
+
+<script>
+(function(){
+  var PH = document.getElementById('phong'), TY = document.getElementById('ty');
+  var cp = PH.getContext('2d'), ct = TY.getContext('2d');
+  var W = PH.width, H = PH.height, TW = TY.width, TH = TY.height;
+  var INK='#1A1F36', MUT='#5A6272', ACC='#FF6B35', TEAL='#2A9D8F',
+      MAG='#D81E5B', LINE='#E4E8EF';
+
+  var S = { n: 0, vat: [] };
+  // Mot mau cho moi he so, dung chung giua hinh can phong va
+  // khung ben phai, de mat noi duoc hai ben voi nhau.
+  var MAU4 = ['#D81E5B','#FF6B35','#6C5CE7','#2A9D8F'];
+
+  // --- so phuc toi gian ------------------------------------------------
+  function cm(a,b){ return {re:a.re*b.re-a.im*b.im, im:a.re*b.im+a.im*b.re}; }
+  function ca(a,b){ return {re:a.re+b.re, im:a.im+b.im}; }
+  function cc(a){ return {re:a.re, im:-a.im}; }
+  function ab(a){ return Math.hypot(a.re,a.im); }
+  function ex(t){ return {re:Math.cos(t), im:Math.sin(t)}; }
+
+  // --- hinh hoc cua can phong, tinh bang MET ---------------------------
+  // Mang ang-ten nam doc truc y, nen goc duoc do tu huong broadside (truc
+  // x). Vector lai a(theta)[m] = exp(j*pi*m*sin theta), ung voi khoang
+  // cach nua buoc song. Day la dung cong thuc tren slide.
+  var TX = -4.0, RX = 4.0;            // hai mang cach nhau 8 m
+  var LOS_TH = 0.22, LOS_PH = -0.15;  // phong trong: mot huong hoi cheo,
+                                      // de ma tran khong ra toan so 1
+  var YS = 46;                        // diem anh tren met, cho vat tan xa
+  var DAP = 62;                       // khoang cach VE giua hai ang-ten
+  function px(x){ return 62 + (x - TX)/(RX - TX)*(W-124); }
+  function py(y){ return H/2 - y*YS; }
+  function pyA(k){ return H/2 + (k===0 ? -DAP/2 : DAP/2); }
+
+  function phatSinh(n){
+    var v = [];
+    for (var i=0;i<n;i++){
+      var u = (i + 0.5)/n;
+      v.push({ x: TX + 1.3 + u*(RX-TX-2.6) + (Math.random()-0.5)*1.2,
+               y: (Math.random()<0.5?-1:1)*(0.8 + Math.random()*2.6),
+               pha: Math.random()*2*Math.PI,
+               bd: 0.6 + Math.random()*0.8 });
+    }
+    return v;
+  }
+
+  // Duong truc tiep LUON co mat, vat tan xa cong them vao. Nen mot vat
+  // tan xa cho HAI huong chu khong phai mot: phong trong moi la truong
+  // hop mot huong duy nhat.
+  function tinhH(){
+    var huong = [{ th: LOS_TH, ph: LOS_PH, bd: 1, pha: 0 }];
+    for (var i=0;i<S.vat.length;i++){
+      var v = S.vat[i];
+      huong.push({ ph: Math.atan2(v.y, v.x - TX),
+                   th: Math.atan2(v.y, RX - v.x),
+                   bd: v.bd, pha: v.pha });
+    }
+    var h = [[{re:0,im:0},{re:0,im:0}],[{re:0,im:0},{re:0,im:0}]];
+    for (var k=0;k<huong.length;k++){
+      var d = huong[k];
+      var al = {re:d.bd*Math.cos(d.pha), im:d.bd*Math.sin(d.pha)};
+      for (var m=0;m<2;m++) for (var q=0;q<2;q++){
+        var t = cm(ex(Math.PI*m*Math.sin(d.th)),
+                   cc(ex(Math.PI*q*Math.sin(d.ph))));
+        h[m][q] = ca(h[m][q], cm(al, t));
+      }
+    }
+    var sc = Math.sqrt(huong.length);
+    for (var m2=0;m2<2;m2++) for (var q2=0;q2<2;q2++){
+      h[m2][q2] = {re:h[m2][q2].re/sc, im:h[m2][q2].im/sc};
+    }
+    return { h: h, soHuong: huong.length };
+  }
+
+  // Chi do mot thu: bon he so giong nhau den muc nao. Hai tang, va chung
+  // vo ra theo hai nhip khac han:
+  //   do lon: mot huong thi bon cai bang nhau tuyet doi
+  //   pha   : mot huong thi goc h22 = goc h12 + goc h21 - goc h11
+  function doDac(h){
+    var g = [ab(h[0][0]), ab(h[0][1]), ab(h[1][0]), ab(h[1][1])];
+    var lon = Math.max.apply(null, g), nho = Math.min.apply(null, g);
+    var gc = [Math.atan2(h[0][0].im,h[0][0].re),
+              Math.atan2(h[0][1].im,h[0][1].re),
+              Math.atan2(h[1][0].im,h[1][0].re),
+              Math.atan2(h[1][1].im,h[1][1].re)];
+    var d = gc[3] - gc[1] - gc[2] + gc[0];
+    d = Math.abs(((d + Math.PI) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI) - Math.PI);
+    var tb = (g[0]+g[1]+g[2]+g[3])/4;
+    var cv = Math.sqrt(g.reduce(function(a,v){return a+(v-tb)*(v-tb);},0)/4)/tb;
+    return { g: g, goc: gc, ty: lon/nho, khoa: d*180/Math.PI, cv: cv };
+  }
+
+  function mui(c, x0,y0,x1,y1, mau, w){
+    c.strokeStyle = mau; c.fillStyle = mau; c.lineWidth = w||2;
+    c.beginPath(); c.moveTo(x0,y0); c.lineTo(x1,y1); c.stroke();
+    var a = Math.atan2(y1-y0, x1-x0), L = 9;
+    c.beginPath(); c.moveTo(x1,y1);
+    c.lineTo(x1-L*Math.cos(a-0.4), y1-L*Math.sin(a-0.4));
+    c.lineTo(x1-L*Math.cos(a+0.4), y1-L*Math.sin(a+0.4));
+    c.closePath(); c.fill();
+  }
+
+  // Nhan co nen trang, de doc duoc khi nam de len cac tia.
+  function nhan(c, x, y, d1, d2, mau){
+    c.font = 'bold 13px Consolas';
+    var w = Math.max(c.measureText(d1).width, 0) + 10;
+    c.font = '11px Calibri';
+    w = Math.max(w, c.measureText(d2).width + 10);
+    c.fillStyle = 'rgba(255,255,255,0.88)';
+    c.fillRect(x - w/2, y - 15, w, 30);
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = mau; c.font = 'bold 13px Consolas';
+    c.fillText(d1, x, y - 7);
+    c.font = '11px Calibri';
+    c.fillText(d2, x, y + 7);
+  }
+
+  // Bon duong noi giua hai mang ang-ten, moi duong la MOT he so.
+  // Thu tu h[m][q]: m la ang-ten thu, q la ang-ten phat, nen h12 chay
+  // tu tx2 toi rx1. Do day net ti le voi do loi, de nhin thay ngay bon
+  // cai co bang nhau hay khong.
+  var LINK = [[0,0,'h11',0.34,-1], [0,1,'h12',0.72,-1],
+              [1,0,'h21',0.72, 1], [1,1,'h22',0.34, 1]];
+  function veLink(h, m){
+    var lon = Math.max.apply(null, m.g);
+    for (var i=0;i<4;i++){
+      var L = LINK[i], rx = L[0], tx = L[1], g = ab(h[rx][tx]);
+      var x0 = px(TX)+9, y0 = pyA(tx), x1 = px(RX)-9, y1 = pyA(rx);
+      cp.strokeStyle = MAU4[i]; cp.lineWidth = 1.4 + 4.6*(g/lon);
+      cp.globalAlpha = 0.95;
+      cp.beginPath(); cp.moveTo(x0,y0); cp.lineTo(x1,y1); cp.stroke();
+      cp.globalAlpha = 1;
+    }
+    for (var k=0;k<4;k++){
+      var K = LINK[k], t = K[3];
+      var ax = px(TX)+9 + t*(px(RX)-px(TX)-18);
+      var ay = pyA(K[1]) + t*(pyA(K[0]) - pyA(K[1])) + K[4]*26;
+      var z = h[K[0]][K[1]];
+      nhan(cp, ax, ay, K[2],
+           ab(z).toFixed(3) + '  \u2220' +
+           (Math.atan2(z.im,z.re)*180/Math.PI).toFixed(0) + '\u00b0',
+           MAU4[k]);
+    }
+  }
+
+  function vePhong(h, m){
+    cp.clearRect(0,0,W,H);
+    cp.fillStyle='#FBFCFE'; cp.fillRect(0,0,W,H);
+    // Tia di qua tung vat tan xa, ve rat nhat: chung chi de giai thich
+    // bon he so TU DAU MA RA, khong phai la bon he so.
+    cp.globalAlpha = 0.28; cp.strokeStyle = MUT; cp.lineWidth = 0.9;
+    for (var i=0;i<S.vat.length;i++){
+      var v = S.vat[i], vx = px(v.x), vy = py(v.y);
+      for (var k=0;k<2;k++){
+        cp.beginPath(); cp.moveTo(px(TX)+9, pyA(k)); cp.lineTo(vx,vy); cp.stroke();
+        cp.beginPath(); cp.moveTo(vx,vy); cp.lineTo(px(RX)-9, pyA(k)); cp.stroke();
+      }
+    }
+    cp.globalAlpha = 1;
+    for (var j=0;j<S.vat.length;j++){
+      var vv = S.vat[j];
+      cp.fillStyle = ACC; cp.beginPath();
+      cp.arc(px(vv.x), py(vv.y), 8, 0, 7); cp.fill();
+      cp.fillStyle='#fff'; cp.font='bold 11px Consolas';
+      cp.textAlign='center'; cp.textBaseline='middle';
+      cp.fillText(String(j+1), px(vv.x), py(vv.y)+0.5);
+    }
+    veLink(h, m);
+    [[TX,'tx',-1],[RX,'rx',1]].forEach(function(t){
+      for (var k=0;k<2;k++){
+        cp.strokeStyle = INK; cp.lineWidth = 3;
+        cp.beginPath(); cp.moveTo(px(t[0]), pyA(k)-17);
+        cp.lineTo(px(t[0]), pyA(k)+17); cp.stroke();
+        cp.fillStyle = INK; cp.font = 'bold 12px Calibri';
+        cp.textAlign = t[2]<0 ? 'right' : 'left'; cp.textBaseline='middle';
+        cp.fillText(t[1] + (k+1), px(t[0]) + t[2]*13, pyA(k));
+      }
+    });
+    cp.fillStyle = MUT; cp.font = '12.5px Calibri'; cp.textAlign='center';
+    cp.fillText('each coloured line is one coefficient, its thickness the '
+                + 'gain \u00b7 the faint rays show where that gain came from',
+                W/2, H-14);
+    cp.fillStyle = S.vat.length === 0 ? MAG : TEAL;
+    cp.font = 'bold 14px Calibri'; cp.textAlign='left';
+    cp.fillText(S.vat.length === 0
+      ? 'line of sight only: one direction, and all four lines are '
+        + 'equally thick'
+      : S.vat.length + ' scatterer' + (S.vat.length>1?'s':'')
+        + ' plus the direct path, so ' + (S.vat.length+1)
+        + ' directions add up in each coefficient',
+      20, 24);
+  }
+
+  var TEN = ['h11','h12','h21','h22'];
+  function veTy(m){
+    ct.clearRect(0,0,TW,TH);
+    ct.fillStyle='#FBFCFE'; ct.fillRect(0,0,TW,TH);
+    var cx = TW/2, cy = TH/2 + 16, R = 112;
+    ct.strokeStyle = LINE; ct.lineWidth = 1;
+    ct.beginPath(); ct.moveTo(cx-R-16, cy); ct.lineTo(cx+R+16, cy); ct.stroke();
+    ct.beginPath(); ct.moveTo(cx, cy-R-16); ct.lineTo(cx, cy+R+16); ct.stroke();
+    ct.beginPath(); ct.arc(cx, cy, R, 0, 7); ct.stroke();
+    var lon = Math.max.apply(null, m.g), nho = Math.min.apply(null, m.g);
+    // vong net dut o muc ngan nhat, de mat so sanh duoc do dai
+    if (m.ty > 1.02){
+      ct.strokeStyle = LINE; ct.setLineDash([3,3]);
+      ct.beginPath(); ct.arc(cx, cy, R*nho/lon, 0, 7); ct.stroke();
+      ct.setLineDash([]);
+    }
+    for (var k=0;k<4;k++){
+      var d = m.g[k]/lon*R, a = m.goc[k];
+      mui(ct, cx, cy, cx + d*Math.cos(a), cy - d*Math.sin(a), MAU4[k], 3);
+      ct.fillStyle = MAU4[k]; ct.font = 'bold 13px Consolas';
+      ct.textAlign='center'; ct.textBaseline='middle';
+      ct.fillText(TEN[k], cx + (d+22)*Math.cos(a), cy - (d+22)*Math.sin(a));
+    }
+    ct.fillStyle = MUT; ct.font = '13px Calibri'; ct.textAlign='center';
+    ct.fillText('the four coefficients as arrows', TW/2, 22);
+    ct.fillText('length is gain, angle is phase', TW/2, 40);
+    ct.fillStyle = m.ty < 1.05 ? MAG : (m.ty < 1.6 ? ACC : TEAL);
+    ct.font = 'bold 15px Calibri';
+    ct.fillText(m.ty < 1.0001
+      ? 'all four exactly the same length'
+      : 'longest ÷ shortest = ' + m.ty.toFixed(2), TW/2, TH-16);
+  }
+
+  function so(x){ return (x>=0?'+':'') + x.toFixed(3); }
+
+  function chay(){
+    var k = tinhH(), m = doDac(k.h), h = k.h;
+    vePhong(h, m); veTy(m);
+    var mau = m.ty < 1.05 ? MAG : (m.ty < 1.6 ? ACC : TEAL);
+    document.getElementById('vH').textContent = k.soHuong;
+    document.getElementById('vT').textContent = m.ty.toFixed(2);
+    document.getElementById('vV').textContent = (m.cv*100).toFixed(0) + '%';
+    document.getElementById('vK').textContent = m.khoa.toFixed(0) + '°';
+    ['vT','vV','vK'].forEach(function(id){
+      document.getElementById(id).style.color = mau; });
+    var r = [];
+    for (var a2=0;a2<2;a2++) for (var b2=0;b2<2;b2++){
+      var z = h[a2][b2];
+      r.push('h' + (a2+1) + (b2+1) + '  ' + so(z.re) + ' ' + so(z.im) +
+             'j&nbsp;&nbsp;&nbsp; gain ' + ab(z).toFixed(3) +
+             '&nbsp;&nbsp;&nbsp; phase ' +
+             (Math.atan2(z.im,z.re)*180/Math.PI).toFixed(0) + '°');
+    }
+    document.getElementById('mt').innerHTML = r.join('<br>');
+    var L = document.getElementById('loi');
+    if (k.soHuong === 1){
+      L.style.borderLeftColor = MAG;
+      L.innerHTML = '<b>One direction, and the four coefficients are as ' +
+        'alike as they can be.</b> All four gains are equal to the last ' +
+        'decimal, and the four phases are not free either: the angle of ' +
+        'h22 is the angle of h12 plus the angle of h21 minus the angle of ' +
+        'h11, exactly. Four complex numbers, but only two of them are ' +
+        'really being chosen.';
+    } else if (m.ty < 1.6 || m.khoa < 15){
+      L.style.borderLeftColor = ACC;
+      L.innerHTML = '<b>Pulling apart, but not far.</b> The gains now ' +
+        'differ by ' + m.ty.toFixed(2) + ' times and the phase relation is ' +
+        m.khoa.toFixed(0) + '° out. With few directions this happens ' +
+        'often: one extra path is not always in a useful place, so press ' +
+        'rearrange and watch how much the answer moves.';
+    } else {
+      L.style.borderLeftColor = TEAL;
+      L.innerHTML = '<b>Four numbers that really are four numbers.</b> The ' +
+        'gains differ by ' + m.ty.toFixed(2) + ' times and the phase ' +
+        'relation is ' + m.khoa.toFixed(0) + '° out, so nothing about ' +
+        'any one of them lets you guess another. This is what a richly ' +
+        'scattering room does to a channel matrix.';
+    }
+  }
+
+  function datN(n){ S.n = n; S.vat = phatSinh(n); chay(); }
+
+  [].forEach.call(document.querySelectorAll('.nut[data-n]'), function(b){
+    b.addEventListener('click', function(){
+      [].forEach.call(document.querySelectorAll('.nut[data-n]'), function(o){
+        o.classList.remove('on'); });
+      b.classList.add('on');
+      datN(parseInt(b.dataset.n, 10));
+    });
+  });
+  document.getElementById('moi').addEventListener('click', function(){ datN(S.n); });
+
+  datN(0);
+})();
+</script>
+
+<div data-tacgia="1" style="margin:28px 0 0;padding:16px 26px;border-top:1px solid #E4E8EF;background:#F7F9FC;font-family:Calibri,Segoe UI,system-ui,sans-serif;font-size:13.5px;line-height:1.7;color:#5A6272">
+<b style="color:#1A1F36">Dr Mai Tran</b><br>
+Faculty of Information Technology<br>
+University of Engineering and Technology, Vietnam National University<br>
+<a href="mailto:mai.tran@vnu.edu.vn" style="color:#5A6272">mai.tran@vnu.edu.vn</a>
+</div>
+</main>
+</body>
+</html>
