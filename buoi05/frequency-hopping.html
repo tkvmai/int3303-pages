@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Frequency hopping, and what the code is for</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;
+      --mut:#5A6272;--line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE;max-width:960px;line-height:1.5}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.55}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+.dk{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:16px 0;background:var(--tint)}
+.hang{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 26px}
+label.t{display:block;font-size:13.5px;color:var(--mut);margin:0 0 3px}
+label.t b{color:var(--ink);font-size:14.5px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.buoc{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;align-items:center}
+.nut{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 15px;
+  font-family:inherit;font-size:13.5px;color:var(--mut);cursor:pointer}
+.nut:hover{border-color:var(--acc);color:var(--ink)}
+.nut.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+.so{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:10px;margin:14px 0 0}
+.o{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+.o .n{font-size:11.5px;letter-spacing:1.3px;text-transform:uppercase;color:var(--mut);font-weight:700}
+.o .v{font-size:21px;font-weight:700;margin-top:2px}
+h2{font-family:Cambria,Georgia,serif;font-size:20px;margin:26px 0 8px}
+.ghi{border-left:3px solid var(--acc);padding:2px 0 2px 14px;margin:14px 0;color:var(--mut);
+  font-size:14.5px;line-height:1.6}
+.ghi b{color:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0 0}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--tint);font-weight:700}
+code{font-family:Consolas,monospace;font-size:13.5px}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · SESSION 5</div>
+  <h1>Frequency hopping, and what the code is for</h1>
+  <p>The transmitter changes frequency hundreds of times a second. The receiver has to be on the
+     same frequency at the same instant, or it hears nothing at all. The spreading code is what
+     tells them both where to go next.</p>
+</header>
+<main>
+
+<p class="sub">Frequency on the vertical axis, time running left to right, exactly like a
+spectrogram. Each block is one dwell: the transmitter sits on that channel, sends, and jumps.
+Note what the code is <b>not</b> doing here: it never touches the data. The bits are modulated
+in the ordinary way, and the code only drives the frequency synthesiser.</p>
+
+<div class="buoc">
+  <button class="nut on" id="chay">running</button>
+  <button class="nut" id="motcai">one hop</button>
+  <button class="nut" id="xoa">clear</button>
+  <span style="width:14px"></span>
+  <button class="nut" id="bSai">receiver uses the wrong code</button>
+  <button class="nut" id="bPha">park a jammer on one channel</button>
+  <button class="nut" id="bHai">add a second piconet</button>
+  <span style="width:14px"></span>
+  <button class="nut" id="bBt">Bluetooth: 79 channels, 1600 hops/s</button>
+</div>
+
+<div class="dk">
+  <div class="hang">
+    <div>
+      <label class="t">channels in the band: <b><span id="vN">16</span></b></label>
+      <input type="range" id="sN" min="4" max="79" step="1" value="16">
+    </div>
+    <div>
+      <label class="t">hops per second: <b><span id="vH">1600</span></b></label>
+      <input type="range" id="sH" min="200" max="3200" step="100" value="1600">
+    </div>
+  </div>
+</div>
+
+<canvas id="c" width="1060" height="430"></canvas>
+
+<div class="so">
+  <div class="o"><div class="n">Dwell time</div><div class="v" id="vD">—</div></div>
+  <div class="o"><div class="n">Chance of a clash</div><div class="v" id="vP">—</div></div>
+  <div class="o"><div class="n">Hops so far</div><div class="v" id="vT">0</div></div>
+  <div class="o"><div class="n">Hops the receiver got</div><div class="v" id="vG">—</div></div>
+  <div class="o"><div class="n">Hops lost</div><div class="v" id="vL">—</div></div>
+</div>
+
+<div class="ghi" id="loi"></div>
+
+<h2>What the spreading code is doing</h2>
+
+<table>
+  <tr><th>Job</th><th>What happens without it</th></tr>
+  <tr><td><b>It tells both ends which channel is next</b></td>
+      <td>The receiver listens on the wrong frequency and hears nothing. Press
+          <b>wrong code</b> and watch the hit rate collapse to the one-in-N you would get by
+          luck alone.</td></tr>
+  <tr><td><b>It makes the order look random</b></td>
+      <td>A plain ascending sweep would walk into a narrowband jammer at the same predictable
+          moment every cycle, and two systems that started together would collide on every
+          single hop forever.</td></tr>
+  <tr><td><b>It separates users</b></td>
+      <td>Two piconets with different codes only clash when they happen to land on the same
+          channel at the same instant, which is one hop in N.</td></tr>
+</table>
+
+<h2>Where the spreading actually is</h2>
+
+<p class="sub">At any instant the signal is <b>narrow</b>: Bluetooth occupies one 1 MHz channel,
+the same width the data needed in the first place. The spreading is in the
+<b>time average</b>: over a second the transmitter has visited the whole 79 MHz band. That is
+the opposite of direct sequence, where the signal is genuinely wide at every instant.</p>
+
+<p class="sub">It is also where the robustness comes from. A jammer sitting on one channel can
+only ruin the hops that land on it, which is one in N. Everything else gets through untouched,
+and an error-correcting code mops up the rest.</p>
+
+<h2>The real Bluetooth numbers</h2>
+
+<table>
+  <tr><th>Quantity</th><th>Value</th><th>Follows from</th></tr>
+  <tr><td>Channels</td><td>79, spaced 1 MHz</td><td>the 2.4 GHz ISM band</td></tr>
+  <tr><td>Hop rate</td><td>1600 per second</td><td>standardised</td></tr>
+  <tr><td>Dwell time</td><td>625 µs</td><td>1 ÷ 1600</td></tr>
+  <tr><td>Clash with another piconet</td><td>1 hop in 79, about 1.3%</td><td>1 ÷ 79</td></tr>
+  <tr><td>Clashes per second</td><td>about 20</td><td>1600 ÷ 79</td></tr>
+</table>
+
+<script>
+(function(){
+  var C = document.getElementById('c'), g = C.getContext('2d');
+  var W = C.width, H = C.height;
+  var INK='#1A1F36', MUT='#5A6272', ACC='#FF6B35', TEAL='#2A9D8F',
+      MAG='#D81E5B', PUR='#6C5CE7', LINE='#E4E8EF';
+
+  var S = { N:16, hop:1600, chay:true, t:0, duoc:0, mat:0,
+            sai:false, pha:false, hai:false, kenhPha:0,
+            lichA:[], lichB:[], lichC:[], ve:[] };
+  var COT = 54;                       // so cot hien tren man hinh
+
+  // "Spreading code" o day la mot bo sinh so gia ngau nhien co hat
+  // giong. Hai ma khac nhau chi la hai hat giong khac nhau.
+  function ma(hat){
+    var x = hat >>> 0;
+    return function(){
+      x ^= x << 13; x >>>= 0;
+      x ^= x >> 17;
+      x ^= x << 5;  x >>>= 0;
+      return x;
+    };
+  }
+  var rA, rB, rC;
+  function datMa(){
+    rA = ma(0x9E3779B9); rB = ma(0x41C64E6D); rC = ma(0x2545F491);
+  }
+
+  function motHop(){
+    var a = rA() % S.N;               // may phat
+    var b = S.sai ? (rB() % S.N) : a; // may thu: dung ma hay sai ma
+    var c = S.hai ? (rC() % S.N) : -1;// piconet thu hai
+    var hong = false;
+    if (S.pha && a === S.kenhPha) hong = true;
+    if (S.hai && a === c) hong = true;
+    var nhan = (b === a) && !hong;
+    if (nhan) S.duoc++; else S.mat++;
+    S.t++;
+    S.ve.push({a:a, b:b, c:c, hong:hong, nhan:nhan});
+    if (S.ve.length > COT) S.ve.shift();
+  }
+
+  function ve(){
+    g.clearRect(0,0,W,H);
+    g.fillStyle='#FBFCFE'; g.fillRect(0,0,W,H);
+    var L = 58, R = 16, T = 30, B = 34;
+    var gw = (W-L-R)/COT, gh = (H-T-B)/S.N;
+
+    // bang nhay cua may pha
+    if (S.pha){
+      var yj = T + (S.N-1-S.kenhPha)*gh;
+      g.fillStyle = 'rgba(216,30,91,0.10)';
+      g.fillRect(L, yj, W-L-R, gh);
+      g.fillStyle = MAG; g.font='bold 11px Calibri';
+      g.textAlign='left'; g.textBaseline='middle';
+      g.fillText('jammer', L+6, yj+gh/2);
+    }
+    // luoi
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    for (var k=0;k<=S.N;k++){
+      var y = T + k*gh;
+      g.beginPath(); g.moveTo(L,y); g.lineTo(W-R,y); g.stroke();
+    }
+    g.fillStyle = MUT; g.font='11px Calibri';
+    g.textAlign='right'; g.textBaseline='middle';
+    for (var k2=0;k2<S.N;k2++){
+      if (S.N <= 20 || k2 % 4 === 0)
+        g.fillText('ch ' + k2, L-6, T + (S.N-1-k2)*gh + gh/2);
+    }
+    // cac o
+    for (var i=0;i<S.ve.length;i++){
+      var e = S.ve[i], x = L + i*gw;
+      if (S.hai && e.c >= 0){         // piconet thu hai, ve nhat
+        g.fillStyle = 'rgba(108,92,231,0.30)';
+        g.fillRect(x+1, T+(S.N-1-e.c)*gh+1, gw-2, gh-2);
+      }
+      g.fillStyle = e.hong ? MAG : TEAL;   // may phat
+      g.fillRect(x+1, T+(S.N-1-e.a)*gh+1, gw-2, gh-2);
+      if (S.sai){                     // cho may thu dang nghe
+        g.strokeStyle = e.nhan ? TEAL : MUT;
+        g.lineWidth = 2;
+        g.strokeRect(x+1.5, T+(S.N-1-e.b)*gh+1.5, gw-3, gh-3);
+      }
+    }
+    g.fillStyle = INK; g.font='bold 12.5px Calibri'; g.textAlign='left';
+    g.textBaseline='alphabetic';
+    g.fillText('frequency', 6, T-12);
+    g.fillStyle = MUT; g.font='12px Calibri'; g.textAlign='center';
+    g.fillText('time, one block per dwell →', W/2, H-10);
+    g.textAlign='left';
+    var cg = L;
+    g.fillStyle = TEAL; g.fillRect(cg, H-26, 12, 10);
+    g.fillStyle = MUT; g.fillText('transmitter', cg+16, H-17);
+    cg += 96;
+    if (S.sai){
+      g.strokeStyle = MUT; g.lineWidth=2; g.strokeRect(cg+0.5, H-26.5, 12, 10);
+      g.fillStyle = MUT; g.fillText('where the receiver listened', cg+16, H-17);
+      cg += 186;
+    }
+    if (S.hai){
+      g.fillStyle = 'rgba(108,92,231,0.45)'; g.fillRect(cg, H-26, 12, 10);
+      g.fillStyle = MUT; g.fillText('second piconet', cg+16, H-17);
+      cg += 116;
+    }
+    if (S.pha || S.hai){
+      g.fillStyle = MAG; g.fillRect(cg, H-26, 12, 10);
+      g.fillStyle = MUT; g.fillText('hop lost', cg+16, H-17);
+    }
+  }
+
+  function so(){
+    var p = 1/S.N;
+    document.getElementById('vD').textContent =
+      (1e6/S.hop).toFixed(0) + ' µs';
+    document.getElementById('vP').textContent =
+      (100*p).toFixed(1) + '%';
+    document.getElementById('vT').textContent = S.t;
+    var tyG = S.t ? 100*S.duoc/S.t : 0, tyL = S.t ? 100*S.mat/S.t : 0;
+    document.getElementById('vG').textContent = tyG.toFixed(1) + '%';
+    document.getElementById('vL').textContent = tyL.toFixed(1) + '%';
+    var L = document.getElementById('loi');
+    if (S.sai){
+      L.style.borderLeftColor = MAG;
+      L.innerHTML = '<b>Wrong code, so the receiver is almost never in the right ' +
+        'place.</b> It lands on the transmitter’s channel only by luck, one time in ' +
+        S.N + ', which is ' + (100*p).toFixed(1) + '%. Measured so far: ' +
+        tyG.toFixed(1) + '%. The data was never encrypted; the receiver simply ' +
+        'cannot find it.';
+    } else if (S.pha && S.hai){
+      L.style.borderLeftColor = ACC;
+      L.innerHTML = '<b>A jammer and a neighbour at once.</b> Each one can only spoil ' +
+        'the hops that land on its channel, about ' + (100*p).toFixed(1) +
+        '% each, so together roughly ' + (100*(1-(1-p)*(1-p))).toFixed(1) +
+        '%. Measured: ' + tyL.toFixed(1) + '% lost. The rest of the traffic never ' +
+        'met either of them.';
+    } else if (S.pha){
+      L.style.borderLeftColor = ACC;
+      L.innerHTML = '<b>The jammer owns one channel and only one.</b> It ruins the hops ' +
+        'that land there, one in ' + S.N + ', and the other ' +
+        (100*(1-p)).toFixed(1) + '% of the traffic goes through untouched. ' +
+        'Measured: ' + tyL.toFixed(1) + '% lost. A narrowband attacker has to ' +
+        'cover the whole band to stop the link.';
+    } else if (S.hai){
+      L.style.borderLeftColor = ACC;
+      L.innerHTML = '<b>Two piconets, two different codes.</b> They clash only when both ' +
+        'land on the same channel at the same instant, one hop in ' + S.N + '. ' +
+        'Measured: ' + tyL.toFixed(1) + '% lost. At Bluetooth’s 1600 hops a ' +
+        'second over 79 channels that is about 20 clashes a second, and a code ' +
+        'repairs them.';
+    } else {
+      L.style.borderLeftColor = TEAL;
+      L.innerHTML = '<b>Both ends run the same code, so they hop together.</b> Every ' +
+        'dwell lands where the receiver is already listening. Nothing here is wide: ' +
+        'at any instant the signal is one channel across. The spreading only shows ' +
+        'up when you average over time.';
+    }
+  }
+
+  var lan = 0, dem = 0;
+  function khung(){
+    if (S.chay){
+      dem += 1;
+      if (dem >= 4){ dem = 0; motHop(); }
+    }
+    ve(); so();
+    requestAnimationFrame(khung);
+  }
+
+  function datLai(){
+    S.t=0; S.duoc=0; S.mat=0; S.ve=[]; datMa();
+    S.kenhPha = Math.floor(S.N/2);
+  }
+
+  document.getElementById('chay').addEventListener('click', function(){
+    S.chay = !S.chay; this.classList.toggle('on', S.chay);
+    this.textContent = S.chay ? 'running' : 'paused';
+  });
+  document.getElementById('motcai').addEventListener('click', function(){
+    S.chay=false;
+    var b=document.getElementById('chay');
+    b.classList.remove('on'); b.textContent='paused';
+    motHop();
+  });
+  document.getElementById('xoa').addEventListener('click', datLai);
+  function nut(id, khoa){
+    document.getElementById(id).addEventListener('click', function(){
+      S[khoa] = !S[khoa];
+      this.classList.toggle('on', S[khoa]);
+      datLai();
+    });
+  }
+  nut('bSai','sai'); nut('bPha','pha'); nut('bHai','hai');
+  document.getElementById('sN').addEventListener('input', function(){
+    S.N = parseInt(this.value,10);
+    document.getElementById('vN').textContent = S.N;
+    datLai();
+  });
+  document.getElementById('sH').addEventListener('input', function(){
+    S.hop = parseInt(this.value,10);
+    document.getElementById('vH').textContent = S.hop;
+  });
+  document.getElementById('bBt').addEventListener('click', function(){
+    S.N = 79; S.hop = 1600;
+    document.getElementById('sN').value = 79;
+    document.getElementById('sH').value = 1600;
+    document.getElementById('vN').textContent = 79;
+    document.getElementById('vH').textContent = 1600;
+    datLai();
+  });
+
+  datLai();
+  requestAnimationFrame(khung);
+})();
+</script>
+
+<div data-tacgia="1" style="margin:28px 0 0;padding:16px 26px;border-top:1px solid #E4E8EF;background:#F7F9FC;font-family:Calibri,Segoe UI,system-ui,sans-serif;font-size:13.5px;line-height:1.7;color:#5A6272">
+<b style="color:#1A1F36">Dr Mai Tran</b><br>
+Faculty of Information Technology<br>
+University of Engineering and Technology, Vietnam National University<br>
+<a href="mailto:mai.tran@vnu.edu.vn" style="color:#5A6272">mai.tran@vnu.edu.vn</a>
+</div>
+</main>
+</body>
+</html>
