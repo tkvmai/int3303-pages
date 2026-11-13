@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INT3303 · Everyone at once, and how one receiver picks out one user</title>
+<style>
+:root{--ink:#1A1F36;--acc:#FF6B35;--teal:#2A9D8F;--pur:#6C5CE7;--mag:#D81E5B;
+      --mut:#5A6272;--line:#E4E8EF;--tint:#F2F4F8;--dark:#141B34;}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Segoe UI,system-ui,sans-serif;color:var(--ink);background:#fff}
+header{background:var(--dark);color:#fff;padding:18px 26px}
+header .k{font-size:12px;letter-spacing:2.5px;color:var(--acc);font-weight:700}
+header h1{margin:4px 0 0;font-family:Cambria,Georgia,serif;font-size:27px;font-weight:700}
+header p{margin:5px 0 0;font-size:14px;color:#AEB8CE;max-width:960px;line-height:1.5}
+main{padding:22px 26px 40px;max-width:1180px;margin:0 auto}
+p.sub{color:var(--mut);font-size:15px;margin:0 0 16px;line-height:1.55}
+canvas{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;background:#fff}
+.dk{border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:16px 0;background:var(--tint)}
+.hang{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 26px}
+label.t{display:block;font-size:13.5px;color:var(--mut);margin:0 0 3px}
+label.t b{color:var(--ink);font-size:14.5px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.buoc{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;align-items:center}
+.nut{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 15px;
+  font-family:inherit;font-size:13.5px;color:var(--mut);cursor:pointer}
+.nut:hover{border-color:var(--acc);color:var(--ink)}
+.nut.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:700}
+.so{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:10px;margin:14px 0 0}
+.o{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+.o .n{font-size:11.5px;letter-spacing:1.3px;text-transform:uppercase;color:var(--mut);font-weight:700}
+.o .v{font-size:21px;font-weight:700;margin-top:2px}
+h2{font-family:Cambria,Georgia,serif;font-size:20px;margin:26px 0 8px}
+.ghi{border-left:3px solid var(--acc);padding:2px 0 2px 14px;margin:14px 0;color:var(--mut);
+  font-size:14.5px;line-height:1.6}
+.ghi b{color:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0 0}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--tint);font-weight:700}
+code{font-family:Consolas,monospace;font-size:13.5px}
+</style>
+</head>
+<body>
+<header>
+  <div class="k">INT3303 · SESSION 5</div>
+  <h1>Everyone at once, and how one receiver picks out one user</h1>
+  <p>Several senders transmit over the same band at the same instant. Nothing separates them in
+     time and nothing separates them in frequency. The only thing that tells them apart is the
+     code, and this page follows one bit all the way through the receiver.</p>
+</header>
+<main>
+
+<p class="sub">Each sender takes its bit, multiplies it by its own code, and puts the result on
+the air. The air just adds. The receiver multiplies what arrives by the code of the one user it
+wants, adds up the chips, and looks at the sign. Every number below is computed, not drawn.</p>
+
+<div class="buoc">
+  <button class="nut on" id="chay">running</button>
+  <button class="nut" id="motcai">one bit  (or press →)</button>
+  <span style="width:10px"></span>
+  <button class="nut on" id="bTg">orthogonal codes</button>
+  <button class="nut" id="bNn">codes picked at random</button>
+  <span style="width:10px"></span>
+  <button class="nut" id="bMoi">new codes</button>
+  <button class="nut" id="xoa">clear the count</button>
+</div>
+
+<div class="dk">
+  <div class="hang">
+    <div>
+      <label class="t">senders on the air: <b><span id="vK">3</span></b></label>
+      <input type="range" id="sK" min="1" max="7" step="1" value="3">
+    </div>
+    <div>
+      <label class="t">the receiver is listening for user
+        <b><span id="vU">1</span></b></label>
+      <input type="range" id="sU" min="1" max="7" step="1" value="1">
+    </div>
+    <div>
+      <label class="t">noise on each chip: <b><span id="vS">0.0</span></b></label>
+      <input type="range" id="sS" min="0" max="30" step="1" value="0">
+    </div>
+  </div>
+</div>
+
+<canvas id="c" width="1320" height="560"></canvas>
+
+<div class="so">
+  <div class="o"><div class="n">Wanted term</div><div class="v" id="oA">—</div></div>
+  <div class="o"><div class="n">The other users</div><div class="v" id="oB">—</div></div>
+  <div class="o"><div class="n">Noise term</div><div class="v" id="oC">—</div></div>
+  <div class="o"><div class="n">Sum z</div><div class="v" id="oZ">—</div></div>
+  <div class="o"><div class="n">Bits read</div><div class="v" id="oT">0</div></div>
+  <div class="o"><div class="n">Read wrong</div><div class="v" id="oE">—</div></div>
+</div>
+
+<div class="ghi" id="loi"></div>
+
+<h2>The three terms, and which one you can get rid of</h2>
+
+<table>
+  <tr><th>Term</th><th>Where it comes from</th><th>What you can do about it</th></tr>
+  <tr><td><b>The wanted term</b></td>
+      <td>The code of the user multiplied by itself. Every chip gives <code>+1</code>, so the
+          sum is <code>N</code> and it carries the bit.</td>
+      <td>Nothing needed. It grows with the length of the code.</td></tr>
+  <tr><td><b>The other users</b></td>
+      <td>Every other code measured against the one the receiver is holding.</td>
+      <td><b>This is the one the code design kills.</b> Choose the codes so that every pair
+          gives zero and the term disappears exactly, however many senders there are. Choose
+          them at random and it does not.</td></tr>
+  <tr><td><b>The noise term</b></td>
+      <td>Thermal noise, with the signs of the code mixed in.</td>
+      <td>Nothing. Multiplying by <code>±1</code> leaves noise looking exactly like noise.</td></tr>
+</table>
+
+<h2>What to try</h2>
+
+<table>
+  <tr><th>Do this</th><th>Watch</th></tr>
+  <tr><td>Look down the right-hand column with orthogonal codes</td>
+      <td>The row of the user being listened to shows the bit at full size. Every other
+          row shows <b>0</b>. The receiver is not filtering anything away: the other users
+          simply add up to nothing once their chips are scored against the wrong code.</td></tr>
+  <tr><td>Leave the codes orthogonal and drag the number of senders from 1 to 7</td>
+      <td>The middle box stays at exactly <b>0</b> the whole way. Seven senders cost the
+          receiver nothing at all.</td></tr>
+  <tr><td>Switch to <b>codes picked at random</b>, then drag the senders up again</td>
+      <td>The middle box stops being zero and grows. The sum starts to wander, and with enough
+          senders the sign eventually flips and a bit is read wrong.</td></tr>
+  <tr><td>Set the senders to 1 and turn the noise up</td>
+      <td>Only the third box moves. This is the ordinary noise problem, and the code neither
+          helps nor hurts.</td></tr>
+  <tr><td>Press <b>new codes</b> a few times with random codes</td>
+      <td>Some sets happen to be better than others. Orthogonal codes are not luck: they are
+          built that way.</td></tr>
+</table>
+
+<script>
+(function(){
+  var C = document.getElementById('c'), g = C.getContext('2d');
+  var W = C.width, H = C.height;
+  var INK='#1A1F36', MUT='#5A6272', ACC='#FF6B35', TEAL='#2A9D8F',
+      MAG='#D81E5B', PUR='#6C5CE7', LINE='#E4E8EF';
+  var MAU = ['#3364FB','#2A9D8F','#6C5CE7','#D81E5B','#FF6B35',
+             '#0E7C86','#8E44AD','#C06014'];
+
+  var N = 8;                          // chip moi bit
+  var KMAX = 7;                       // bo hang toan +1 cua Hadamard
+  var S = { K:3, nghe:0, sigma:0, truc:true, chay:true,
+            hatMa:20261112, ma:[], d:[], chip:[], khong:[], nhieu:[],
+            tich:[], gop:[], z:0, tA:0, tB:0, tC:0, t:0, sai:0 };
+
+  function sinh(hat){                 // bo sinh so gia ngau nhien co hat
+    var x = hat >>> 0;
+    return function(){
+      x ^= x << 13; x >>>= 0; x ^= x >> 17; x ^= x << 5; x >>>= 0;
+      return x / 4294967296;
+    };
+  }
+  var r = sinh(S.hatMa);
+
+  function walsh(n){                  // Hadamard, dung de co ma truc giao
+    var H = [[1]];
+    while (H.length < n){
+      var m = H.length, G2 = [];
+      for (var i=0;i<2*m;i++){
+        G2.push([]);
+        for (var j=0;j<2*m;j++){
+          var v = H[i%m][j%m];
+          G2[i].push((i>=m && j>=m) ? -v : v);
+        }
+      }
+      H = G2;
+    }
+    return H;
+  }
+
+  function datMa(){
+    var k, i;
+    if (S.truc){
+      var H = walsh(N);
+      S.ma = H.slice(1);              // bo hang 0, hang toan +1
+    } else {
+      S.ma = [];
+      for (k=0;k<KMAX;k++){
+        var h = [];
+        for (i=0;i<N;i++) h.push(r() < 0.5 ? -1 : 1);
+        S.ma.push(h);
+      }
+    }
+  }
+
+  // Mot bit: moi nguoi chon mot bit, cong het lai tren khong, roi may
+  // thu nhan voi ma cua nguoi no muon va cong N chip.
+  function motBit(){
+    var k, i;
+    S.d = [];
+    for (k=0;k<S.K;k++) S.d.push(r() < 0.5 ? -1 : 1);
+    S.chip = [];
+    for (k=0;k<S.K;k++){
+      var h = [];
+      for (i=0;i<N;i++) h.push(S.d[k]*S.ma[k][i]);
+      S.chip.push(h);
+    }
+    S.nhieu = [];
+    for (i=0;i<N;i++){                // Box-Muller, de co nhieu Gauss
+      var u1 = Math.max(r(), 1e-12), u2 = r();
+      S.nhieu.push(S.sigma*Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2));
+    }
+    S.khong = [];
+    for (i=0;i<N;i++){
+      var s = S.nhieu[i];
+      for (k=0;k<S.K;k++) s += S.chip[k][i];
+      S.khong.push(s);
+    }
+    var c = S.ma[S.nghe];
+    S.tich = [];
+    for (i=0;i<N;i++) S.tich.push(S.khong[i]*c[i]);
+
+    // Dong gop RIENG cua tung nguoi vao tong cua may thu nay:
+    //   gop[k] = tong_i  (chip cua nguoi k) x (ma cua nguoi dang nghe)
+    // Day moi la cho sinh vien nhin thay tai sao nguoi khac bang 0.
+    S.gop = [];
+    for (k=0;k<S.K;k++){
+      var t = 0;
+      for (i=0;i<N;i++) t += S.chip[k][i]*c[i];
+      S.gop.push(t);
+    }
+    S.tC = 0;
+    for (i=0;i<N;i++) S.tC += S.nhieu[i]*c[i];
+    S.tA = (S.nghe < S.K) ? S.gop[S.nghe] : 0;
+    S.tB = 0;
+    for (k=0;k<S.K;k++) if (k !== S.nghe) S.tB += S.gop[k];
+    S.z = 0;
+    for (i=0;i<N;i++) S.z += S.tich[i];
+    S.t++;
+    var doc = S.z > 0 ? 1 : -1;
+    if (S.nghe < S.K && doc !== S.d[S.nghe]) S.sai++;
+  }
+
+  function o(x, y, w, h, chu, vien, nen, mauChu, fs){
+    g.fillStyle = nen; g.fillRect(x, y, w, h);
+    g.strokeStyle = vien; g.lineWidth = 1.2;
+    g.strokeRect(x+0.5, y+0.5, w-1, h-1);
+    g.fillStyle = mauChu; g.font = 'bold ' + (fs||12) + 'px Calibri';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(chu, x+w/2, y+h/2+0.5);
+  }
+
+  function nhan(x, y, chu, mau, fs, canh){
+    g.fillStyle = mau; g.font = (fs||12) + 'px Calibri';
+    g.textAlign = canh || 'left'; g.textBaseline = 'middle';
+    g.fillText(chu, x, y);
+  }
+
+  function ve(){
+    g.clearRect(0,0,W,H);
+    g.fillStyle = '#FBFCFE'; g.fillRect(0,0,W,H);
+    var L = 444, OW = 73, OH = 30, KHE = 5;
+    var XM = 104, MW = 30, MK = 2;    // dai ma rieng cua tung nguoi
+    var XG = 1086, GW = 212;          // cot dong gop cua tung nguoi
+    var T = 44, i, k;
+
+    // tieu de hai khoi
+    nhan(XM, T-16, 'its own code, a string of +1 and \u22121', MUT, 11);
+    nhan(XG + GW/2, T-30, 'what this user alone', MUT, 11, 'center');
+    nhan(XG + GW/2, T-16, 'adds to the sum below', MUT, 11, 'center');
+    for (i=0;i<N;i++){
+      nhan(L + i*(OW+KHE) + OW/2, T-16, 'chip ' + (i+1), MUT, 11, 'center');
+    }
+
+    // ---- tung nguoi phat -------------------------------------------
+    var y = T;
+    for (k=0;k<S.K;k++){
+      var mau = MAU[k % MAU.length], la = (k === S.nghe);
+      nhan(10, y+OH/2, 'user ' + (k+1), la ? mau : MUT, la ? 13 : 12.5);
+      // chinh day ma cua nguoi do, thu khong doi tu bit nay sang bit khac
+      for (i=0;i<N;i++){
+        o(XM + i*(MW+MK), y+4, MW, OH-8,
+          (S.ma[k][i] > 0 ? '+1' : '\u22121'), mau,
+          la ? '#EEF3FF' : '#FBFCFE', mau, 11);
+      }
+      nhan(XM + N*(MW+MK) + 12, y+OH/2,
+           '\u00d7  ' + (S.d[k] > 0 ? '+1' : '\u22121') + '  =', INK, 12.5);
+      for (i=0;i<N;i++){
+        o(L + i*(OW+KHE), y, OW, OH, (S.chip[k][i] > 0 ? '+1' : '-1'),
+          mau, la ? '#EEF3FF' : '#FBFCFE', mau, 12.5);
+      }
+      if (la){
+        g.strokeStyle = mau; g.lineWidth = 2.2;
+        g.strokeRect(XM-4, y-3, N*(MW+MK)-MK+8, OH+6);
+        g.strokeRect(L-3, y-3, N*(OW+KHE)-KHE+6, OH+6);
+      }
+      // dong gop cua rieng nguoi nay vao tong ma may thu se cong ra
+      var gp = S.gop[k], khong = (gp === 0);
+      o(XG, y, GW, OH,
+        (khong ? '0' : (gp > 0 ? '+' : '\u2212') + Math.abs(gp))
+        + (la ? '   the bit' : (khong ? '   nothing' : '   in the way')),
+        la ? mau : (khong ? TEAL : MAG),
+        la ? '#EEF3FF' : (khong ? '#EAF6F4' : '#FDEAF1'),
+        la ? mau : (khong ? TEAL : MAG), 13);
+      y += OH + 7;
+    }
+
+    // tong cua ca cot, de thay no chinh la phan khong phai nhieu
+    var tongG = 0;
+    for (k=0;k<S.K;k++) tongG += S.gop[k];
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(XG, y+1); g.lineTo(XG+GW, y+1); g.stroke();
+    nhan(XG + GW/2, y+16,
+         'all of them together: ' + (tongG > 0 ? '+' : '') + tongG,
+         INK, 12.5, 'center');
+
+    // ---- tren khong -------------------------------------------------
+    y += 10;
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(10, y-6); g.lineTo(W-10, y-6); g.stroke();
+    y += 6;
+    nhan(10, y+OH/2, 'what arrives: the air adds them', INK, 13);
+    for (i=0;i<N;i++){
+      o(L + i*(OW+KHE), y, OW, OH, S.khong[i].toFixed(S.sigma ? 1 : 0),
+        INK, '#F0F2F6', INK, 12.5);
+    }
+    y += OH + 14;
+
+    // ---- nhan voi ma cua nguoi muon nghe ----------------------------
+    var mn = MAU[S.nghe % MAU.length];
+    nhan(10, y+OH/2, 'multiply by the code of user ' + (S.nghe+1), mn, 13);
+    for (i=0;i<N;i++){
+      o(L + i*(OW+KHE), y, OW, OH,
+        (S.ma[S.nghe][i] > 0 ? '+1' : '-1'), mn, '#FBFCFE', mn, 12.5);
+    }
+    y += OH + 7;
+    nhan(10, y+OH/2, 'and this is what you get', MUT, 12.5);
+    for (i=0;i<N;i++){
+      o(L + i*(OW+KHE), y, OW, OH, S.tich[i].toFixed(S.sigma ? 1 : 0),
+        mn, '#EEF3FF', mn, 12.5);
+    }
+    y += OH + 18;
+
+    // ---- cong lai, tach ba so hang ----------------------------------
+    nhan(10, y+16, 'add the ' + N + ' of them up', INK, 13);
+    var BX = L, BW = N*(OW+KHE)-KHE, BH = 30;
+    var tong = Math.abs(S.tA) + Math.abs(S.tB) + Math.abs(S.tC);
+    var don = tong > 0 ? BW/Math.max(tong, N) : 0;
+    var x = BX;
+    var phan = [[Math.abs(S.tA), TEAL, 'wanted'],
+                [Math.abs(S.tB), MAG, 'others'],
+                [Math.abs(S.tC), MUT, 'noise']];
+    for (var p=0;p<phan.length;p++){
+      var w = phan[p][0]*don;
+      if (w < 0.5) continue;
+      g.fillStyle = phan[p][1]; g.globalAlpha = 0.80;
+      g.fillRect(x, y, w, BH); g.globalAlpha = 1;
+      if (w > 54) nhan(x+w/2, y+BH/2, phan[p][2], '#fff', 11.5, 'center');
+      x += w;
+    }
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    g.strokeRect(BX+0.5, y+0.5, BW, BH);
+    y += BH + 20;
+
+    // ---- ket qua ----------------------------------------------------
+    var doc = S.z > 0 ? '+1' : '-1';
+    var that = S.nghe < S.K ? (S.d[S.nghe] > 0 ? '+1' : '-1') : '—';
+    var dung = (S.nghe < S.K) && (doc === that);
+    g.fillStyle = dung ? '#EAF6F4' : '#FDEAF1';
+    g.strokeStyle = dung ? TEAL : MAG; g.lineWidth = 1.6;
+    g.fillRect(10, y, W-20, 44); g.strokeRect(10.5, y+0.5, W-21, 43);
+    nhan(24, y+22,
+         'z = ' + S.z.toFixed(2) + '    so the bit reads ' + doc +
+         ',  and user ' + (S.nghe+1) + ' actually sent ' + that +
+         (S.nghe >= S.K ? '   (that user is not transmitting)'
+                        : (dung ? '   correct' : '   WRONG')),
+         dung ? TEAL : MAG, 14.5);
+  }
+
+  function so(){
+    document.getElementById('oA').textContent = S.tA.toFixed(1);
+    document.getElementById('oB').textContent = S.tB.toFixed(1);
+    document.getElementById('oC').textContent = S.tC.toFixed(1);
+    document.getElementById('oZ').textContent = S.z.toFixed(2);
+    document.getElementById('oT').textContent = S.t;
+    document.getElementById('oE').textContent =
+      S.t ? (100*S.sai/S.t).toFixed(1) + '%' : '—';
+
+    var L = document.getElementById('loi');
+    if (S.nghe >= S.K){
+      L.style.borderLeftColor = MUT;
+      L.innerHTML = '<b>User ' + (S.nghe+1) + ' is not on the air.</b> ' +
+        'Everything the receiver collects belongs to somebody else, so the ' +
+        'sum is pure interference. Drag the number of senders up, or pick a ' +
+        'user that is actually transmitting.';
+    } else if (S.truc){
+      var ds = [];
+      for (var q=0;q<S.K;q++) if (q !== S.nghe) ds.push('user ' + (q+1) + ' \u2192 0');
+      L.style.borderLeftColor = TEAL;
+      L.innerHTML = '<b>Read the right-hand column.</b> The code in receiver ' +
+        (S.nghe+1) + ' is laid against every sender in turn. Against user ' +
+        (S.nghe+1) + ' it matches on all ' + N + ' chips, so it returns the bit ' +
+        'at full size, ' + (S.tA > 0 ? '+' : '\u2212') + Math.abs(S.tA) +
+        '. Against the others it matches on exactly half the chips and ' +
+        'disagrees on the other half, so each one cancels itself out: ' +
+        ds.join(',  ') + '. <b>That is the whole mechanism</b>: different ' +
+        'codes, nothing left behind. Only noise can spoil the reading.';
+    } else {
+      var sir = Math.abs(S.tB) > 1e-9
+        ? (20*Math.log10(Math.abs(S.tA)/Math.abs(S.tB))).toFixed(1) + ' dB'
+        : 'nothing to measure yet';
+      L.style.borderLeftColor = MAG;
+      var ds2 = [];
+      for (var q2=0;q2<S.K;q2++) if (q2 !== S.nghe)
+        ds2.push('user ' + (q2+1) + ' \u2192 ' + (S.gop[q2] > 0 ? '+' : '')
+                 + S.gop[q2]);
+      L.innerHTML = '<b>Read the right-hand column: ' + ds2.join(',  ') +
+        '.</b> These codes do not match on exactly half the chips, so the ' +
+        'others no longer cancel and what they leave behind, ' +
+        S.tB.toFixed(0) + ', lands on top of the wanted bit. ' +
+        'For one fixed set of codes it is a fixed amount that only changes ' +
+        'sign as the other users change their bits, so press <b>new codes</b> ' +
+        'to see it move. Across code sets its typical size is the square root ' +
+        'of (K-1)N, and it grows with every sender added. Wanted over ' +
+        'interference on this bit: ' + sir + '.';
+    }
+  }
+
+  var dem = 0;
+  function khung(){
+    if (S.chay){ dem++; if (dem >= 26){ dem = 0; motBit(); } }
+    ve(); so();
+    requestAnimationFrame(khung);
+  }
+
+  function datLai(kieu){
+    if (kieu !== 'giu'){ r = sinh(S.hatMa); datMa(); }
+    S.t = 0; S.sai = 0;
+    motBit();
+  }
+  function motBuoc(){
+    S.chay = false;
+    var b = document.getElementById('chay');
+    b.classList.remove('on'); b.textContent = 'paused';
+    motBit();
+  }
+
+  document.getElementById('chay').addEventListener('click', function(){
+    S.chay = !S.chay; this.classList.toggle('on', S.chay);
+    this.textContent = S.chay ? 'running' : 'paused';
+  });
+  document.getElementById('motcai').addEventListener('click', motBuoc);
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight' || e.key === ' '){ e.preventDefault(); motBuoc(); }
+  });
+  document.getElementById('xoa').addEventListener('click', function(){
+    S.t = 0; S.sai = 0;
+  });
+  document.getElementById('bMoi').addEventListener('click', function(){
+    S.hatMa = (S.hatMa*1103515245 + 12345) >>> 0;
+    datLai();
+  });
+  function doiKieu(truc){
+    S.truc = truc;
+    document.getElementById('bTg').classList.toggle('on', truc);
+    document.getElementById('bNn').classList.toggle('on', !truc);
+    datLai();
+  }
+  document.getElementById('bTg').addEventListener('click', function(){ doiKieu(true); });
+  document.getElementById('bNn').addEventListener('click', function(){ doiKieu(false); });
+  document.getElementById('sK').addEventListener('input', function(){
+    S.K = parseInt(this.value,10);
+    document.getElementById('vK').textContent = S.K;
+    S.t = 0; S.sai = 0; motBit();
+  });
+  document.getElementById('sU').addEventListener('input', function(){
+    S.nghe = parseInt(this.value,10) - 1;
+    document.getElementById('vU').textContent = S.nghe + 1;
+    S.t = 0; S.sai = 0; motBit();
+  });
+  document.getElementById('sS').addEventListener('input', function(){
+    S.sigma = parseInt(this.value,10)/10;
+    document.getElementById('vS').textContent = S.sigma.toFixed(1);
+    S.t = 0; S.sai = 0; motBit();
+  });
+
+  datLai();
+  requestAnimationFrame(khung);
+})();
+</script>
+
+<div data-tacgia="1" style="margin:28px 0 0;padding:16px 26px;border-top:1px solid #E4E8EF;background:#F7F9FC;font-family:Calibri,Segoe UI,system-ui,sans-serif;font-size:13.5px;line-height:1.7;color:#5A6272">
+<b style="color:#1A1F36">Dr Mai Tran</b><br>
+Faculty of Information Technology<br>
+University of Engineering and Technology, Vietnam National University<br>
+<a href="mailto:mai.tran@vnu.edu.vn" style="color:#5A6272">mai.tran@vnu.edu.vn</a>
+</div>
+</main>
+</body>
+</html>

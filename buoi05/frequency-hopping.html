@@ -55,14 +55,28 @@ spectrogram. Each block is one dwell: the transmitter sits on that channel, send
 Note what the code is <b>not</b> doing here: it never touches the data. The bits are modulated
 in the ordinary way, and the code only drives the frequency synthesiser.</p>
 
+<p class="sub">The curve down the left is <b>the room itself</b>, the same frequency response
+you met in Session 3, only turned on its side so that it lines up with the channels. Where it
+dips past the dashed line the channel is dead, and a hop landing there is lost. The point to
+watch is <b>how long that lasts</b>. Then press <b>stop hopping</b> to park the transmitter on
+one channel and see what the same room does to a link that cannot move.</p>
+
 <div class="buoc">
   <button class="nut on" id="chay">running</button>
-  <button class="nut" id="motcai">one hop</button>
+  <button class="nut" id="motcai">one hop  (or press →)</button>
+  <span style="width:10px"></span>
+  <button class="nut" id="vCham">slow</button>
+  <button class="nut on" id="vVua">medium</button>
+  <button class="nut" id="vNhanh">fast</button>
+  <span style="width:10px"></span>
   <button class="nut" id="xoa">clear</button>
   <span style="width:14px"></span>
   <button class="nut" id="bSai">receiver uses the wrong code</button>
   <button class="nut" id="bPha">park a jammer on one channel</button>
-  <button class="nut" id="bHai">add a second piconet</button>
+  <button class="nut" id="bHai">add a second link</button>
+  <span style="width:14px"></span>
+  <button class="nut" id="bCo">stop hopping, stay on one channel</button>
+  <button class="nut" id="bPhong">a different room</button>
   <span style="width:14px"></span>
   <button class="nut" id="bBt">Bluetooth: 79 channels, 1600 hops/s</button>
 </div>
@@ -77,6 +91,11 @@ in the ordinary way, and the code only drives the frequency synthesiser.</p>
       <label class="t">hops per second: <b><span id="vH">1600</span></b></label>
       <input type="range" id="sH" min="200" max="3200" step="100" value="1600">
     </div>
+    <div>
+      <label class="t">if it stops hopping, park it on channel:
+        <b><span id="vC">0</span></b></label>
+      <input type="range" id="sC" min="0" max="15" step="1" value="0">
+    </div>
   </div>
 </div>
 
@@ -84,10 +103,11 @@ in the ordinary way, and the code only drives the frequency synthesiser.</p>
 
 <div class="so">
   <div class="o"><div class="n">Dwell time</div><div class="v" id="vD">—</div></div>
-  <div class="o"><div class="n">Chance of a clash</div><div class="v" id="vP">—</div></div>
+  <div class="o"><div class="n">Deep fades in this room</div><div class="v" id="vP">—</div></div>
   <div class="o"><div class="n">Hops so far</div><div class="v" id="vT">0</div></div>
   <div class="o"><div class="n">Hops the receiver got</div><div class="v" id="vG">—</div></div>
   <div class="o"><div class="n">Hops lost</div><div class="v" id="vL">—</div></div>
+  <div class="o"><div class="n">Predicted loss</div><div class="v" id="vQ">—</div></div>
 </div>
 
 <div class="ghi" id="loi"></div>
@@ -105,7 +125,7 @@ in the ordinary way, and the code only drives the frequency synthesiser.</p>
           moment every cycle, and two systems that started together would collide on every
           single hop forever.</td></tr>
   <tr><td><b>It separates users</b></td>
-      <td>Two piconets with different codes only clash when they happen to land on the same
+      <td>Two links with different codes only clash when they happen to land on the same
           channel at the same instant, which is one hop in N.</td></tr>
 </table>
 
@@ -127,7 +147,7 @@ and an error-correcting code mops up the rest.</p>
   <tr><td>Channels</td><td>79, spaced 1 MHz</td><td>the 2.4 GHz ISM band</td></tr>
   <tr><td>Hop rate</td><td>1600 per second</td><td>standardised</td></tr>
   <tr><td>Dwell time</td><td>625 µs</td><td>1 ÷ 1600</td></tr>
-  <tr><td>Clash with another piconet</td><td>1 hop in 79, about 1.3%</td><td>1 ÷ 79</td></tr>
+  <tr><td>Clash with another link</td><td>1 hop in 79, about 1.3%</td><td>1 ÷ 79</td></tr>
   <tr><td>Clashes per second</td><td>about 20</td><td>1600 ÷ 79</td></tr>
 </table>
 
@@ -139,9 +159,12 @@ and an error-correcting code mops up the rest.</p>
       MAG='#D81E5B', PUR='#6C5CE7', LINE='#E4E8EF';
 
   var S = { N:16, hop:1600, chay:true, t:0, duoc:0, mat:0,
-            sai:false, pha:false, hai:false, kenhPha:0,
-            lichA:[], lichB:[], lichC:[], ve:[] };
+            sai:false, pha:false, hai:false, codinh:false,
+            kenhPha:0, kenhCo:0, hatPhong:12345,
+            G:[], xau:[], ve:[], nhip:12 };
   var COT = 54;                       // so cot hien tren man hinh
+  var NGUONG = -8;                    // dB, duoi muc nay coi nhu kenh chet
+  var GX0 = 58, GX1 = 168;            // bang do loi kenh nam o day
 
   // "Spreading code" o day la mot bo sinh so gia ngau nhien co hat
   // giong. Hai ma khac nhau chi la hai hat giong khac nhau.
@@ -159,57 +182,178 @@ and an error-correcting code mops up the rest.</p>
     rA = ma(0x9E3779B9); rB = ma(0x41C64E6D); rC = ma(0x2545F491);
   }
 
+  // ----- can phong -------------------------------------------------
+  // Bon duong truyen, do tre toi 400 ns. Do loi cua kenh k lay tai
+  // tan so k MHz, dung cong thuc tong cac tia, khong bia so.
+  // Bien do cua kenh tai mot tan so bat ky, don vi MHz. Dung chung cho
+  // ca cot gia tri tung kenh lan duong cong lien tuc ve o le trai.
+  function bienDo(fMHz){
+    var re=0, im=0, f=fMHz*1e6;
+    for (var j=0;j<S.duong.length;j++){
+      var th = -2*Math.PI*f*S.duong[j].tau + S.duong[j].ph;
+      re += S.duong[j].a*Math.cos(th);
+      im += S.duong[j].a*Math.sin(th);
+    }
+    return Math.sqrt(re*re+im*im);
+  }
+  function loiDb(fMHz){ return 20*Math.log10(bienDo(fMHz)/S.chuan); }
+
+  function tinhPhong(){
+    var r = ma(S.hatPhong), U = function(){ return r()/4294967296; };
+    S.duong = [{a:1.0, tau:0, ph:0}];
+    for (var i=0;i<3;i++){
+      S.duong.push({ a: 0.45 + 0.50*U(),
+                     tau: (60 + 340*U())*1e-9,
+                     ph: 2*Math.PI*U() });
+    }
+    S.chuan = 1;
+    var bd = [], k;
+    for (k=0;k<S.N;k++) bd.push(bienDo(k));
+    var tb = 0;                       // chuan hoa theo cong suat trung binh
+    for (k=0;k<S.N;k++) tb += bd[k]*bd[k];
+    S.chuan = Math.sqrt(tb/S.N);
+    S.G = []; S.xau = [];
+    for (k=0;k<S.N;k++){
+      var db = 20*Math.log10(bd[k]/S.chuan);
+      S.G.push(db);
+      S.xau.push(db < NGUONG);
+    }
+    // mac dinh dau o kenh toi nhat, cho thay ro nhat cai gia phai tra
+    var xn = 0;
+    for (k=1;k<S.N;k++) if (S.G[k] < S.G[xn]) xn = k;
+    S.kenhCo = xn;
+    var sc = document.getElementById('sC');
+    sc.max = S.N-1; sc.value = xn;
+    document.getElementById('vC').textContent = xn;
+  }
+
+  function soFade(){
+    var n = 0;
+    for (var k=0;k<S.N;k++) if (S.xau[k]) n++;
+    return n;
+  }
+
+  // Ty le mat DU DOAN, tinh vet can tren moi kenh chu khong uoc luong.
+  function duDoan(){
+    var tot = 0, k;
+    if (S.codinh){
+      var a = S.kenhCo;
+      var ok = !S.xau[a] && !(S.pha && a === S.kenhPha);
+      if (ok) tot = S.hai ? (S.N-1)/S.N : 1;
+      return 1 - tot;
+    }
+    for (k=0;k<S.N;k++){
+      var g = !S.xau[k] && !(S.pha && k === S.kenhPha);
+      if (!g) continue;
+      tot += (S.hai ? (S.N-1)/S.N : 1) / S.N;
+    }
+    return 1 - tot;
+  }
+
   function motHop(){
-    var a = rA() % S.N;               // may phat
+    // may phat: nhay theo ma, hoac dung yen neu da tat nhay
+    var a = S.codinh ? S.kenhCo : (rA() % S.N);
+    if (S.codinh) rA();               // van rut so de hai che do cung nhip
     var b = S.sai ? (rB() % S.N) : a; // may thu: dung ma hay sai ma
-    var c = S.hai ? (rC() % S.N) : -1;// piconet thu hai
-    var hong = false;
-    if (S.pha && a === S.kenhPha) hong = true;
-    if (S.hai && a === c) hong = true;
+    var c = S.hai ? (rC() % S.N) : -1;// link thu hai
+    var hong = false, vi = '';
+    if (S.xau[a]) { hong = true; vi = 'fade'; }
+    if (S.pha && a === S.kenhPha) { hong = true; vi = vi || 'jammer'; }
+    if (S.hai && a === c) { hong = true; vi = vi || 'clash'; }
     var nhan = (b === a) && !hong;
     if (nhan) S.duoc++; else S.mat++;
     S.t++;
-    S.ve.push({a:a, b:b, c:c, hong:hong, nhan:nhan});
+    S.ve.push({a:a, b:b, c:c, hong:hong, vi:vi, nhan:nhan});
     if (S.ve.length > COT) S.ve.shift();
   }
 
   function ve(){
     g.clearRect(0,0,W,H);
     g.fillStyle='#FBFCFE'; g.fillRect(0,0,W,H);
-    var L = 58, R = 16, T = 30, B = 34;
+    var L = 178, R = 16, T = 46, B = 34;
     var gw = (W-L-R)/COT, gh = (H-T-B)/S.N;
+    var k, y;
 
+    // ---- nen: to nhat nhung kenh chet -----------------------------
+    for (k=0;k<S.N;k++){
+      if (!S.xau[k]) continue;
+      y = T + (S.N-1-k)*gh;
+      g.fillStyle = 'rgba(216,30,91,0.09)';
+      g.fillRect(L, y, W-L-R, gh);
+    }
     // bang nhay cua may pha
     if (S.pha){
       var yj = T + (S.N-1-S.kenhPha)*gh;
-      g.fillStyle = 'rgba(216,30,91,0.10)';
+      g.fillStyle = 'rgba(255,107,53,0.14)';
       g.fillRect(L, yj, W-L-R, gh);
-      g.fillStyle = MAG; g.font='bold 11px Calibri';
+      g.fillStyle = ACC; g.font='bold 11px Calibri';
       g.textAlign='left'; g.textBaseline='middle';
       g.fillText('jammer', L+6, yj+gh/2);
     }
-    // luoi
-    g.strokeStyle = LINE; g.lineWidth = 1;
-    for (var k=0;k<=S.N;k++){
-      var y = T + k*gh;
-      g.beginPath(); g.moveTo(L,y); g.lineTo(W-R,y); g.stroke();
+    // ---- bang do loi cua can phong --------------------------------
+    var DB0 = -24, DB1 = 8, GW = GX1 - GX0;
+    var xng = GX0 + GW*((NGUONG-DB0)/(DB1-DB0));
+    for (k=0;k<S.N;k++){
+      var db = S.G[k];
+      var u = (db-DB0)/(DB1-DB0); if (u<0) u=0; if (u>1) u=1;
+      y = T + (S.N-1-k)*gh;
+      g.fillStyle = S.xau[k] ? MAG : TEAL;
+      g.globalAlpha = S.xau[k] ? 0.55 : 0.30;
+      g.fillRect(GX0, y+1.5, GW*u, gh-3);
+      g.globalAlpha = 1;
     }
+    // duong cong lien tuc cua dap ung kenh, hinh ma sinh vien quen
+    // nhin o Buoi 3. Truc tan so dung nen duong cong nam doc.
+    g.strokeStyle = INK; g.lineWidth = 1.9;
+    g.beginPath();
+    var buoc = 0.04, dau = true;
+    for (var fq = -0.5; fq <= S.N-0.5+1e-9; fq += buoc){
+      var ud = (loiDb(fq)-DB0)/(DB1-DB0); if (ud<0) ud=0; if (ud>1) ud=1;
+      var xc = GX0 + GW*ud, yc = T + (S.N-1-fq)*gh + gh/2;
+      if (dau){ g.moveTo(xc, yc); dau = false; } else { g.lineTo(xc, yc); }
+    }
+    g.stroke();
+    g.strokeStyle = MAG; g.lineWidth = 1.4; g.setLineDash([3,3]);
+    g.beginPath(); g.moveTo(xng, T); g.lineTo(xng, T+S.N*gh); g.stroke();
+    g.setLineDash([]);
+    g.fillStyle = MUT; g.font='10.5px Calibri';
+    g.textAlign='center'; g.textBaseline='alphabetic';
+    g.fillText('dead', xng, T-4);
+    g.textAlign='left';
+    g.fillStyle = INK; g.font='bold 11.5px Calibri';
+    g.fillText('the room', GX0, T-17);
+
+    // ---- nhan kenh va dau cho kenh dau co dinh ---------------------
     g.fillStyle = MUT; g.font='11px Calibri';
     g.textAlign='right'; g.textBaseline='middle';
-    for (var k2=0;k2<S.N;k2++){
-      if (S.N <= 20 || k2 % 4 === 0)
-        g.fillText('ch ' + k2, L-6, T + (S.N-1-k2)*gh + gh/2);
+    for (k=0;k<S.N;k++){
+      if (S.N <= 20 || k % 4 === 0)
+        g.fillText('ch ' + k, GX0-6, T + (S.N-1-k)*gh + gh/2);
     }
-    // cac o
+    if (S.codinh){
+      y = T + (S.N-1-S.kenhCo)*gh + gh/2;
+      g.fillStyle = PUR;
+      g.beginPath();
+      g.moveTo(GX1+3, y); g.lineTo(GX1+10, y-5); g.lineTo(GX1+10, y+5);
+      g.closePath(); g.fill();
+    }
+
+    // ---- luoi ------------------------------------------------------
+    g.strokeStyle = LINE; g.lineWidth = 1;
+    for (k=0;k<=S.N;k++){
+      y = T + k*gh;
+      g.beginPath(); g.moveTo(L,y); g.lineTo(W-R,y); g.stroke();
+    }
+    // ---- cac o -----------------------------------------------------
     for (var i=0;i<S.ve.length;i++){
       var e = S.ve[i], x = L + i*gw;
-      if (S.hai && e.c >= 0){         // piconet thu hai, ve nhat
+      if (S.hai && e.c >= 0){
         g.fillStyle = 'rgba(108,92,231,0.30)';
         g.fillRect(x+1, T+(S.N-1-e.c)*gh+1, gw-2, gh-2);
       }
-      g.fillStyle = e.hong ? MAG : TEAL;   // may phat
+      g.fillStyle = e.hong ? MAG : TEAL;
       g.fillRect(x+1, T+(S.N-1-e.a)*gh+1, gw-2, gh-2);
-      if (S.sai){                     // cho may thu dang nghe
+      if (S.sai){
         g.strokeStyle = e.nhan ? TEAL : MUT;
         g.lineWidth = 2;
         g.strokeRect(x+1.5, T+(S.N-1-e.b)*gh+1.5, gw-3, gh-3);
@@ -217,14 +361,20 @@ and an error-correcting code mops up the rest.</p>
     }
     g.fillStyle = INK; g.font='bold 12.5px Calibri'; g.textAlign='left';
     g.textBaseline='alphabetic';
-    g.fillText('frequency', 6, T-12);
+    g.fillText('frequency', 6, T-31);
     g.fillStyle = MUT; g.font='12px Calibri'; g.textAlign='center';
-    g.fillText('time, one block per dwell →', W/2, H-10);
+    g.fillText('time, one block per dwell →', (L+W-R)/2, H-10);
     g.textAlign='left';
     var cg = L;
     g.fillStyle = TEAL; g.fillRect(cg, H-26, 12, 10);
-    g.fillStyle = MUT; g.fillText('transmitter', cg+16, H-17);
-    cg += 96;
+    g.fillStyle = MUT; g.fillText('got through', cg+16, H-17);
+    cg += 100;
+    g.fillStyle = MAG; g.fillRect(cg, H-26, 12, 10);
+    g.fillStyle = MUT; g.fillText('lost', cg+16, H-17);
+    cg += 56;
+    g.fillStyle = 'rgba(216,30,91,0.18)'; g.fillRect(cg, H-26, 12, 10);
+    g.fillStyle = MUT; g.fillText('a dead channel', cg+16, H-17);
+    cg += 122;
     if (S.sai){
       g.strokeStyle = MUT; g.lineWidth=2; g.strokeRect(cg+0.5, H-26.5, 12, 10);
       g.fillStyle = MUT; g.fillText('where the receiver listened', cg+16, H-17);
@@ -232,60 +382,61 @@ and an error-correcting code mops up the rest.</p>
     }
     if (S.hai){
       g.fillStyle = 'rgba(108,92,231,0.45)'; g.fillRect(cg, H-26, 12, 10);
-      g.fillStyle = MUT; g.fillText('second piconet', cg+16, H-17);
+      g.fillStyle = MUT; g.fillText('second link', cg+16, H-17);
       cg += 116;
-    }
-    if (S.pha || S.hai){
-      g.fillStyle = MAG; g.fillRect(cg, H-26, 12, 10);
-      g.fillStyle = MUT; g.fillText('hop lost', cg+16, H-17);
     }
   }
 
   function so(){
-    var p = 1/S.N;
+    var nf = soFade(), q = duDoan();
     document.getElementById('vD').textContent =
       (1e6/S.hop).toFixed(0) + ' µs';
-    document.getElementById('vP').textContent =
-      (100*p).toFixed(1) + '%';
+    document.getElementById('vP').textContent = nf + ' of ' + S.N;
     document.getElementById('vT').textContent = S.t;
     var tyG = S.t ? 100*S.duoc/S.t : 0, tyL = S.t ? 100*S.mat/S.t : 0;
     document.getElementById('vG').textContent = tyG.toFixed(1) + '%';
     document.getElementById('vL').textContent = tyL.toFixed(1) + '%';
+    document.getElementById('vQ').textContent = (100*q).toFixed(1) + '%';
+    var pf = nf/S.N, dwell = 1e6/S.hop;
     var L = document.getElementById('loi');
-    if (S.sai){
+    if (S.codinh){
+      L.style.borderLeftColor = PUR;
+      L.innerHTML = '<b>No hopping: the link is parked on channel ' + S.kenhCo +
+        ' and stays there.</b> ' +
+        (S.xau[S.kenhCo]
+          ? 'That channel is one of the dead ones, so <b>every single dwell is lost, ' +
+            'and it stays lost</b>. Nothing in the link can fix this: the fade does not ' +
+            'move, and neither does the carrier. Only moving the furniture would help.'
+          : 'This one happens to be a good channel, so the link works. That is the ' +
+            'whole problem with standing still: it is a bet. Drag the slider onto a ' +
+            'red row, or press <b>a different room</b>, and the same link dies.') +
+        ' Predicted ' + (100*q).toFixed(1) + '%, measured ' + tyL.toFixed(1) + '% lost.';
+    } else if (S.sai){
       L.style.borderLeftColor = MAG;
       L.innerHTML = '<b>Wrong code, so the receiver is almost never in the right ' +
         'place.</b> It lands on the transmitter’s channel only by luck, one time in ' +
-        S.N + ', which is ' + (100*p).toFixed(1) + '%. Measured so far: ' +
+        S.N + ', which is ' + (100/S.N).toFixed(1) + '%. Measured so far: ' +
         tyG.toFixed(1) + '%. The data was never encrypted; the receiver simply ' +
         'cannot find it.';
-    } else if (S.pha && S.hai){
+    } else if (nf > 0){
+      L.style.borderLeftColor = TEAL;
+      L.innerHTML = '<b>' + nf + ' of the ' + S.N + ' channels in this room are dead, ' +
+        'and the hopping walks into them ' + (100*pf).toFixed(1) + '% of the time.</b> ' +
+        'Watch what that costs: one dwell, ' + dwell.toFixed(0) + ' µs, and the next ' +
+        'hop is somewhere else. The fade never gets to hold the link down. ' +
+        'Predicted loss ' + (100*q).toFixed(1) + '%, measured ' + tyL.toFixed(1) + '%. ' +
+        'Press <b>stop hopping</b> to see the same room punish a link that cannot move.';
+    } else if (S.pha || S.hai){
       L.style.borderLeftColor = ACC;
-      L.innerHTML = '<b>A jammer and a neighbour at once.</b> Each one can only spoil ' +
-        'the hops that land on its channel, about ' + (100*p).toFixed(1) +
-        '% each, so together roughly ' + (100*(1-(1-p)*(1-p))).toFixed(1) +
-        '%. Measured: ' + tyL.toFixed(1) + '% lost. The rest of the traffic never ' +
-        'met either of them.';
-    } else if (S.pha){
-      L.style.borderLeftColor = ACC;
-      L.innerHTML = '<b>The jammer owns one channel and only one.</b> It ruins the hops ' +
-        'that land there, one in ' + S.N + ', and the other ' +
-        (100*(1-p)).toFixed(1) + '% of the traffic goes through untouched. ' +
-        'Measured: ' + tyL.toFixed(1) + '% lost. A narrowband attacker has to ' +
-        'cover the whole band to stop the link.';
-    } else if (S.hai){
-      L.style.borderLeftColor = ACC;
-      L.innerHTML = '<b>Two piconets, two different codes.</b> They clash only when both ' +
-        'land on the same channel at the same instant, one hop in ' + S.N + '. ' +
-        'Measured: ' + tyL.toFixed(1) + '% lost. At Bluetooth’s 1600 hops a ' +
-        'second over 79 channels that is about 20 clashes a second, and a code ' +
-        'repairs them.';
+      L.innerHTML = '<b>This room has no dead channels, so only the jammer and the ' +
+        'neighbour cost anything.</b> Each can spoil only the hops that land on it. ' +
+        'Predicted ' + (100*q).toFixed(1) + '%, measured ' + tyL.toFixed(1) + '% lost.';
     } else {
       L.style.borderLeftColor = TEAL;
       L.innerHTML = '<b>Both ends run the same code, so they hop together.</b> Every ' +
-        'dwell lands where the receiver is already listening. Nothing here is wide: ' +
-        'at any instant the signal is one channel across. The spreading only shows ' +
-        'up when you average over time.';
+        'dwell lands where the receiver is already listening. This room happens to have ' +
+        'no dead channel; press <b>a different room</b> until some rows turn red, then ' +
+        'watch how briefly each one hurts.';
     }
   }
 
@@ -293,7 +444,7 @@ and an error-correcting code mops up the rest.</p>
   function khung(){
     if (S.chay){
       dem += 1;
-      if (dem >= 4){ dem = 0; motHop(); }
+      if (dem >= S.nhip){ dem = 0; motHop(); }
     }
     ve(); so();
     requestAnimationFrame(khung);
@@ -302,6 +453,7 @@ and an error-correcting code mops up the rest.</p>
   function datLai(){
     S.t=0; S.duoc=0; S.mat=0; S.ve=[]; datMa();
     S.kenhPha = Math.floor(S.N/2);
+    tinhPhong();
   }
 
   document.getElementById('chay').addEventListener('click', function(){
@@ -309,12 +461,39 @@ and an error-correcting code mops up the rest.</p>
     this.textContent = S.chay ? 'running' : 'paused';
   });
   document.getElementById('motcai').addEventListener('click', function(){
-    S.chay=false;
-    var b=document.getElementById('chay');
-    b.classList.remove('on'); b.textContent='paused';
-    motHop();
+    motBuoc();
   });
   document.getElementById('xoa').addEventListener('click', datLai);
+
+  // Toc do chi la toc do VE, khong lien quan toi so hop moi giay cua
+  // he that o thanh truot ben duoi. Mot hop tren man hinh van la mot
+  // dwell, chi la ve cham lai cho de nhin.
+  var NUT_TOC = { vCham:36, vVua:12, vNhanh:3 };
+  function datToc(id){
+    S.nhip = NUT_TOC[id];
+    for (var k in NUT_TOC)
+      document.getElementById(k).classList.toggle('on', k === id);
+  }
+  Object.keys(NUT_TOC).forEach(function(id){
+    document.getElementById(id).addEventListener('click', function(){
+      datToc(id);
+    });
+  });
+
+  function motBuoc(){
+    S.chay = false;
+    var b = document.getElementById('chay');
+    b.classList.remove('on'); b.textContent = 'paused';
+    motHop();
+  }
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight' || e.key === ' '){
+      e.preventDefault(); motBuoc();
+    } else if (e.key === 'ArrowLeft'){
+      e.preventDefault();
+      if (S.ve.length){ S.ve.pop(); }      // chi xoa khoi hinh
+    }
+  });
   function nut(id, khoa){
     document.getElementById(id).addEventListener('click', function(){
       S[khoa] = !S[khoa];
@@ -323,6 +502,20 @@ and an error-correcting code mops up the rest.</p>
     });
   }
   nut('bSai','sai'); nut('bPha','pha'); nut('bHai','hai');
+  document.getElementById('bCo').addEventListener('click', function(){
+    S.codinh = !S.codinh;
+    this.classList.toggle('on', S.codinh);
+    S.t=0; S.duoc=0; S.mat=0; S.ve=[];      // giu nguyen phong de doi chieu
+  });
+  document.getElementById('bPhong').addEventListener('click', function(){
+    S.hatPhong = (S.hatPhong*1103515245 + 12345) >>> 0;
+    datLai();
+  });
+  document.getElementById('sC').addEventListener('input', function(){
+    S.kenhCo = parseInt(this.value,10);
+    document.getElementById('vC').textContent = S.kenhCo;
+    S.t=0; S.duoc=0; S.mat=0; S.ve=[];
+  });
   document.getElementById('sN').addEventListener('input', function(){
     S.N = parseInt(this.value,10);
     document.getElementById('vN').textContent = S.N;
